@@ -1,0 +1,33 @@
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#cfe9ff;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",Roboto,sans-serif;color:#23305a}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:linear-gradient(180deg,#bfe3ff,#ffe4f1)}
+#top{display:flex;align-items:center;gap:6px;padding:6px 8px}
+.ib{width:46px;height:46px;border-radius:14px;border:0;background:#fff9;color:#2c3a6b;font-size:22px;box-shadow:0 2px 8px #4a6fa522}
+.ti{flex:1;text-align:center}#lDiff{font-weight:800;font-size:18px}#lInfo{font-size:14px;opacity:.8;font-variant-numeric:tabular-nums}
+#wrap{flex:1;position:relative;min-height:0}#c{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#toast{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:#fff;padding:8px 16px;border-radius:20px;font-weight:700;box-shadow:0 4px 16px #0002;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+#tools{display:flex;gap:6px;padding:4px 8px}
+.tb{flex:1;height:54px;border:0;border-radius:14px;background:#fffc;color:#2c3a6b;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px #4a6fa522}
+.tb span{font-size:20px;line-height:1}.tb b{font-size:10px;color:#889}.tb.on{background:#ffd54a}.tb.on b{color:#2c3a6b}
+#pad{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;padding:4px 8px 8px}
+.nk{height:62px;border:0;border-radius:14px;background:linear-gradient(180deg,#fff,#e9f1ff);color:#2b5bd7;font-size:28px;font-weight:800;box-shadow:0 3px 0 #b9c9ee,0 4px 10px #4a6fa533;position:relative;padding:0}
+.nk:active{transform:translateY(2px);box-shadow:0 1px 0 #b9c9ee}
+.nk small{position:absolute;bottom:3px;left:0;right:0;font-size:10px;color:#99a;font-weight:600}
+.nk.done{opacity:.35}
+.notes .nk{color:#7a6ad8;font-size:20px}
+@media (min-width:700px){#pad{max-width:720px;margin:0 auto;width:100%}.nk{height:72px;font-size:34px}#tools{max-width:720px;margin:0 auto;width:100%}}
+.ov{position:fixed;inset:0;background:#b9dcff99;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+.ov.on{display:flex}
+.card{background:#fffffff2;border-radius:26px;padding:22px;width:min(420px,100%);max-height:100%;overflow:auto;box-shadow:0 12px 40px #3a5a9a44;text-align:center}
+h1{margin:4px 0;font-size:34px}h1 em{font-style:normal;background:linear-gradient(90deg,#ff7ab6,#7a6ad8,#36b6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{margin:4px 0 14px}.sub{margin:0 0 14px;opacity:.75}
+.big{display:block;width:100%;height:56px;margin:8px 0;border:0;border-radius:16px;background:linear-gradient(180deg,#5aa8ff,#3b7cf0);color:#fff;font-size:19px;font-weight:800;box-shadow:0 3px 0 #2a5cc0}
+.big.alt{background:linear-gradient(180deg,#5fe0a0,#2fbf7a);box-shadow:0 3px 0 #1f9a5e}.big.daily{background:linear-gradient(180deg,#ffc95a,#ff9d3b);box-shadow:0 3px 0 #d97a1c}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}.row{display:flex;gap:8px}
+.sm{flex:1;height:48px;border:0;border-radius:14px;background:#eef3ff;color:#2c3a6b;font-weight:700;font-size:16px;margin-top:6px;padding:0 14px}
+.sl{display:grid;grid-template-columns:1fr 48px;align-items:center;text-align:left;font-weight:700;margin:10px 0;gap:4px}
+.sl input{grid-column:1/2;width:100%;height:36px;accent-color:#3b7cf0}.sl output{grid-row:1/3;grid-column:2;text-align:right;font-variant-numeric:tabular-nums}
+.tg{display:flex;align-items:center;gap:10px;font-weight:700;text-align:left;margin:12px 0}.tg input{width:26px;height:26px;accent-color:#3b7cf0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:10px}td,th{padding:6px 4px;border-bottom:1px solid #e3e9f7}th{font-size:12px;opacity:.7}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}.kv div{background:#f2f6ff;border-radius:12px;padding:8px}.kv b{display:block;font-size:20px}

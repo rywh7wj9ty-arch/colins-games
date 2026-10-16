@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Sudoku Prism</title>
+<meta name="theme-color" content="#bfe3ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sudoku Prism">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css?v=20261016223446">
+</head><body>
+<div id="app">
+ <header id="top">
+  <button id="bMenu" class="ib" aria-label="Menu">☰</button>
+  <div class="ti"><div id="lDiff">Easy</div><div id="lInfo"><span id="lTime">0:00</span> · <span id="lMist">0 mistakes</span></div></div>
+  <button id="bView" class="ib" aria-label="Reset view">⟲</button>
+  <button id="bSet" class="ib" aria-label="Settings">⚙</button>
+ </header>
+ <div id="wrap"><canvas id="c"></canvas><div id="toast"></div></div>
+ <div id="tools">
+  <button id="bUndo" class="tb"><span>↶</span>Undo</button>
+  <button id="bErase" class="tb"><span>⌫</span>Erase</button>
+  <button id="bNotes" class="tb"><span>✎</span>Notes <b id="lNotes">OFF</b></button>
+  <button id="bHint" class="tb"><span>💡</span>Hint</button>
+ </div>
+ <div id="pad"></div>
+</div>
+
+<div id="ovMenu" class="ov"><div class="card">
+ <h1>Sudoku <em>Prism</em></h1><p class="sub">Glassy 3D sudoku. Drag the board to tilt it.</p>
+ <button id="bCont" class="big alt">Continue</button>
+ <div class="grid2">
+  <button class="big" data-diff="easy">Easy</button><button class="big" data-diff="medium">Medium</button>
+  <button class="big" data-diff="hard">Hard</button><button class="big" data-diff="expert">Expert</button>
+ </div>
+ <button id="bDaily" class="big daily">☀ Daily Puzzle</button>
+ <div class="row"><button id="bStats" class="sm">📊 Stats</button><button id="bSet2" class="sm">⚙ Settings</button></div>
+</div></div>
+
+<div id="ovSet" class="ov"><div class="card">
+ <h2>Settings</h2>
+ <label class="sl">Music <input id="sMusic" type="range" min="0" max="100"><output id="oMusic"></output></label>
+ <label class="sl">Sound effects <input id="sSfx" type="range" min="0" max="100"><output id="oSfx"></output></label>
+ <label class="sl">Brightness <input id="sBright" type="range" min="60" max="140"><output id="oBright"></output></label>
+ <label class="tg"><input id="tMist" type="checkbox"> Highlight mistakes</label>
+ <label class="tg"><input id="tAuto" type="checkbox"> Auto-remove notes</label>
+ <button class="big close">Done</button>
+</div></div>
+
+<div id="ovStats" class="ov"><div class="card"><h2>Stats</h2><div id="statBody"></div>
+ <button class="big close">Close</button></div></div>
+
+<div id="ovWin" class="ov"><div class="card win"><h1>Solved! 🎉</h1><div id="winBody"></div>
+ <button id="bAgain" class="big">New puzzle</button><button id="bWinMenu" class="sm">Menu</button></div></div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js" } }</script>
+<script type="module" src="game.js?v=20261016223446"></script>
+</body></html>
