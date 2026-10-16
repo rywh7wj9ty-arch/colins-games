@@ -2,6 +2,8 @@
 export const DT = 1 / 120;
 export const G = 60, JUMP = 18, DJUMP = 16, PAD = 27, HOLD_T = 0.22, HOLD_G = 0.42;
 export const PW = 0.3, PH = 1.4;
+// forgiveness windows (seconds): coyote jump after leaving a ledge, buffered jump before landing, colour-touch grace
+export const COYOTE = 0 /* off: the always-available air jump already covers late ledge taps, and a full ground jump here broke the verified level routes */, BUFFER = 0.12, GRACE = 0.07;
 export const COLORS = [null, 'magenta', 'gold', 'cyan'];
 
 export function nextColor(c, n) { return (c % n) + 1; }
@@ -35,7 +37,7 @@ export function prepare(lvl) {
 
 export function newState(lvl) {
   return { t: 0, step: 0, x: lvl.start || 2, y: 0, vy: 0, gs: 1, col: 1, jumps: 1, grounded: true, holdT: 0, holding: false,
-    dead: false, cause: '', fin: false, gems: 0, boosts: 0, boostT: 0, switches: 0, jumpsN: 0, fallT: {}, grav: 0, padT: 0, events: null };
+    dead: false, cause: '', fin: false, gems: 0, boosts: 0, boostT: 0, switches: 0, jumpsN: 0, fallT: {}, grav: 0, padT: 0, events: null, airT: 0, bufT: 0, graceT: 0, coy: true, saves: 0 };
 }
 export function clone(s) { const c = { ...s }; c.fallT = { ...s.fallT }; return c; }
 export function speedAt(lvl, s) { return lvl.v0 + (lvl.v1 - lvl.v0) * Math.min(1, s.x / lvl.end) + (s.boostT > 0 ? 4 : 0); }
@@ -47,9 +49,12 @@ export function step(s, lvl, inp) {
   if (s.dead || s.fin) return s;
   const n = lvl.ncol;
   for (let k = 0; k < (inp.sw || 0); k++) { s.col = nextColor(s.col, n); s.switches++; }
-  if (inp.jp) {
-    if (s.grounded) { s.vy = JUMP * s.gs; s.grounded = false; s.holdT = 0; s.holding = true; s.jumpsN++; }
-    else if (s.jumps > 0) { s.jumps--; s.vy = DJUMP * s.gs; s.holdT = 0; s.holding = true; s.jumpsN++; }
+  if (inp.jp) s.bufT = BUFFER;
+  if (s.bufT > 0) {
+    const coyote = !s.grounded && s.coy && s.airT < COYOTE && s.vy * s.gs <= 0;
+    if (s.grounded || coyote) { s.vy = JUMP * s.gs; s.grounded = false; s.coy = false; s.holdT = 0; s.holding = !!inp.jh; s.jumpsN++; s.bufT = 0; }
+    else if (inp.jp && s.jumps > 0) { s.jumps--; s.vy = DJUMP * s.gs; s.holdT = 0; s.holding = true; s.jumpsN++; s.bufT = 0; }
+    else s.bufT -= DT;
   }
   if (!inp.jh) s.holding = false;
   let g = G;
@@ -60,6 +65,7 @@ export function step(s, lvl, inp) {
   s.x += speedAt(lvl, s) * DT;
   s.y += s.vy * DT;
   if (s.boostT > 0) s.boostT -= DT;
+  const wasG = s.grounded; s._mis = false;
   s.grounded = false;
   const bk = lvl._b[Math.floor(s.x / 4)] || [];
   let support = null;
@@ -83,17 +89,20 @@ export function step(s, lvl, inp) {
     if (s.dead) return s;
   }
   if (support) {
-    s.jumps = 1;
+    s.jumps = 1; s.coy = true; s.airT = 0;
     touch(s, support, t);
     if (s.dead) return s;
     if (support.fall && s.fallT[support.i] === undefined) s.fallT[support.i] = t;
+    if (support.pad && s._mis) { die(s, 'color'); return s; }
     if (support.pad) { s.vy = PAD * gs; s.grounded = false; s.holding = false; s.padT = 0.3; }
   }
+  else { s.airT += DT; if (wasG && s.vy * s.gs <= 0) s.coy = true; }
+  let mis = s._mis;
   // non-solid elements
   const ymin = gs > 0 ? s.y : s.y - PH, ymax = gs > 0 ? s.y + PH : s.y;
   for (const e of bk) {
     if (e.t === 'w') {
-      if (s.x + PW > e.x - 0.12 && s.x - PW < e.x + 0.12 && ymax > e.y && ymin < e.y + e.h && e.c !== s.col) { die(s, 'color'); return s; }
+      if (s.x + PW > e.x - 0.12 && s.x - PW < e.x + 0.12 && ymax > e.y && ymin < e.y + e.h && e.c !== s.col) { mis = true; }
     } else if (e.t === 's') {
       const sy = gs > 0 || !e.up ? e.y : e.y;
       const y0 = e.up ? sy - 0.6 : sy, y1 = e.up ? sy : sy + 0.6;
@@ -109,6 +118,7 @@ export function step(s, lvl, inp) {
       if (!(s.grav & bit) && s.x >= e.x) { s.grav |= bit; s.gs = -s.gs; s.grounded = false; s.jumps = 1; s.y += s.gs < 0 ? PH : -PH; s.vy = 0; }
     }
   }
+  if (mis) { s.graceT += DT; if (s.graceT > GRACE) { die(s, 'color'); return s; } } else if (s.graceT > 0) { s.saves++; s.graceT = 0; }
   if (s.y < (lvl.minY ?? -14) || s.y > (lvl.maxY ?? 30)) { die(s, 'fall'); return s; }
   s.t += DT; s.step++;
   if (s.x >= lvl.end) s.fin = true;
@@ -116,7 +126,7 @@ export function step(s, lvl, inp) {
 }
 function touch(s, p, t) {
   const c = colorAt(p, t);
-  if (c && c !== s.col) die(s, 'color');
+  if (c && c !== s.col) s._mis = true;
 }
 
 // Script = sorted events [step, kind] kind: 'd' jump down, 'u' jump up, 's' colour tap.

@@ -1,8 +1,8 @@
 // HUE DASH: rendering, input, UI, progress. Physics lives in logic.js (deterministic, tested in Node).
 import * as THREE from './vendor/three/three.module.js';
-import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610101531';
-import { LEVELS, WORLDS } from './levels.js?v=202610101531';
-import { Audio } from './audio.js?v=202610101531';
+import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610162218';
+import { LEVELS, WORLDS } from './levels.js?v=202610162218';
+import { Audio } from './audio.js?v=202610162218';
 
 const $ = id => document.getElementById(id);
 const HEX = [0xdedad8, 0xd6246e, 0xe2a21d, 0x1fb5c9];
@@ -43,7 +43,7 @@ function loadSave() {
   try { save = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { save = {}; }
   save.levels = save.levels || {}; save.ach = save.ach || {};
   save.tot = Object.assign({ deaths: 0, jumps: 0, switches: 0, play: 0, runs: 0, finishes: 0 }, save.tot);
-  save.set = Object.assign({ music: 0.7, sfx: 0.8, musicOn: true, sfxOn: true, reduced: false, ghost: true }, save.set);
+  save.set = Object.assign({ music: 0.7, sfx: 0.8, musicOn: true, sfxOn: true, reduced: false, ghost: true, bright: 1 }, save.set);
   save.look = Object.assign({ outfit: 'cap', board: 'snow' }, save.look);
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
@@ -66,7 +66,9 @@ $('game').appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 260);
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc8, 1.6); scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xffffff, 1.9); sun.castShadow = true;
+const sun = new THREE.DirectionalLight(0xffffff, 1.9);
+function curTheme() { try { return theme; } catch (e) { return null; } }
+function applyBright() { const b = save.set.bright || 1, n = THEMES.indexOf(curTheme()) === 3; hemi.intensity = (n ? 1.7 : 1.6) * b; sun.intensity = (n ? 0.9 : 1.9) * b; document.documentElement.style.setProperty('--bright', b); } sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 12, bottom: -12, near: 1, far: 60 });
 sun.shadow.bias = -0.0006; sun.shadow.radius = 4; scene.add(sun); scene.add(sun.target);
 scene.fog = new THREE.Fog(0xf6ebe5, 40, 150);
@@ -77,9 +79,9 @@ const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: fals
 const sky = new THREE.Mesh(new THREE.SphereGeometry(200, 24, 12), skyMat); sky.renderOrder = -1; scene.add(sky);
 
 function resize() {
-  const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  const rc = $('game').getBoundingClientRect(); const w = Math.max(1, Math.round(rc.width || innerWidth)), h = Math.max(1, Math.round(rc.height || innerHeight)); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 120)); if (window.visualViewport) visualViewport.addEventListener('resize', resize); resize();
 
 // ---------- materials ----------
 const matCache = {};
@@ -158,6 +160,11 @@ class Cubes {
 let smoke = new Smoke(save.set.reduced ? 140 : 360), cubes = new Cubes(160);
 const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, side: THREE.DoubleSide });
 const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 48), ringMat); ring.visible = false; scene.add(ring);
+const ring2Mat = ringMat.clone(); const ring2 = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), ring2Mat); ring2.visible = false; scene.add(ring2); let ring2T = 0, skyPulse = 0, hitStop = 0;
+const skyBase = { top: new THREE.Color(), hor: new THREE.Color() }, tint = new THREE.Color();
+// DOM-level instant feedback: a ripple under the finger and a soft colour flash (no WebGL cost)
+function tapFx(x, y) { if (!$('hud').classList.contains('on')) return; const d = document.createElement('i'); d.className = 'ripple'; d.style.left = x + 'px'; d.style.top = y + 'px'; $('fx').appendChild(d); setTimeout(() => d.remove(), 420); }
+function flash(col, a) { if (save.set.reduced) a *= 0.5; const f = $('flash'); f.style.transition = 'none'; f.style.background = col; f.style.opacity = a; void f.offsetWidth; f.style.transition = 'opacity .28s ease-out'; f.style.opacity = 0; }
 let ringT = 0;
 
 // ---------- runner ----------
@@ -205,7 +212,7 @@ function applyTheme(wi) {
   theme = THEMES[wi]; setThemeMats(theme);
   skyMat.uniforms.top.value.setHex(theme.top); skyMat.uniforms.hor.value.setHex(theme.hor); scene.fog.color.setHex(theme.fog);
   hemi.color.setHex(theme.night ? 0x9c90d0 : 0xffffff); hemi.groundColor.setHex(theme.night ? 0x2a2040 : 0xd8cfc8); hemi.intensity = theme.night ? 1.7 : 1.6;
-  sun.color.setHex(theme.sun); sun.intensity = theme.night ? 0.9 : 1.9;
+  sun.color.setHex(theme.sun); applyBright(); skyBase.top.setHex(theme.top); skyBase.hor.setHex(theme.hor); skyBase.ok = true;
   document.documentElement.style.setProperty('--ink', theme.night ? '#ece6ff' : '#4a4350');
 }
 function buildBackdrop(wi, len) {
@@ -302,16 +309,17 @@ function simStep() {
     if (input.jp && !input.held) { script.push([S.step + 1, 'u']); input.wasHeld = false; } else input.wasHeld = jh;
     input.jp = false; input.sw = 0;
   }
-  const pre = { g: S.grounded, gems: S.gems, boosts: S.boosts, gs: S.gs, jn: S.jumpsN, col: S.col, pad: S.padT };
+  const pre = { g: S.grounded, gems: S.gems, boosts: S.boosts, gs: S.gs, jn: S.jumpsN, col: S.col, pad: S.padT, sv: S.saves, vy: S.vy };
   step(S, level, inp);
   if (G && !G.s.dead && !G.s.fin) step(G.s, level, scriptInput(ghostScript, G.s, G));
   // events -> juice
   if (S.col !== pre.col) onSwitch(S.col);
   if (S.jumpsN > pre.jn) { audio.sfxPlay('jump', pre.g ? 0 : 1); if (!pre.g) puff(8, S.col); if (mode !== MODE.replay) save.tot.jumps++; }
-  if (S.grounded && !pre.g) { squash = 1; audio.sfxPlay('land'); cubes.burst(S.x - 0.3, S.y, 0xffffff, save.set.reduced ? 2 : 5, { v: 4, s: 0.06, life: 0.4, g: 20 }); }
+  if (S.grounded && !pre.g) { squash = 1; if (pre.vy && Math.abs(pre.vy) > 14) shake = Math.max(shake, 0.15); audio.sfxPlay('land'); cubes.burst(S.x - 0.3, S.y, 0xffffff, save.set.reduced ? 2 : 5, { v: 4, s: 0.06, life: 0.4, g: 20 }); }
   if (S.padT && !pre.pad) { audio.sfxPlay('pad'); puff(14, S.col); }
   if (S.gems !== pre.gems) { const k = Math.log2(S.gems ^ pre.gems); const gm = gemMeshes[k]; if (gm) { gm.visible = false; cubes.burst(gm.position.x, gm.position.y - 0.5, 0x9fe8ff, 18, { v: 6, s: 0.1, g: 6, life: 0.9 }); } audio.sfxPlay('gem'); }
   if (S.boosts !== pre.boosts) { const k = Math.log2(S.boosts ^ pre.boosts); if (boostMeshes[k]) boostMeshes[k].visible = false; audio.sfxPlay('boost'); }
+  if (S.saves > (pre.sv || 0) && mode === MODE.play) { banner('<small>close one!</small>'); audio.sfxPlay('star', 0); }
   if (S.gs !== pre.gs) { audio.sfxPlay('grav'); shake = 0.3; }
   if (S.padT > 0) S.padT -= DT;
   if (S.dead) onDeath(); else if (S.fin) onFinish();
@@ -319,12 +327,18 @@ function simStep() {
 function onSwitch(c) {
   audio.sfxPlay('switch', c); setAccent(c); paintRunner(runner, c); puff(save.set.reduced ? 6 : 14, c);
   ring.visible = true; ringT = 0; ringMat.color.setHex(HEX[c]); if (mode !== MODE.replay) save.tot.switches++;
+  ring2.visible = true; ring2T = 0; ring2Mat.color.setHex(HEX[c]); flash(CSS[c], 0.16); skyPulse = 1; shake = Math.max(shake, 0.12);
+  cubes.burst(S.x, S.y + S.gs * 0.7, HEX[c], save.set.reduced ? 4 : 10, { v: 7, s: 0.08, g: 4, life: 0.5 });
 }
 function puff(n, c) { for (let k = 0; k < n; k++) { const a = Math.random() * Math.PI * 2; smoke.emit(S.x + Math.cos(a) * 0.4, S.y + S.gs * 0.8 + Math.sin(a) * 0.5, (Math.random() - .5), HEX[c], { vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, s: 0.4, gs: 1.6, life: 0.6 + Math.random() * 0.4 }); } }
+let deathStreak = {};
 function onDeath() {
   window.__deaths = (window.__deaths || []).concat([[level.id, S.cause, +S.x.toFixed(1), +S.y.toFixed(1), S.step]]);
   window.__deathAt = performance.now();
-  mode = MODE.dead; deadT = 0; runner.g.visible = false; audio.sfxPlay('shatter'); shake = 0.5;
+  mode = MODE.dead; deadT = 0; runner.g.visible = false; audio.sfxPlay('shatter'); shake = 0.6; hitStop = 0.06; flash('#ffffff', 0.35);
+  const why = { color: 'Match the colour, <b>tap left</b> before you touch it', spike: 'Spikes! <b>Jump</b> over them', crash: '<b>Jump</b> sooner to clear that ledge', fall: 'Hold <b>jump</b> longer, or double-jump' }[S.cause];
+  deathStreak = (deathStreak.id === level.id ? deathStreak : { id: level.id, n: 0 }); deathStreak.n++;
+  if (why && !replayScript && (deathStreak.n <= 2 || deathStreak.n % 4 === 0)) setTimeout(() => mode === MODE.play && banner('<small>' + why + '</small>'), 280);
   cubes.burst(S.x, S.y - (S.gs < 0 ? 1.4 : 0), HEX[S.col], save.set.reduced ? 26 : 50); cubes.burst(S.x, S.y, 0xffffff, 12);
   if (!replayScript) { save.tot.deaths++; if (save.tot.deaths >= 50) ach('deaths50'); }
 }
@@ -370,7 +384,7 @@ const pointers = new Map();
 const cv = renderer.domElement;
 cv.addEventListener('pointerdown', e => {
   e.preventDefault(); if (!$('hud').classList.contains('on')) { audio.unlock(); return; }
-  if (e.clientX >= innerWidth / 2) { pointers.set(e.pointerId, 'j'); jumpDown(); } else { pointers.set(e.pointerId, 's'); switchTap(); }
+  tapFx(e.clientX, e.clientY); const rc = cv.getBoundingClientRect(); if (e.clientX >= rc.left + rc.width / 2) { pointers.set(e.pointerId, 'j'); jumpDown(); } else { pointers.set(e.pointerId, 's'); switchTap(); }
 }, { passive: false });
 const pUp = e => { if (pointers.get(e.pointerId) === 'j') { pointers.delete(e.pointerId); if (![...pointers.values()].includes('j')) jumpUp(); } else pointers.delete(e.pointerId); };
 cv.addEventListener('pointerup', pUp); cv.addEventListener('pointercancel', pUp);
@@ -392,10 +406,11 @@ function showScreen(id) { ['title', 'levels', 'pause', 'results', 'stats', 'ward
 const click = f => () => { audio.unlock(); audio.sfxPlay('click'); f(); };
 function audioPanel(el) {
   el.innerHTML = `<label class="row"><span>Music</span><input type="checkbox" data-k="musicOn"><input type="range" min="0" max="100" data-k="music"></label>
-  <label class="row"><span>Sound effects</span><input type="checkbox" data-k="sfxOn"><input type="range" min="0" max="100" data-k="sfx"></label>`;
+  <label class="row"><span>Sound effects</span><input type="checkbox" data-k="sfxOn"><input type="range" min="0" max="100" data-k="sfx"></label>
+  <label class="row"><span>Brightness</span><input type="range" min="60" max="140" data-k="bright"></label>`;
   el.querySelectorAll('input').forEach(i => {
     const k = i.dataset.k; if (i.type === 'checkbox') i.checked = save.set[k]; else i.value = Math.round(save.set[k] * 100);
-    i.addEventListener('input', () => { audio.unlock(); save.set[k] = i.type === 'checkbox' ? i.checked : i.value / 100; audio[k] = save.set[k]; audio.apply(); persist(); syncAudioPanels(); if (k === 'sfx' || k === 'sfxOn') audio.sfxPlay('click'); });
+    i.addEventListener('input', () => { audio.unlock(); save.set[k] = i.type === 'checkbox' ? i.checked : i.value / 100; if (k === 'bright') applyBright(); else { audio[k] = save.set[k]; audio.apply(); } persist(); syncAudioPanels(); if (k === 'sfx' || k === 'sfxOn') audio.sfxPlay('click'); });
   });
 }
 function syncAudioPanels() { document.querySelectorAll('.audio input').forEach(i => { const k = i.dataset.k; if (i.type === 'checkbox') i.checked = save.set[k]; else if (document.activeElement !== i) i.value = Math.round(save.set[k] * 100); }); }
@@ -479,9 +494,9 @@ function frame(now) {
     attract.sw -= ft; if (attract.sw < 0) { attract.sw = 3 + Math.random() * 2; S.col = S.col === 1 ? 2 : 1; paintRunner(runner, S.col); setAccent(S.col); puff(10, S.col); ring.visible = true; ringT = 0; ringMat.color.setHex(HEX[S.col]); }
     if (S.x > level.end + 60) S.x = -20;
   } else if (mode === MODE.play || mode === MODE.replay) {
-    if (!paused) { acc += dt * timeScale; let n = 0; while (acc >= DT && n < 12 && (mode === MODE.play || mode === MODE.replay)) { simStep(); acc -= DT; n++; } if (mode === MODE.play) save.tot.play += dt; }
+    if (hitStop > 0) hitStop -= dt; else if (!paused) { acc += dt * timeScale; let n = 0; while (acc >= DT && n < 12 && (mode === MODE.play || mode === MODE.replay)) { simStep(); acc -= DT; n++; } if (mode === MODE.play) save.tot.play += dt; }
   } else if (mode === MODE.dead) {
-    deadT += dt; if (performance.now() - window.__deathAt > 330 || deadT > 0.33) { if (replayScript) { stopReplay(); } else restart(); }
+    deadT += dt; if (performance.now() - window.__deathAt > 300 || deadT > 0.3) { if (replayScript) { stopReplay(); } else restart(); }
   } else if (mode === MODE.finish) {
     finT += dt; S.x += speedAt(level, S) * dt * Math.max(0.12, 1 - finT * 2);
     if (finT > 1.6) { mode = MODE.title; if (replayScript && !replayScript.__test) { stopReplay(); } else { $('hud').classList.remove('on'); showResults(); } }
@@ -520,6 +535,9 @@ function updateVisuals(dt) {
   }
   smoke.update(dt); cubes.update(dt);
   if (ring.visible) { ringT += dt; const s = 0.5 + ringT * 9; ring.scale.setScalar(s); ring.position.set(sim.x, sim.y + gs * 0.8, 0.2); ringMat.opacity = Math.max(0, 0.8 - ringT * 2.2); if (ringT > 0.4) ring.visible = false; }
+  if (ring2.visible) { ring2T += dt; const e = 1 - Math.pow(1 - Math.min(1, ring2T / 0.5), 3); ring2.scale.setScalar(0.6 + e * 7); ring2.position.set(sim.x, sim.y + gs * 0.8, 0.1); ring2Mat.opacity = Math.max(0, 0.65 * (1 - ring2T / 0.5)); if (ring2T > 0.5) ring2.visible = false; }
+  if (skyBase.ok) { skyPulse = Math.max(0, skyPulse - dt * 1.6); tint.setHex(HEX[sim.col] || 0xffffff); const k = theme.night ? 0.16 : 0.1 + skyPulse * 0.08;
+    skyMat.uniforms.hor.value.copy(skyBase.hor).lerp(tint, k); skyMat.uniforms.top.value.copy(skyBase.top).lerp(tint, k * 0.5); }
   // camera
   const spd = mode === MODE.title ? 8 : speedAt(level, sim);
   camX = sim.x; camY += ((sim.y + (gs < 0 ? -2.5 : 1.2)) - camY) * Math.min(1, dt * 3);
