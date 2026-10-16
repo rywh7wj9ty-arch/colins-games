@@ -8,9 +8,7 @@ var GAMES=[
  {id:'dig-buddies',name:'Dig Buddies',tagline:'Dig the garden. Dodge the Boomshrooms.',url:'https://rywh7wj9ty-arch.github.io/colins-games/dig-buddies/',accent:'#ffb36b'},
  {id:'hollow-isle',name:'Hollow Isle',tagline:'Keep the lantern lit. Outlast the fog.',url:'https://rywh7wj9ty-arch.github.io/colins-games/hollow-isle/',accent:'#9b7cff'},
  {id:'aetherion',name:'Aetherion: Skybound Realms',tagline:'Build, glide and explore a shattered sky.',url:'https://rywh7wj9ty-arch.github.io/colins-games/aetherion/',accent:'#7ecbff'},
- {id:'lumina-drift',name:'Lumina Drift',tagline:'Drift through a dreaming sky. Gather the Echoes.',url:'https://rywh7wj9ty-arch.github.io/colins-games/lumina-drift/',accent:'#f0a8ff'},
- {id:'pip-sky-gardens',name:'Pip & the Sky Gardens',tagline:'A bright 3D side-scroller through floating gardens.',url:'https://rywh7wj9ty-arch.github.io/colins-games/a/',accent:'#7dffb3'},
- {id:'elderglow',name:'Elderglow',tagline:'Light and darkness in an Ori-inspired dream.',url:'https://rywh7wj9ty-arch.github.io/colins-games/b/',accent:'#b8a0ff'}
+ {id:'lumina-drift',name:'Lumina Drift',tagline:'Drift through a dreaming sky. Gather the Echoes.',url:'https://rywh7wj9ty-arch.github.io/colins-games/lumina-drift/',accent:'#f0a8ff'}
 ];
 (function(){
  var root=document.getElementById('games');
