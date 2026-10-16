@@ -222,7 +222,7 @@ function buildLevel() {
   P(4600, 420, 660, 305, 'g', { cry: 1, tunnel: 1 }); // underside at y725: 45px headroom // low crystal arch: only a Dash carries you under it (flat, lit underside so the tunnel reads)
   P(4580, 770, 350, 40, 'g', { cry: 1 }); // tunnel floor: 140px gap. Hop (up to ~80ms early) then Dash 50-175ms later always clears it; on foot it never does (swept in unit test)
   W(4930, 771, 140, 700, 0, 600000); L.winds[L.winds.length - 1].down = 1; // crystal downdraft in the tunnel gap: once you drop below the floor line you can't double-jump back up
-  G(4610, 770, 'dash', 'Hop, then Dash under the low crystal ceiling', { gx1: 4930 }); A(0, 4940, 770, 60); E(4535, 625);
+  G(4610, 770, 'dash', 'Run, tap Jump, then Dash in mid-air to cross the gap', { gx0: 4250, gx1: 5070, assistT: 8 }); A(0, 4940, 770, 60); E(4535, 625);
   E(4900, 900); // risky: over the void
   P(3300, 1080, 160, 30, 'g', { cry: 1 }); E(3380, 1040); // crystal pocket below
   // ---------- Stormbreak Edge ----------
@@ -882,6 +882,7 @@ function touchRunes() {
 }
 function respawn() {
   stats.falls++; saveStats();
+  for (var gk in gateT) if (gateT[gk] > 0) { gateT[gk] += 4; gateOut[gk] = 0; } // each fall near a gate counts as struggling
   var cp = L.checkpoints[prog.cp] || L.checkpoints[0]; pl = LD.newPlayer(cp.x, cp.y); A.sfx_('respawn');
   burst(cp.x + 9, cp.y - 12, 30, [255, 240, 210], 160, 1, 4); respawnT = 0.6;
 }
@@ -1194,8 +1195,8 @@ function updateGates(dt) {
     var x0 = g.gx0 !== undefined ? g.gx0 : g.x - 100, x1 = g.gx1 !== undefined ? g.gx1 : g.x + 200, y0 = g.gy0 !== undefined ? g.gy0 : g.y - 260, y1 = g.y + 400;
     var inZone = c.x > x0 && c.x < x1 && c.y > y0 && c.y < y1;
     if (inZone && !g.noAssist && settings.assist && LD.hasAbility(prog, g.need) && !prog.assist[g.id]) { gateT[g.id] = (gateT[g.id] || 0) + dt; gateOut[g.id] = 0;
-      if (gateT[g.id] > 20) { prog.assist[g.id] = 1; L.solids.forEach(function (s) { if (s.type === 'help' && s.gate === g.id) { s.helpT = 0; burst(s.x + s.w / 2, s.y, 30, [255, 230, 160], 180, 1, 4); } }); A.sfx_('rune'); showToast('A helping ledge glimmers', 'The sky lends you a hand', 3.5); } }
-    else { gateOut[g.id] = (gateOut[g.id] || 0) + dt; if (gateOut[g.id] > 4) gateT[g.id] = 0; }
+      if (gateT[g.id] > (g.assistT || 20)) { prog.assist[g.id] = 1; L.solids.forEach(function (s) { if (s.type === 'help' && s.gate === g.id) { s.helpT = 0; burst(s.x + s.w / 2, s.y, 30, [255, 230, 160], 180, 1, 4); } }); A.sfx_('rune'); showToast('A helping ledge glimmers', 'The sky lends you a hand', 3.5); } }
+    else { gateOut[g.id] = (gateOut[g.id] || 0) + dt; if (gateOut[g.id] > 15) gateT[g.id] = 0; }
   });
 }
 function drawAurora(a, u) {
