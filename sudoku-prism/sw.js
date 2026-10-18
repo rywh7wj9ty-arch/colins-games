@@ -1,5 +1,5 @@
-var V="sudoku-prism-20261016223446";
-var FILES=['./','index.html','style.css?v=20261016223446','game.js?v=20261016223446','logic.js?v=20261016223446','audio.js?v=20261016223446','manifest.webmanifest','vendor/three/three.module.js','icons/apple-touch-icon.png','icons/favicon-32.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'];
+var V="sudoku-prism-20261018141852";
+var FILES=['./','index.html','style.css?v=20261018141852','game.js?v=20261018141852','logic.js?v=20261018141852','audio.js?v=20261018141852','manifest.webmanifest','vendor/three/three.module.js','icons/apple-touch-icon.png','icons/favicon-32.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(n){return n.indexOf('sudoku-prism-')===0&&n!==V}).map(function(n){return caches.delete(n)}))}).then(function(){return self.clients.claim()}))});
 self.addEventListener('fetch',function(e){var u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==location.origin)return;
