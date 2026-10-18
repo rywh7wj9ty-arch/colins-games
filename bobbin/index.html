@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bobbin">
+<meta name="theme-color" content="#ffd9a0">
+<title>Bobbin's Button Box</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="cv"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="prizeHud" class="pill"><span class="bubIcon"></span><b id="prizeCount">0</b><span class="of">/<span id="prizeTotal">0</span></span></div>
+    <div id="timeHud" class="pill small">0:00</div>
+    <button id="pauseBtn" class="roundBtn" aria-label="Pause"><span></span><span></span></button>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div id="stickZone"><div id="stickBase"><div id="stickKnob"></div></div></div>
+    <button id="grabBtn" class="actBtn" aria-label="Grab"><i>✋</i><b>Grab</b></button>
+    <button id="jumpBtn" class="actBtn" aria-label="Jump"><i>⤒</i><b>Jump</b></button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="rotateTip" class="hidden"><span>📱↻ Turn your phone sideways for a bigger view</span><button id="rotateOk">OK</button></div>
+
+  <!-- Title -->
+  <section id="title" class="screen">
+    <div class="titleCard">
+      <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
+      <p class="sub">A little handmade world to poke and play with</p>
+      <div class="menu">
+        <button class="btn big" id="playBtn">Play</button>
+        <button class="btn" id="levelsBtn">Levels</button>
+        <button class="btn" id="costumeBtn">Dress Up</button>
+        <button class="btn" id="statsBtn">Stats</button>
+        <button class="btn" id="settingsBtn">Settings</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Levels -->
+  <section id="levels" class="screen hidden">
+    <div class="panel wide">
+      <h2>Pick a level</h2>
+      <div id="levelCards"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- Costume -->
+  <section id="costume" class="screen hidden">
+    <div class="panel costumePanel">
+      <h2>Dress up Bobbin</h2>
+      <p class="hint">Pick a yarn colour</p>
+      <div id="swatches"></div>
+      <button class="btn back" data-go="title">Done</button>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section id="stats" class="screen hidden">
+    <div class="panel">
+      <h2>Your stats</h2>
+      <div id="statsList"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- Settings (title) -->
+  <section id="settings" class="screen hidden">
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="sliders"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- Pause -->
+  <section id="pause" class="screen hidden">
+    <div class="panel">
+      <h2>Paused</h2>
+      <div class="menu row">
+        <button class="btn" id="resumeBtn">Resume</button>
+        <button class="btn" id="cpBtn">Back to checkpoint</button>
+        <button class="btn" id="resetPiecesBtn">Reset puzzle pieces</button>
+        <button class="btn" id="restartBtn">Restart level</button>
+        <button class="btn" id="quitBtn">Levels</button>
+      </div>
+      <div class="sliders"></div>
+      <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · Esc to pause</p>
+    </div>
+  </section>
+
+  <!-- End -->
+  <section id="end" class="screen hidden">
+    <div class="panel endPanel">
+      <h2 id="endTitle">Level complete!</h2>
+      <div id="endStars"></div>
+      <div class="endRows">
+        <div><span>Prize bubbles</span><b id="endPrizes">0/0</b></div>
+        <div><span>Time</span><b id="endTime">0:00</b></div>
+        <div><span>Best</span><b id="endBest">-</b></div>
+      </div>
+      <p id="endNote"></p>
+      <div class="menu row">
+        <button class="btn big" id="nextBtn">Next level</button>
+        <button class="btn" id="replayBtn">Play again</button>
+        <button class="btn" id="endLevelsBtn">Levels</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/planck.min.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/gfx.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
