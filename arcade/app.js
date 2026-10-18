@@ -11,7 +11,8 @@ var GAMES=[
  {id:'lumina-drift',name:'Lumina Drift',tagline:'Drift through a dreaming sky. Gather the Echoes.',url:'https://rywh7wj9ty-arch.github.io/colins-games/lumina-drift/',accent:'#f0a8ff'},
  {id:'kickabout',name:'Kickabout',tagline:'Fast top-down football. 1P vs CPU or 2P.',url:'https://rywh7wj9ty-arch.github.io/colins-games/kickabout/',accent:'#5df27a'},
  {id:'sudoku-prism',name:'Sudoku Prism',tagline:'Glossy 3D sudoku with Killer and Zen modes, themes and smart hints.',url:'https://rywh7wj9ty-arch.github.io/colins-games/sudoku-prism/',accent:'#a98bff'},
- {id:'moonturn',name:'Moonturn',tagline:'Run round tiny moons. Twist them. Look again.',url:'https://rywh7wj9ty-arch.github.io/colins-games/moonturn/',accent:'#ff9a3c'}
+ {id:'moonturn',name:'Moonturn',tagline:'Run round tiny moons. Twist them. Look again.',url:'https://rywh7wj9ty-arch.github.io/colins-games/moonturn/',accent:'#ff9a3c'},
+ {id:'bobbin',name:"Bobbin's Button Box",tagline:'A handmade physics romp. Push, pull, swing and boing.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bobbin/',accent:'#4aa8ff'}
 ];
 (function(){
  var root=document.getElementById('games');
