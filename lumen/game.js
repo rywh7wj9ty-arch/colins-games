@@ -6,8 +6,10 @@ import { Renderer } from './js/render.js';
 import { Sound } from './js/audio.js';
 import { Input } from './js/input.js';
 import * as S from './js/stats.js';
+import { PUZZLES } from './js/puzzles.js';
 
-export const VERSION = '2026.10.09-1';
+export const VERSION = '2.0';
+const OLDER = [['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.has('debug');
 const $ = (s, r = document) => r.querySelector(s);
@@ -28,6 +30,7 @@ const MODE_INFO = {
   ultra: { name: 'Ultra', desc: 'Two minutes. Score attack.' },
   zen: { name: 'Zen', desc: 'No game over. Just light.' },
   daily: { name: 'Daily', desc: 'Same pieces for everyone today. Three minutes.' },
+  puzzle: { name: 'Puzzle', desc: '30 hand-picked wells. Empty each one with the pieces given.' },
 };
 const MODE_ORDER = ['marathon', 'sprint', 'ultra', 'zen'];
 
@@ -68,6 +71,8 @@ class App {
     window.__lumenBooted = true;
     this.hideLoading();
     this.registerSW();
+    this.maybeA2HS();
+    window.addEventListener('gamepadconnected', e => this.onPadConnected(e.gamepad));
     if (DEBUG) this.exposeDebug();
   }
   hideLoading() {
@@ -120,7 +125,7 @@ class App {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     this.fx.resize(L, dpr);
     this.bg.resize(w, h);
-    this.placeHud();
+    this.placeHud(); this.placeV2();
   }
   placeHud() {
     const L = this.L, c = L.cell, hud = $('#hud');
@@ -160,6 +165,7 @@ class App {
   // ---------------------------------------------------------------- settings
   applySettings(first) {
     const s = this.settings;
+    document.body.style.filter = Math.abs((s.brightness || 1) - 1) > 0.01 ? `brightness(${s.brightness})` : '';
     const reduced = s.effects === 'reduced';
     this.fx.setOptions({ reduced, reducedMotion: this.reducedMotion, shakeOn: s.shake && !this.reducedMotion, leanOn: s.lean, showGhost: s.ghost, showGrid: s.grid });
     this.bg.setQuality(reduced);
@@ -182,6 +188,8 @@ class App {
     if (name === 'title') this.buildTitle();
     if (name === 'stats') this.buildStats();
     if (name === 'settings') this.buildSettings();
+    if (name === 'puzzles') this.buildPuzzles();
+    this.padFocus = -1;
     if (name !== 'game' && name !== 'pause') this.maybeApplyUpdate();
   }
   back() { const to = this.overlayStack.pop() || (this.game ? 'pause' : 'title'); this.show(to, false); if (to === 'pause' || to === 'results') this.overlayStack = []; }
@@ -202,6 +210,8 @@ class App {
       case 'restart': this.restart(); break;
       case 'quit': this.quit(); break;
       case 'again': this.startGame(this.mode); break;
+      case 'next': this.startGame('puzzle', (this.puzzleIdx || 0) + 1); break;
+      case 'puzzles': this.quit(); this.show('puzzles', false); break;
       case 'end-zen': if (this.game) { this.show('game'); this.game.end('ended'); } break;
     }
   }
@@ -224,23 +234,31 @@ class App {
     const dBest = st.daily.days[today]; const streak = st.daily.lastDate && (st.daily.lastDate === today || S.addDays(st.daily.lastDate, 1) === today) ? st.daily.streak : 0;
     let html = MODE_ORDER.map(m => `<button class="mode" data-mode="${m}"><span class="glint"></span><span class="m-name">${MODE_INFO[m].name}</span><span class="m-desc">${MODE_INFO[m].desc}</span><span class="m-best">${best(m)}</span></button>`).join('');
     html += `<button class="mode daily" data-mode="daily"><span class="glint"></span><span class="m-name">Daily Challenge</span><span class="m-desc">${MODE_INFO.daily.desc}</span><span class="m-best">${dBest != null ? 'Today ' + fmtInt(dBest) : 'Not played today'}${streak ? ' &nbsp;·&nbsp; streak ' + streak + (streak > 1 ? ' days' : ' day') : ''}</span></button>`;
+    const P = this.stats.puzzles || {}; const solved = S.puzzleCount(this.stats), stars = S.puzzleStars(this.stats);
+    html += `<button class="mode puzzle" data-mode="puzzle"><span class="glint"></span><span class="m-name">Puzzles</span><span class="m-desc">${MODE_INFO.puzzle.desc}</span><span class="m-best">${solved ? solved + ' / 30 solved · ' + stars + '★' : 'Not played yet'}</span></button>`;
     el.innerHTML = html;
-    $$('.mode', el).forEach(b => b.addEventListener('click', () => this.startGame(b.dataset.mode)));
+    const vt = $('#ver-tag'); if (vt) vt.textContent = 'version ' + VERSION;
+    $$('.mode', el).forEach(b => b.addEventListener('click', () => b.dataset.mode === 'puzzle' ? this.show('puzzles', true) : this.startGame(b.dataset.mode)));
   }
   dailyDate() { return qs.get('date') || localDateStr(); }
 
   // ---------------------------------------------------------------- game flow
-  startGame(mode) {
+  startGame(mode, pIdx) {
     this.clearTimers();
     this.mode = mode;
     const s = this.settings;
     let seed = qs.has('seed') ? +qs.get('seed') : undefined;
     if (mode === 'daily') seed = dailySeed(this.dailyDate());
-    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf });
+    let puzzle = null;
+    if (mode === 'puzzle') { this.puzzleIdx = clamp(pIdx ?? this.puzzleIdx ?? 0, 0, PUZZLES.length - 1); puzzle = PUZZLES[this.puzzleIdx]; }
+    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf, puzzle });
+    this.slowT = 0; this.ghostRec = []; this.ghostRun = null; this.combo0 = 0;
+    if (mode === 'sprint' && s.raceGhost) { const gh = S.loadJSON(S.GHOST_KEY, null); if (gh && Array.isArray(gh.locks)) this.ghostRun = { ...gh, i: 0, board: Array.from({ length: 20 }, () => new Uint8Array(10)), lines: 0 }; }
+    $('#ghostcv').style.display = this.ghostRun && this.L.side ? '' : 'none'; $('#ghost-pace').textContent = '';
     this.liveToasted = new Set(); this.shownScore = 0; this.hudCache = {}; this.maxStack = 0;
     this.input.releaseAll();
     $('#popups').innerHTML = '';
-    this.world = worldIndexFor(mode, this.game.level, 0);
+    this.world = this.worldFor(this.game);
     this.fx.setWorld(this.world, true); this.fx.vis = null; this.fx.P.n = 0; this.fx.rings = []; this.fx.collapse = null; this.fx.stackDirty = true;
     this.bg.setWorld(this.world, false); this.bg.board = 1;
     this.setAccent(this.world);
@@ -298,10 +316,13 @@ class App {
   frame(ts) {
     const dt = clamp((ts - this.last) / 1000, 0, 0.1); this.last = ts;
     const g = this.game;
-    if (g && this.screen === 'game' && this.running && !g.over && this.timeScale !== 0) g.update(dt * 1000);
+    const slow = this.slowT > 0 ? 0.3 : 1; if (this.slowT > 0) this.slowT -= dt;
+    if (g && this.screen === 'game' && this.running && !g.over && this.timeScale !== 0) { g.update(dt * 1000 * slow); this.stepGhost(g); }
+    if (this.input.pollPads) this.input.pollPads();
+    this.sound.relief = Math.max(0, (this.sound.relief || 0) - dt / 5);
     if (g) {
       this.processEvents(g);
-      const wi = worldIndexFor(this.mode, g.level, g.lines);
+      const wi = this.worldFor(g);
       if (wi !== this.world) this.changeWorld(wi);
     }
     if (g) {
@@ -315,12 +336,13 @@ class App {
       const target = clamp(0.22 + lvlIn * 0.3 + this.world * 0.06 + height / 20 * 0.3 + Math.max(0, g.combo) * 0.05 + (g.b2b > 0 ? 0.05 : 0), 0, 1);
       this.intensity += (target - this.intensity) * Math.min(1, dt * 0.8);
       this.sound.intensity = this.intensity; this.bg.energy = this.intensity * 0.6;
+      this.sound.tension = this.mode === 'zen' || this.mode === 'puzzle' ? 0 : clamp((height - 9) / 8, 0, 1);
     } else {
       this.titleT += dt;
       if (this.titleT > 14) { this.titleT = 0; this.titleWorld = (this.titleWorld + 1) % WORLDS.length; this.bg.setWorld(this.titleWorld); this.fx.setWorld(this.titleWorld); this.setAccent(this.titleWorld); }
       this.bg.energy = 0.1; this.sound.intensity = 0.25;
     }
-    const vdt = dt * (this.timeScale == null ? 1 : this.timeScale); // timeScale: debug hook to freeze effects for screenshots
+    const vdt = dt * (this.timeScale == null ? 1 : this.timeScale) * (this.slowT > 0 ? 0.45 : 1); // timeScale: debug hook to freeze effects for screenshots
     if (!this.skipRender) { this.bg.render(vdt); this.fx.render(vdt, { game: g, title: !g }); }
     if (g && (this.screen === 'game' || this.screen === 'pause')) this.updateHud(g, dt);
   }
@@ -338,8 +360,8 @@ class App {
         case 'move': this.sound.move(e.x); break;
         case 'rotate': this.sound.rotate(e.dir); break;
         case 'soft': softTicks++; break;
-        case 'harddrop': this.sound.hardDrop(e.dist); break;
-        case 'lock': if (!e.lines) this.sound.lock(); break;
+        case 'harddrop': this.sound.hardDrop(e.dist); this.input.rumble(0.25, 60); break;
+        case 'lock': if (!e.lines) this.sound.lock(); if (this.mode === 'sprint') this.ghostRec.push([Math.round(g.time), e.cells.map(([x, y]) => x + (y - HIDDEN) * 10).filter(v => v >= 0), TYPE_ID[e.piece]]); if (!e.lines) this.setCombo(-1); break;
         case 'hold': this.sound.hold(); break;
         case 'clear': this.onClear(e, g); break;
         case 'levelup': this.onLevel(g); break;
@@ -352,6 +374,11 @@ class App {
   boardUV() { const L = this.L; return [(L.bx + L.bw / 2) / L.w, 1 - (L.by + L.bh / 2) / L.h]; }
   onClear(e, g) {
     this.sound.clear(e.lines, e.spin, Math.max(0, e.combo), e.b2b, e.pc);
+    if (e.lines) this.setCombo(e.combo);
+    if (e.lines === 4 || e.pc) {
+      this.slowT = this.reducedMotion ? 0 : 0.6; this.sound.calmDown(); this.input.rumble(0.9, 260);
+      for (let i = 0; i < e.rows.length; i++) for (let x = 0; x < COLS; x++) this.fx.burstCell(x, e.rows[i], e.rowCells[i][x] || 1, this.fx.reduced ? 1 : 3, 2.2);
+    } else if (e.lines) this.input.rumble(0.4, 90);
     const W = WORLDS[this.world];
     const tColor = W.pieces[5];
     if (e.pc) { this.popup('Perfect Clear', '+' + fmtInt(e.score), 'big', '#ffffff'); const [u, v] = this.boardUV(); this.bg.pulseAt(u, v); this.bg.flash = 0.7; }
@@ -398,9 +425,10 @@ class App {
     const set = (k, v) => { if (this.hudCache[k] !== v) { this.hudCache[k] = v; $('#hud-' + k + ' .val').textContent = v; } };
     this.shownScore += (g.score - this.shownScore) * Math.min(1, dt * 12); if (Math.abs(g.score - this.shownScore) < 1) this.shownScore = g.score;
     set('score', fmtInt(this.shownScore));
-    if (this.mode === 'sprint') { set('level', String(Math.max(0, 40 - g.lines))); this.lbl('level', 'Left'); }
+    if (this.mode === 'puzzle') { set('level', String(this.puzzleIdx + 1)); this.lbl('level', 'Puzzle'); set('lines', String(g.queue.length + (g.hold ? 1 : 0) + (g.cur ? 1 : 0))); this.lbl('lines', 'Pieces'); }
+    else if (this.mode === 'sprint') { set('level', String(Math.max(0, 40 - g.lines))); this.lbl('level', 'Left'); }
     else { set('level', String(g.level)); this.lbl('level', 'Level'); }
-    set('lines', String(g.lines));
+    if (this.mode !== 'puzzle') { set('lines', String(g.lines)); this.lbl('lines', 'Lines'); }
     const lim = g.def.timeLimit;
     if (lim) { set('time', fmtTime(lim - g.time + 999)); this.lbl('time', 'Left'); } else { set('time', fmtTime(g.time, this.mode === 'sprint')); this.lbl('time', 'Time'); }
     set('pps', (g.pieces / Math.max(1, g.time / 1000)).toFixed(2));
@@ -410,6 +438,9 @@ class App {
   onEnd(e, g) {
     this.running = false; this.input.releaseAll();
     const summary = g.summary();
+    if (this.mode === 'puzzle') return this.onPuzzleEnd(e, g, summary);
+    if (e.result === 'topout') this.input.rumble(1, 400);
+    if (this.mode === 'sprint' && e.result === 'complete') this.saveGhost(summary);
     if (e.result === 'topout') {
       const cells = []; for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (g.board[y][x]) cells.push([x, y, g.board[y][x]]);
       this.fx.handle({ type: 'zenclear', cells }, g);
@@ -428,6 +459,7 @@ class App {
   }
   showResults() {
     const { summary: s, records: r, unlocked } = this.lastResult; const st = this.stats; const M = st.modes[s.mode];
+    $('#res-next').hidden = true;
     $('#res-mode').textContent = MODE_INFO[s.mode].name + (s.mode === 'daily' ? ' · ' + this.dailyDate() : '');
     const titles = { topout: 'Game Over', complete: 'Complete', timeup: 'Time', ended: 'Session complete' };
     $('#res-title').textContent = titles[s.result] || 'Results';
@@ -520,6 +552,7 @@ class App {
       ['Games', fmtInt(L.games)], ['Time played', fmtLong(L.timeMs)], ['Lines', fmtInt(L.lines)], ['Pieces', fmtInt(L.pieces)],
       ['Avg PPS', S.avgPPS(st).toFixed(2)], ['Best PPS', L.bestPPS.toFixed(2)], ['Avg APM', S.avgAPM(st).toFixed(1)], ['Best APM', L.bestAPM.toFixed(1)],
       ['Tetrises', fmtInt(L.clears.tetris)], ['T-spins', fmtInt(tsp)], ['Perfect clears', fmtInt(L.pcs)], ['Max combo', L.maxCombo], ['Max B2B', L.maxB2B], ['Total score', fmtInt(L.score)],
+      ['Puzzles solved', S.puzzleCount(st) + ' / 30'], ['Puzzle stars', S.puzzleStars(st) + ' / 90'], ['Ghosts beaten', (st.extra && st.extra.ghostWins) | 0],
     ];
     $('#life-grid').innerHTML = life.map(([k, v]) => `<div><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
     const W = WORLDS[this.inGameWorld()].pieces;
@@ -564,10 +597,15 @@ class App {
       ['range', 'das', 'DAS', 'Delay before a held key or button repeats', 50, 300, 1, v => v + ' ms'],
       ['range', 'arr', 'ARR', 'Repeat rate once DAS kicks in (0 = instant)', 0, 80, 1, v => v + ' ms'],
       ['seg', 'sdf', 'Soft drop', 'Speed of soft drop (keys and buttons)', [[10, '10×'], [30, '30×'], [1000, 'Instant']]],
+      ['seg', 'swipeUp', 'Swipe up', 'What a swipe or flick up does', [['hold', 'Hold'], ['hard', 'Hard drop'], ['off', 'Nothing']]],
+      ['seg', 'flickDown', 'Flick down', 'A quick flick down hard-drops', [['hard', 'Hard drop'], ['off', 'Off']]],
+      ['toggle', 'rumble', 'Controller rumble', 'Where the controller supports it'],
+      ['toggle', 'raceGhost', 'Sprint ghost', 'Race a replay of your best Sprint 40'],
       ['group', 'Sound'],
-      ['range', 'music', 'Music', '', 0, 1, 0.05, v => Math.round(v * 100) + '%'],
-      ['range', 'sfx', 'Effects', 'Play sounds are tuned to the music', 0, 1, 0.05, v => Math.round(v * 100) + '%'],
+      ['range', 'music', 'Music', '0 = silent', 0, 1, 0.05, v => Math.round(v * 100) + '%'],
+      ['range', 'sfx', 'Sound effects', '0 = silent', 0, 1, 0.05, v => Math.round(v * 100) + '%'],
       ['group', 'Visuals'],
+      ['range', 'brightness', 'Brightness', '', 0.8, 1.3, 0.05, v => Math.round(v * 100) + '%'],
       ['seg', 'effects', 'Effects quality', 'Reduced saves battery on older phones', [['high', 'High'], ['reduced', 'Reduced']]],
       ['toggle', 'shake', 'Screen shake', 'Subtle impact on hard drops and Tetrises'],
       ['toggle', 'lean', 'Board lean', 'The well tilts gently toward the piece'],
@@ -584,6 +622,7 @@ class App {
       else if (type === 'toggle') html += `<div class="set-row">${left}<button class="toggle${s[key] ? ' on' : ''}" data-key="${key}" aria-label="${label}"></button></div>`;
     }
     html += `<h3>Your data</h3><div class="set-actions"><button data-act2="export">Export stats</button><button data-act2="copy">Copy stats</button><button data-act2="reset-settings">Reset settings</button><button class="danger" data-act2="reset">Reset stats</button></div>`;
+    html += `<h3>Older versions</h3><p class="older">${OLDER.map(([v, href, d]) => `<a href="${href}">${v}</a><span class="dim">${d}</span>`).join(' ')}</p>`;
     html += `<div class="about">LUMEN ${VERSION} · <button data-act2="update" style="text-decoration:underline">Check for update</button> <span id="upd-msg"></span></div>`;
     body.innerHTML = html;
     const fmts = {}; rows.filter(r => r[0] === 'range').forEach(r => { fmts[r[1]] = r[7]; });
@@ -602,6 +641,7 @@ class App {
   applySettingsLite(key) {
     const s = this.settings;
     if (key === 'music' || key === 'sfx') this.sound.setVolumes(s.music, s.sfx);
+    if (key === 'brightness') this.applySettings(true);
     if (this.game && (key === 'das' || key === 'arr')) { this.game.das = s.das; this.game.arr = s.arr; }
   }
   settingsAction(a, btn) {
@@ -633,6 +673,94 @@ class App {
     }
   }
 
+  // ---------------------------------------------------------------- v2.0 additions
+  worldFor(g) { return this.mode === 'puzzle' ? worldIndexFor('puzzle', (this.puzzleIdx || 0) + 1, 0) : worldIndexFor(this.mode, g.level, g.lines); }
+  setCombo(c) {
+    const el = $('#hud-combo'); if (!el) return;
+    if (c >= 1) { el.textContent = (c + 1) + '× COMBO'; el.classList.add('on'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); this.sound.combo(c); setTimeout(() => el.classList.remove('bump'), 160); }
+    else el.classList.remove('on');
+  }
+  placeV2() {
+    const L = this.L, c = L.cell; const el = $('#hud-combo'), gc = $('#ghostcv'), gp = $('#ghost-pace');
+    if (L.side) { el.style.cssText = `left:${L.next.x + 4}px;top:${L.next.y + L.next.h + c * 1.4}px`; }
+    else el.style.cssText = `left:${L.bx + 4}px;top:${L.by + 6}px`;
+    const gw = Math.round(L.hold.w * 0.9), gcell = Math.max(3, Math.floor(gw / 10));
+    gc.width = gcell * 10; gc.height = gcell * 20; gc.style.width = gcell * 10 + 'px'; gc.style.height = gcell * 20 + 'px';
+    gc.style.left = Math.round(L.next.x + 4) + 'px'; gc.style.top = Math.round(L.next.y + L.next.h + c * 2.4) + 'px';
+    if (L.next.y + L.next.h + c * 2.4 + gcell * 20 > L.h - 30) gc.style.display = 'none';
+    gp.style.cssText = L.side ? `left:${L.next.x + 4}px;top:${L.next.y + L.next.h + c * 2.4 + gcell * 20 + 6}px` : `left:${L.bx + L.bw / 2}px;top:${L.by + L.bh + 4}px;transform:translateX(-50%)`;
+    this.ghostCell = gcell;
+  }
+  stepGhost(g) {
+    const G = this.ghostRun; if (!G) return;
+    let changed = false;
+    while (G.i < G.locks.length && G.locks[G.i][0] <= g.time) {
+      const [, cells, id] = G.locks[G.i++];
+      for (const v of cells) { const x = v % 10, y = Math.floor(v / 10); if (y >= 0 && y < 20) G.board[y][x] = id; }
+      for (let y = 19; y >= 0; y--) if (G.board[y].every(v => v)) { G.board.splice(y, 1); G.board.unshift(new Uint8Array(10)); G.lines++; y++; }
+      changed = true;
+    }
+    if (changed || !this.ghostDrawn) this.drawGhost(G);
+    const diff = g.lines - G.lines;
+    const txt = `GHOST ${G.lines}/40 · ${diff >= 0 ? 'you +' + diff : 'you ' + diff}`;
+    const gp = $('#ghost-pace'); if (gp.textContent !== txt) { gp.textContent = txt; gp.style.color = diff >= 0 ? '#ffffff' : '#ffe27a'; }
+  }
+  drawGhost(G) {
+    const cv = $('#ghostcv'); if (cv.style.display === 'none') return; const x = cv.getContext('2d'), c = this.ghostCell || 4;
+    x.clearRect(0, 0, cv.width, cv.height); x.fillStyle = 'rgba(255,255,255,.14)'; x.fillRect(0, 0, cv.width, cv.height);
+    const pal = WORLDS[this.world].pieces;
+    for (let y = 0; y < 20; y++) for (let i = 0; i < 10; i++) { const id = G.board[y][i]; if (id) { x.fillStyle = pal[id - 1] + 'bb'; x.fillRect(i * c, y * c, c - 1, c - 1); } }
+    this.ghostDrawn = true;
+  }
+  saveGhost(sum) {
+    const old = S.loadJSON(S.GHOST_KEY, null);
+    if (this.ghostRun && old && sum.timeMs < old.timeMs) this.stats.extra.ghostWins = (this.stats.extra.ghostWins | 0) + 1;
+    if (!old || sum.timeMs < old.timeMs) { S.saveJSON(S.GHOST_KEY, { timeMs: sum.timeMs, date: new Date().toISOString(), locks: this.ghostRec }); if (old) this.toast('Ghost saved', 'Your new best is the ghost now'); }
+  }
+  buildPuzzles() {
+    const P = this.stats.puzzles || {}; let unlocked = 3; for (let i = 0; i < PUZZLES.length; i++) if (P[i + 1] && P[i + 1].stars) unlocked = Math.max(unlocked, i + 4);
+    $('#pz-sum').textContent = `${S.puzzleCount(this.stats)} / 30 solved · ${S.puzzleStars(this.stats)} / 90 ★`;
+    $('#pz-grid').innerHTML = PUZZLES.map((z, i) => { const r = P[z.id] || {}; const lock = i >= unlocked;
+      return `<button class="pz${lock ? ' locked' : ''}${r.stars ? ' done' : ''}" data-pz="${i}"${lock ? ' disabled' : ''}><span class="n">${z.id}</span><span class="t">${esc(z.name)}</span><span class="s">${'★'.repeat(r.stars | 0)}${'☆'.repeat(3 - (r.stars | 0))}</span></button>`; }).join('');
+    $$('[data-pz]', $('#pz-grid')).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.startGame('puzzle', +b.dataset.pz); }));
+  }
+  onPuzzleEnd(e, g, s) {
+    const z = PUZZLES[this.puzzleIdx]; const win = e.result === 'complete';
+    const stars = win ? (s.timeMs <= z.t3 ? 3 : s.timeMs <= z.t2 ? 2 : 1) : 0;
+    const P = this.stats.puzzles = this.stats.puzzles || {}; const prev = P[z.id] || { stars: 0, bestMs: null, tries: 0 };
+    P[z.id] = { stars: Math.max(prev.stars, stars), bestMs: win ? Math.min(prev.bestMs ?? Infinity, s.timeMs) : prev.bestMs, tries: (prev.tries | 0) + 1 };
+    const unlocked = S.recordPuzzle(this.stats, s); S.saveStats(this.stats);
+    if (win) { this.sound.success(); this.popup('Solved', '★'.repeat(stars), 'big', WORLDS[this.world].accent); this.input.rumble(0.6, 200); }
+    else { this.sound.gameOver(); this.popup('Out of pieces', 'try again', 'big', '#ffffff'); }
+    this.timers.push(setTimeout(() => {
+      $('#res-mode').textContent = `Puzzle ${z.id} · ${z.name}`;
+      $('#res-title').textContent = win ? 'Solved' : 'Not quite'; $('#res-record').hidden = !(win && stars > prev.stars);
+      $('#res-record').textContent = 'New best'; $('#res-score').textContent = win ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '☆☆☆';
+      $('#res-sub').textContent = win ? `${fmtTime(s.timeMs, true)} · 3★ under ${fmtTime(z.t3)} · 2★ under ${fmtTime(z.t2)}` : 'Empty the whole well using only the pieces shown. Hold can swap the order.';
+      $('#res-grid').innerHTML = [['Time', fmtTime(s.timeMs, true)], ['Pieces', s.pieces + ' / ' + z.par], ['Tries', P[z.id].tries], ['Best', P[z.id].bestMs != null ? fmtTime(P[z.id].bestMs, true) : '–']]
+        .map(([k, v]) => `<div class="res-cell"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+      $('#res-next').hidden = !(win && this.puzzleIdx < PUZZLES.length - 1);
+      this.show('results'); unlocked.forEach((id, i) => setTimeout(() => this.achToast(id), 500 + i * 900));
+    }, 1300));
+  }
+  onPadConnected(p) { if (this.padToasted) return; this.padToasted = true; this.toast('Controller connected', 'D-pad moves · A/B rotate · X hold · Start pause'); }
+  focusables() { const scr = $('.screen.on'); return scr ? $$('button:not([disabled]), a[href], input', scr).filter(b => b.offsetParent !== null) : []; }
+  padNav(d) { const f = this.focusables(); if (!f.length) return; this.padFocus = ((this.padFocus ?? -1) + d + f.length) % f.length; const el = f[this.padFocus];
+    f.forEach(x => x.classList.remove('padfocus')); el.classList.add('padfocus'); el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'nearest' }); }
+  padPress() { const f = this.focusables(); const el = f[this.padFocus]; if (!el) { this.padNav(1); return; }
+    if (el.type === 'range') { const st = +el.step || 0.05; el.value = +el.value + st > +el.max ? el.min : +el.value + st; el.dispatchEvent(new Event('input')); } else el.click(); }
+  padBack() { if (this.screen === 'pause') this.resume(); else if (this.screen !== 'title') { if (this.screen === 'results') this.quit(); else this.back(); } }
+  padStart() { if (this.screen === 'pause') this.resume(); else if (this.screen === 'results') this.doAction('again'); }
+  maybeA2HS() {
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (!ios || standalone || S.loadJSON('lumen.a2hs.v2', false)) return;
+    const el = document.createElement('div'); el.id = 'a2hs';
+    el.innerHTML = '<span>For full screen and offline play: tap <b>Share</b>, then <b>Add to Home Screen</b>.</span><button>OK</button>';
+    el.querySelector('button').addEventListener('click', e => { e.stopPropagation(); S.saveJSON('lumen.a2hs.v2', true); el.remove(); });
+    document.body.appendChild(el);
+  }
+
   // ---------------------------------------------------------------- offline / updates
   registerSW() {
     if (!('serviceWorker' in navigator) || qs.has('nosw') || location.protocol === 'file:') return;
@@ -660,7 +788,8 @@ class App {
     window.LUMEN = {
       app, VERSION, WORLDS,
       get game() { return app.game; }, get screen() { return app.screen; }, get stats() { return app.stats; }, get settings() { return app.settings; }, get layout() { return app.L; },
-      start(mode) { app.startGame(mode); app.countdown(0); return true; },
+      start(mode, i) { app.startGame(mode, i); app.countdown(0); return true; },
+      PUZZLES, pad: () => app.input.padOn,
       setBoard(rows) { app.game.setBoard(rows); app.fx.stackDirty = true; },
       setPiece(t, r, x, y) { app.game.setPiece(t, r, x, y); app.fx.vis = null; },
       setQueue(q) { app.game.setQueue(q); },
