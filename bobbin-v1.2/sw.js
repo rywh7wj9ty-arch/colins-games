@@ -1,6 +1,6 @@
 // Bobbin's Button Box service worker. P = this build's cache prefix; it only ever deletes its own old caches
 // (main build: bobbin-<stamp>; frozen copies: bobbin-v1.0-<stamp>, bobbin-v1.1-<stamp>, bobbin-v1.2-<stamp>), so versions never evict each other.
-var P="bobbin-v1.2-",V=P+"20261019094346";
+var P="bobbin-v1.2-",V=P+"20261019131746";
 var FILES=['./','index.html','style.css','manifest.webmanifest','js/planck.min.js','js/audio.js','js/gfx.js','js/levels.js','js/course.js','js/levels2.js','js/game.js','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 function mine(n){return n.indexOf(P)===0&&/^\d+$/.test(n.slice(P.length))}
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}).then(function(){return self.skipWaiting()}))});
