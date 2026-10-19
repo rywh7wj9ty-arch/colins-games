@@ -4,22 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Colin's Arcade</title>
-<meta name="theme-color" content="#0d0a22">
+<meta name="theme-color" content="#fff6e9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Arcade">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/favicon-32.png">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
 <main>
-  <header><h1>Colin's <span>Arcade</span></h1><p id="greet">Pick a world.</p></header>
+  <header><img class="logo" src="icons/icon-192.png" alt=""><div><h1>Colin's <span>Arcade</span></h1><p id="greet">Pick a world.</p></div></header>
   <section id="games" class="grid" aria-label="Games"></section>
-  <footer>Tip: each game can also be added to your Home Screen on its own.</footer>
+  <footer>Tip: each game can also be added to your Home Screen on its own.<br><span class="ver">Arcade v15</span></footer>
 </main>
 <div id="boot-error" hidden><p>The arcade didn't load.</p><button onclick="location.reload()">Tap to reload</button></div>
 <script>

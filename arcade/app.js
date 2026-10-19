@@ -17,17 +17,18 @@ var GAMES=[
 (function(){
  var root=document.getElementById('games');
  function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
- root.innerHTML=GAMES.map(function(g){return '<article class="card" style="--accent:'+g.accent+'"><div class="inner" data-url="'+esc(g.url)+'">'+
+ root.innerHTML=GAMES.map(function(g,i){return '<article class="card" style="--accent:'+g.accent+';--i:'+i+'"><div class="inner" tabindex="0" role="link" aria-label="'+esc(g.name)+'" data-url="'+esc(g.url)+'">'+
   '<div class="art-wrap"><img class="art" src="art/'+g.id+'.webp" alt="" loading="eager" decoding="async"></div>'+
   '<div class="meta"><img class="icon" src="art/'+g.id+'-icon.png" alt=""><div class="txt"><h2>'+esc(g.name)+'</h2><p>'+esc(g.tagline)+'</p></div>'+
   '<button class="play" aria-label="Play '+esc(g.name)+'">Play</button></div></div>'+
   '<p class="tip">Tip: open '+esc(g.name)+' in Safari to add it to your Home Screen on its own.</p></article>'}).join('');
  root.addEventListener('click',function(e){var c=e.target.closest('.inner');if(c)window.location.href=c.getAttribute('data-url')});
  var h=new Date().getHours();document.getElementById('greet').textContent=(h<12?'Good morning':h<18?'Good afternoon':'Good evening')+', Colin. Pick a world.';
+ root.querySelectorAll('.inner').forEach(function(el){el.addEventListener('pointerdown',function(e){if(e.pointerType!=='mouse')el.classList.add('pressed')});['pointerup','pointercancel','pointerleave'].forEach(function(t){el.addEventListener(t,function(){setTimeout(function(){el.classList.remove('pressed')},120)})});el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();window.location.href=el.getAttribute('data-url')}})});
  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!reduce){
   root.querySelectorAll('.inner').forEach(function(el){
-   function mv(x,y){var r=el.getBoundingClientRect();el.style.setProperty('--ry',((x-r.left)/r.width-.5)*10+'deg');el.style.setProperty('--rx',-((y-r.top)/r.height-.5)*10+'deg')}
+   function mv(x,y){var r=el.getBoundingClientRect();el.style.setProperty('--ry',((x-r.left)/r.width-.5)*6+'deg');el.style.setProperty('--rx',-((y-r.top)/r.height-.5)*6+'deg')}
    function rs(){el.style.setProperty('--rx','0deg');el.style.setProperty('--ry','0deg')}
    el.addEventListener('pointermove',function(e){mv(e.clientX,e.clientY)});
    el.addEventListener('pointerleave',rs);el.addEventListener('pointerup',rs);el.addEventListener('pointercancel',rs);
