@@ -135,3 +135,10 @@ box-shadow:0 3px 0 rgba(90,58,40,.18);outline:2px dashed rgba(90,58,40,.22);outl
 .lvTile.locked{opacity:.55;filter:saturate(.4)}.lvTile.done{background:#f3fff8}
 .lvTile:active{transform:translateY(2px)}
 @media (max-height:500px){.wLevels{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}.wHead canvas{width:96px;height:48px}.wHead h3{font-size:18px}.lvTile{min-height:54px;padding:6px 8px 6px 40px}}
+
+#endingCard{margin:10px auto 6px;padding:12px 14px;border:3px dashed #f5a623;border-radius:18px;background:repeating-linear-gradient(45deg,#fff8e6 0 14px,#fff1cf 14px 28px);max-width:440px;text-align:center}
+#endingCard.hidden{display:none}
+#endingCard .ecBig{font-size:1.15em;font-weight:700;color:#d9822b}
+#endingCard p{margin:6px 0}
+#endingCard .ecThanks{color:#7a5cff;font-weight:700}
+@media (max-height:500px){#endingCard{margin:4px auto;padding:6px 10px}#endingCard p{margin:2px 0}}
