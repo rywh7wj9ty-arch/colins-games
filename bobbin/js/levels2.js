@@ -40,3 +40,20 @@ L(10,2,'Rolling Pin Bakery','New: roll the dough ball into the bowl. Kitchen com
   {s:'rollpin'},{s:'pistons',n:4,speed:1.8},{s:'rollpin',belt:3.2},{s:'jelly',n:4,sp:3.8,top:-1.8},{s:'beltlever',len:12,speed:9},
   {s:'jellydrop',h:4.2},{s:'rollpin',belt:4.2},{s:'timed',n:3,slack:1.8},{s:'pistons',n:5,speed:1.9,stair:true},{s:'zip',len:18,drop:2.2,speed:6.5},{s:'belts',n:5,speed:2.8,back:true}]);
 })();
+(function(){
+function L(id,world,name,blurb,intro,segs){var d={id:id,world:world,name:name,blurb:blurb,theme:WORLDS[world].theme,intro:intro,segs:segs,w:200};
+  d.build=function(b){COURSE.build(b,d)};LEVELS.push(d)}
+/* ---- World 3: Toy Attic ---- */
+L(11,3,'Wind-Up Workshop','New: wind-up toys that press buttons for you.','Welcome to the Toy Attic!\nThe toys here have a mind of their own',[
+  {s:'toybtn',tl:5},{s:'hops',n:4,gap:2.1,rise:1.1},{s:'belts',n:3,speed:2.4,back:true},{s:'toybtn',tl:7,look:'car'},{s:'pistons',n:3,speed:1.7},
+  {s:'jelly',n:3,sp:3.8},{s:'toybtn',tl:9,speed:2.0},{s:'zip',len:16,drop:2,speed:6.5},{s:'beltlever',len:12,speed:9},{s:'toybtn',tl:8,look:'car'},{s:'timed',n:3,slack:1.8},{s:'ropes',n:2,sp:4.8},{s:'movers',n:2,span:5,speed:2.0,up:true}]);
+L(12,3,'Choo-Choo Crossing','New: toy trains that go when you climb aboard.','All aboard! Trains carry you\nover the widest gaps',[
+  {s:'train',len:12},{s:'hops',n:4,gap:2.1,rise:1.1},{s:'train',len:16,speed:3.6},{s:'toybtn',tl:7},{s:'jellydrop',h:4.2},{s:'train',len:18,speed:4},
+  {s:'pistons',n:4,speed:1.8},{s:'timed',n:3,slack:1.8},{s:'train',len:22,speed:4.4},{s:'jelly',n:4,sp:3.8,top:-1.8},{s:'movers',n:2,span:5,speed:2.0,up:true},{s:'zip',len:16,drop:2,speed:6.5},{s:'boingwall',h:4.6}]);
+L(13,3,'Pulley Parlour','New: pulleys. A heavy ball lifts you up.','Pulleys! A heavy weight on\none pan lifts the other',[
+  {s:'pulley',d:3.0},{s:'train',len:14,speed:3.8},{s:'toybtn',tl:8,look:'car'},{s:'pulley',d:3.4},{s:'jelly',n:4,sp:3.8,top:-1.8},
+  {s:'ropes',n:3,sp:4.8},{s:'pulley',d:3.8},{s:'beltlever',len:12,speed:9},{s:'train',len:20,speed:4.2},{s:'pistons',n:5,speed:1.9,stair:true},{s:'timed',n:3,slack:1.8}]);
+L(14,3,'Balloon Belfry','New: balloons that float you up. Attic combos.','Grab a balloon and float\nup to the rafters!',[
+  {s:'balloon',h:5},{s:'train',len:16,speed:4},{s:'balloon',h:6},{s:'toybtn',tl:8},{s:'pulley',d:3.6},{s:'balloon',h:6.5},{s:'jellydrop',h:4.2},
+  {s:'zip',len:18,drop:2.2,speed:6.5},{s:'pistons',n:5,speed:1.9,stair:true},{s:'balloon',h:7},{s:'train',len:22,speed:4.4},{s:'ropes',n:3,sp:4.8},{s:'timed',n:4,slack:1.7}]);
+})();
