@@ -144,12 +144,12 @@ S.potlift=function(c,P){var b=c.b,h=P.h||4.4;var x0=c.lead(3,c.hint('potlift','W
   b.route({t:'potlift',pe:x+2.0,lx:x+3.2,sig:sg,name:nm,cx:lx+1.05,top:-h,wall:lx+2.15,end:lx+7.15});c.x=xx+3};
 // flip the toggle to start the fan, then float up the draught
 S.fan=function(c,P){var b=c.b,h=P.h||5;var x0=c.lead(3,c.hint('fan','Flip the switch ({GRAB})\nand ride the breeze up'));var x=c.x,sg='fn'+c.n;c.G(x,x+4.8);
-  b.toggle(sg,x+1.0,0);var fh=(h+1.6)/0.89;b.fan(x+2.3,0,2.4,fh,{dir:'up',power:P.power||7,sig:sg});c.P(x+3.5,-h*0.5);c.P(x+3.5,-h-0.6);
+  b.toggle(sg,x+1.0,0);var fh=(h+1.6)/0.89;b.fan(x+2.3,0,2.4,fh,{dir:'up',power:P.power||7,sig:sg});if(b.cloth)b.cloth(x+5.6,-2.4,1.1,0.7,'#ffd23f');c.P(x+3.5,-h*0.5);c.P(x+3.5,-h-0.6);
   b.block(x+4.8,-h,4,4+h,{topCol:c.col(),tape:0.5});b.cp(x+6.2,-h);var xx=x+8.8,cur=-h;while(cur<-1.3){cur+=1.3;b.block(xx,cur,1.6,4-cur,{topCol:c.col()});xx+=1.6}c.G(xx,xx+3);
   b.route({t:'fan',tx:x+1.0,sig:sg,fx:x+3.5,wall:x+4.8,h:h});c.x=xx+3};
 // fan blows a light seed packet onto the button
 S.fanpush=function(c,P){var b=c.b;var x0=c.lead(3,c.hint('fanpush','Fans blow light things.\nSwitch it on!'));var x=c.x,sg='fp'+c.n,bs='fb'+c.n,nm='seed'+c.n;c.G(x,x+13);
-  b.toggle(sg,x+0.9,0);b.fan(x+2,-0.05,7.9,0.85,{dir:'right',power:P.power||5,sig:sg});var o=b.box(nm,x+3.4,-0.36,0.9,0.7,{kind:'paper',density:0.3,grab:true,zone:[x0,-10,16,10]});o.light=true;o.body.getFixtureList().setFriction(0.15);o.ext=0.35;
+  b.toggle(sg,x+0.9,0);b.fan(x+2,-0.05,7.9,0.85,{dir:'right',power:P.power||5,sig:sg});if(b.cloth)b.cloth(x+6.6,-2.6,1.0,0.6,'#8fd3ff');var o=b.box(nm,x+3.4,-0.36,0.9,0.7,{kind:'paper',density:0.3,grab:true,zone:[x0,-10,16,10]});o.light=true;o.body.getFixtureList().setFriction(0.15);o.ext=0.35;
   b.block(x+2,-1.35,8,0.5,{topCol:c.col(),tape:0.3});b.button(bs,x+8.1,0,1.8,{minMass:0.15});var g=x+10;b.gate(bs,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+5,-2.9);c.P(g+2,-1.2);
   b.route({t:'fanpush',tx:x+0.9,sig:sg,bsig:bs,gate:g,roof:x+2});c.x=x+13};
 // magnet crane: switch it on to lift the tin over the fence, switch off over the button
@@ -172,6 +172,71 @@ S.chain2=function(c,P){var b=c.b;var x0=c.lead(3,c.hint('chain2','One switch sta
   b.toy(tn,x+11.6,-0.36,{w:1.1,h:0.7,sig:bs,speed:1.8,look:'car',zone:[x+10,-10,14,10]});
   var g=x+20;b.button(bt,g-1.75,0,1.6,{minMass:0.4});b.gate(bt,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+6,-2.3);c.P(x+16,-2.3);c.P(g+2,-1.2);
   b.route({t:'chain2',tx:x+0.9,sig:sg,bsig:bs,tsig:bt,roof:x+2,gate:g});c.x=x+24};
+/* ---------- v1.6 physics segments ---------- */
+// soft body: a felt tunnel lower than Bobbin – he squishes through
+S.squeeze=function(c,P){var b=c.b,len=P.len||3.5,gh=P.gh||0.76;var x0=c.lead(3.5,c.hint('squeeze','Bobbin is squishy!\nPush into the felt gap'));var x=c.x;c.G(x,x+len+5);
+  b.block(x+2,-14,len,14-3.4,{mat:'wood'});b.squeeze(x+2,-3.4,len,3.4-gh);c.P(x+2+len/2,-0.5);if(P.slot){}
+  b.route({t:'squeeze',x1:x+2,x2:x+2+len});c.x=x+len+5};
+// real weight: plank-and-string bridge over a wide pit
+S.planks=function(c,P){var b=c.b,w=P.w||7;var x0=c.lead(3.5,c.hint('planks','Wobbly plank bridge.\nIt dips under your weight!'));var x=c.x;b.pit(x,0.7,w,6);b.plankBridge(x,x+w,0,P.n||Math.round(w/0.85));c.P(x+w/2,-1.4);c.P(x+w*0.25,-1.2);c.P(x+w*0.75,-1.2);
+  c.G(x+w,x+w+3);b.route({t:'planks',x1:x,x2:x+w});c.x=x+w+3};
+// sprung platforms over a pit
+S.sprung=function(c,P){var b=c.b,n=P.n||3,gap=P.gap||1.6,pw=P.pw||1.8;var x0=c.lead(3.5,c.hint('sprung','Spring platforms sink\nunder you. Keep hopping!'));var x=c.x,px=x+gap,spots=[];
+  for(var i=0;i<n;i++){var ty=-0.9-(i%2)*0.7;b.sprung(px,ty,pw,{k:P.k||70});spots.push([px+pw/2,ty]);if(i%2===0)c.P(px+pw/2,ty-1.2);px+=pw+gap}
+  b.pit(x,0.7,px-x,6);spots.push([px+1.2,0]);c.G(px,px+3);b.route({t:'sprung',x0:x,spots:spots});c.x=px+3};
+// elastic band trampoline up to a high ledge
+S.elastic=function(c,P){var b=c.b,h=P.h||4.6;var x0=c.lead(3,c.hint('elastic','Elastic bands fling you.\nFall from higher, hold jump!'));var x=c.x;c.G(x,x+9);
+  b.block(x+0.6,-1.6,1.8,1.6,{topCol:c.col(),tape:0.4});b.mat(x+2.6,-0.3,2.4,0.3,'elastic');b.block(x+5.4,-h,3.6,h,{topCol:c.col(),tape:0.5});c.P(x+3.8,-3.2);c.P(x+3.8,-5);c.P(x+7,-h-1);
+  b.route({t:'elastic',step:x+0.6,band:x+2.6,wall:x+5.4,h:h});c.G(x+9,x+12);c.x=x+12};
+// wax paper: a slippery downhill slide, then a gap
+S.wax=function(c,P){var b=c.b,h=P.h||2.2,len=P.len||6;var x0=c.lead(3,c.hint('wax','Wax paper is slippery!\nSlide down and jump'));var x=c.x;c.G(x,x+3.2);
+  b.block(x+0.6,-1.1,1.4,1.1,{topCol:c.col()});b.block(x+2,-h,1.8,h,{topCol:c.col(),tape:0.4});b.wedge([[x+3.8,-h],[x+3.8+len,0],[x+3.8,0]],'wax');var e=x+3.8+len;
+  c.P(x+3.8+len*0.5,-h*0.5-1);var pw=P.gap||3.2;b.pit(e,0.7,pw,6);c.P(e+pw/2,-2);c.G(e+pw,e+pw+3);b.route({t:'wax',top:x+2,h:h,edge:e,x1:e+pw});c.x=e+pw+3};
+// soggy Bobbin: a heavy button only a tea-soaked Bobbin can press
+S.tea=function(c,P){var b=c.b,sg='tb'+c.n;var x0=c.lead(3,c.hint('tea','Too light for the heavy button?\nSoak up some tea first!'));var x=c.x;c.G(x,x+1.5);
+  var pw=P.pw||4.6;b.block(x+1.5,1.3,pw,2.7,{mat:'wood'});b.tea(x+1.5,-0.25,pw,1.55);b.cork('cork'+c.n,x+1.5+pw*0.7,-0.6,0.28);var e=x+1.5+pw;c.G(e,e+9);
+  b.button(sg,e+2.2,0,2,{minMass:1.25,heavy:true});var g=e+6;b.gate(sg,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(e+3.2,-1.4);c.P(g+1.6,-1.2);
+  b.route({t:'tea',p1:x+1.5,p2:e,btn:e+3.2,sig:sg,gate:g});c.x=e+9};
+// duck raft drifting across a wide tea pool (you can also swim, slowly and soggily)
+S.duck=function(c,P){var b=c.b,pw=P.pw||8;var x0=c.lead(3,c.hint('duck','Ride the rubber duck raft\nacross the tea'));var x=c.x;c.G(x,x+1.5);
+  b.block(x+1.5,1.3,pw,2.7,{mat:'wood'});var T=b.tea(x+1.5,-0.25,pw,1.55);T.flow=P.flow||1.3;var o=b.duck('duck'+c.n,x+2.9,-0.55,2.2);T.raft=o;var e=x+1.5+pw;c.G(e,e+3);c.P(x+1.5+pw/2,-1.6);c.P(x+1.5+pw*0.75,-1.6);
+  b.route({t:'duck',p1:x+1.5,p2:e,raft:'duck'+c.n});c.x=e+3};
+// velcro wall: cling and wall-hop to the top
+S.velcro=function(c,P){var b=c.b,h=P.h||4.6;var x0=c.lead(3.5,c.hint('velcro','Velcro is grippy! Jump at it,\nhold towards it and hop up'));var x=c.x;c.G(x,x+10);
+  b.velcro(x+3,-h,0.5,h);b.block(x+3.5,-h,3.4,h,{topCol:c.col(),tape:0.5});c.P(x+2.4,-2.6);c.P(x+5,-h-1);c.G(x+10,x+12);b.route({t:'velcro',wall:x+3,h:h,top:x+3.5});c.x=x+12};
+// sticky tape on the ceiling over a pit: jump up, hang, shimmy across
+S.tape=function(c,P){var b=c.b,w=P.w||5;var x0=c.lead(3.5,c.hint('tape','Jump up to the sticky tape\nand shimmy across. Jump to let go'));var x=c.x;c.G(x,x+1.2);
+  b.block(x-0.6,-14,w+2.4,14-3.05-0.22,{mat:'wood'});b.tape(x-0.6,-3.05,w+2.4);b.pit(x+1.2,0.7,w,6);c.P(x+1.2+w/2,-1.8);c.G(x+1.2+w,x+w+4.5);
+  b.route({t:'tape',x1:x+1.2,x2:x+1.2+w});c.x=x+w+4.5};
+// cardboard wall: roll the heavy ball down the wax slide to tear through
+S.tearwall=function(c,P){var b=c.b,nm='ball'+c.n;var x0=c.lead(3,c.hint('tear','Cardboard tears!\nRoll the heavy ball into it'));var x=c.x;c.G(x,x+16);
+  b.block(x+1.4,-2,3,2,{topCol:c.col(),tape:0.4});var o=b.ball(nm,x+3.6,-2.5,0.45,{density:3,grab:true,zone:[x0,-12,20,12]});b.wedge([[x+4.4,-2],[x+8.6,0],[x+4.4,0]],'wax');
+  var T=b.tear(x+11,-3.4,0.5,3.4,{thr:6});b.block(x+10.9,-14,0.7,10.6,{mat:'wood'});c.P(x+3,-3.4);c.P(x+13,-1.2);
+  b.segWatch(function(dt){var q=o.body.getPosition(),v=o.body.getLinearVelocity();if(T.whole&&q.x>x+8.8&&Math.abs(v.x)+Math.abs(v.y)<0.1){o.rs=(o.rs||0)+dt;if(o.rs>2.2){o.rs=0;b.api.home(o)}}else o.rs=0});
+  b.route({t:'tearwall',ledge:x+1.4,ball:nm,wall:x+11});c.x=x+16};
+// topple a taped card tower onto the big button
+S.tower=function(c,P){var b=c.b,sg='tw'+c.n,n=P.n||5;var x0=c.lead(3,c.hint('tower','Push the tall tower over.\nWatch where it lands!'));var x=c.x;c.G(x,x+16);
+  b.block(x+3.5,-0.15,0.3,0.15,{mat:'wood'});var list=b.tower('tower'+c.n,x+3,0,n,{w:0.9,h:0.95,thr:60,density:0.15});b.button(sg,x+5,0,4,{minMass:0.3});var g=x+11;b.gate(sg,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+7,-1.3);c.P(g+2,-1.2);
+  var still=0,stray=0;b.segWatch(function(dt){if(b.api.sig(sg)){if(list.some(function(o){var q=o.body.getPosition();return q.x>g-0.3||q.y>1})){stray+=dt;if(stray>1){stray=0;b.api.towerReset(list,x+3,0.95)}}else stray=0;return}var moving=list.some(function(o){var v=o.body.getLinearVelocity();return Math.abs(v.x)+Math.abs(v.y)>0.08}),fallen=list.some(function(o){return Math.abs(o.body.getAngle())>0.5});
+    if(fallen&&!moving){still+=dt;if(still>2.5){still=0;b.api.towerReset(list,x+3,0.95)}}else still=0});
+  b.route({t:'tower',base:x+3,btn:x+5,sig:sg,gate:g});c.x=x+16};
+// dominoes: knock the first one, the last one flips the gate
+S.domino=function(c,P){var b=c.b,sg='dm'+c.n,n=P.n||8;var x0=c.lead(3,c.hint('domino','Nudge the first domino...'));var x=c.x;c.G(x,x+n*0.85+10.5);
+  b.dominoes('dom'+c.n,x+2.5,0,n,0.85,{sig:sg,h:1.3,grow:0.05});var g=x+2.5+n*0.85+3;b.gate(sg,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+2.5+n*0.4,-2.4);c.P(g+2,-1.2);
+  b.route({t:'domino',first:x+2.5,sig:sg,gate:g});c.x=g+5};
+// scissors: pull the lever, the scissors snip the rope, the weight drops on the heavy button
+S.snip=function(c,P){var b=c.b,sl='sl'+c.n,sb='sb'+c.n;var x0=c.lead(3,c.hint('snip','Pull the lever to make\nthe scissors snip!'));var x=c.x;c.G(x,x+14);
+  b.lever(sl,x+1.5,0,{start:0.55});b.peg(x+5.2,-6.6,0.22);var rp=b.srope(x+4.4,-7.4,7,0.5,{weight:'weight'+c.n,wd:2.6});b.scissors(rp,1,sl);b.button(sb,x+3.6,0,2.4,{minMass:0.8,heavy:true});
+  var g=x+9;b.gate(sb,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+4.8,-2);c.P(g+2,-1.2);
+  b.route({t:'snip',lx:x+1.5,sig:sl,bsig:sb,gate:g});c.x=x+14};
+// marble run: pull the lever, the marble rolls down the ramps into the cup button
+S.marble=function(c,P){var b=c.b,sl='ml'+c.n,sb='mb'+c.n,nm='marble'+c.n;var x0=c.lead(3,c.hint('marble','Pull the lever and watch\nthe marble run!'));var x=c.x;c.G(x,x+16);
+  b.lever(sl,x+1.5,0,{start:0.55});b.wedge([[x+3,-5.2],[x+9,-4.2],[x+9,-4.0],[x+3,-5.0]],'wood');b.wedge([[x+10.4,-3.0],[x+4.6,-1.9],[x+4.6,-1.7],[x+10.4,-2.8]],'wood');
+  b.block(x+10.6,-5.4,0.3,2.6,{mat:'wood'});b.block(x+3,-6.2,0.3,1.2,{mat:'wood'});b.gate(sl,x+4.2,-6.2,0.25,1.25,{dy:-1.3,mode:'latch'});
+  var o=b.ball(nm,x+3.6,-5.4,0.24,{density:2.2,zone:[x,-12,16,12]});b.button(sb,x+3.2,0,1.8,{minMass:0.3,pocket:true});var g=x+12;b.gate(sb,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});
+  b.block(x+3.55,-2.9,0.22,1.75,{mat:'wood'});c.P(x+7,-0.9);c.P(g+2,-1.2);
+  var rs=0;b.segWatch(function(dt){if(b.api.sig(sb))return;var v=o.body.getLinearVelocity(),q=o.body.getPosition();if(b.api.b.api.sig(sl)&&Math.abs(v.x)+Math.abs(v.y)<0.05&&q.x>x+4.3){rs+=dt;if(rs>2.5){rs=0;b.api.home(o)}}else rs=0});
+  b.route({t:'marble',lx:x+1.5,sig:sl,bsig:sb,gate:g});c.x=x+16};
 /* ---------- level assembly ---------- */
 function build(b,def){var c=mk(b,def);b.spawn(2.5,-0.6);
   c.G(0,6.5);c.x=6.5;

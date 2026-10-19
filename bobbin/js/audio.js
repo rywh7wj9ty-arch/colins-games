@@ -152,6 +152,21 @@ var SND=(function(){
       case 'squish':{var o5=ctx.createOscillator(),g5=ctx.createGain();o5.type='sine';o5.frequency.setValueAtTime(420,t);o5.frequency.exponentialRampToValueAtTime(70,t+0.22);env(g5,t,0.005,0.35,0.26);o5.connect(g5);g5.connect(sfxG);o5.start(t);o5.stop(t+0.3);noise('lowpass',900,150,1.2,0.22,0.2,t);noise('bandpass',2400,800,2,0.1,0.06,t+0.02);break}
       case 'lifeLost':playBuf(marimba(76),t,0.3,sfxG);playBuf(marimba(71),t+0.11,0.28,sfxG);playBuf(marimba(67),t+0.22,0.3,sfxG);tone('sine',800,1500,0.06,0.12,t);break;
       case 'outLives':[72,67,64,60].forEach(function(m,i){playBuf(marimba(m),t+i*0.16,0.3,sfxG)});playBuf(pluck(48),t+0.64,0.3,sfxG);break;
+      case 'imp':{var q=p||{},v=Math.max(0.02,Math.min(1,q.v||0.3)),sp=q.s||5,m=q.m||'card',pi=Math.min(1.6,0.7+sp*0.05);
+        if(m==='foil'){for(var k=0;k<4;k++)noise('highpass',3200+k*900,2000,2,0.035,0.1*v,t+k*0.022)}
+        else if(m==='wax')tone('triangle',1500*pi,900*pi,0.06,0.07*v,t);
+        else if(m==='felt'||m==='denim'||m==='burlap')noise('lowpass',380*pi,160,0.6,0.08,0.13*v,t);
+        else if(m==='sponge')noise('bandpass',260,120,3,0.14,0.12*v,t);
+        else if(m==='elastic'){tone('sine',140,420*pi,0.18,0.18*v,t);tone('triangle',280,840*pi,0.12,0.05*v,t)}
+        else if(m==='wood'||m==='cork'){tone('sine',420*pi,300*pi,0.07,0.16*v,t);noise('bandpass',1200,800,4,0.04,0.06*v,t)}
+        else if(m==='paper')noise('highpass',2500,1500,1,0.06,0.07*v,t);
+        else noise('lowpass',300*pi,130,0.7,0.1,0.16*v,t);break}
+      case 'snip':tone('square',2400,1800,0.02,0.06,t);noise('highpass',4000,0,1,0.05,0.08,t+0.03);tone('square',2000,1500,0.02,0.05,t+0.07);break;
+      case 'snap':noise('bandpass',1600,600,2,0.08,0.18,t);tone('triangle',500,200,0.08,0.08,t);break;
+      case 'tear':for(var k2=0;k2<6;k2++)noise('bandpass',900+k2*250,600,3,0.05,0.12,t+k2*0.035);break;
+      case 'crumple':for(var k3=0;k3<5;k3++)noise('highpass',2600+k3*300,1800,1.5,0.04,0.09,t+k3*0.03);break;
+      case 'rip':for(var k4=0;k4<7;k4++)noise('bandpass',1800+k4*120,1200,5,0.03,0.11,t+k4*0.02);break;
+      case 'velcro':noise('bandpass',1400,900,4,0.06,0.08,t);break;
       case 'thud':noise('lowpass',260,120,0.7,0.12,0.12+Math.min(0.2,p*0.02),t);break;
     }
   }
