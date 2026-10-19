@@ -142,3 +142,22 @@ box-shadow:0 3px 0 rgba(90,58,40,.18);outline:2px dashed rgba(90,58,40,.22);outl
 #endingCard p{margin:6px 0}
 #endingCard .ecThanks{color:#7a5cff;font-weight:700}
 @media (max-height:500px){#endingCard{margin:4px auto;padding:6px 10px}#endingCard p{margin:2px 0}}
+/* lives (v1.1) */
+#livesHud{top:calc(var(--sat) + 62px);padding:5px 10px;gap:5px;font-size:0}
+.lf{display:inline-block;width:20px;height:20px;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 38%,#5a3a28 0 1.6px,transparent 2.2px),radial-gradient(circle at 65% 38%,#5a3a28 0 1.6px,transparent 2.2px),radial-gradient(circle at 35% 64%,#5a3a28 0 1.6px,transparent 2.2px),radial-gradient(circle at 65% 64%,#5a3a28 0 1.6px,transparent 2.2px),radial-gradient(circle,#ff8fb5 0 6.5px,#ff6f9f 7px 100%);box-shadow:inset 0 -2px 0 rgba(150,40,80,.35),0 1px 0 rgba(90,58,40,.3);transition:opacity .3s,transform .3s}
+.lf.gone{background:transparent;box-shadow:none;outline:2px dashed rgba(90,58,40,.35);outline-offset:-2px;opacity:.7}
+.lf.pop{animation:lfPop .75s ease-in forwards}
+@keyframes lfPop{0%{transform:scale(1)}20%{transform:scale(1.55) rotate(-15deg)}100%{transform:translate(14px,46px) rotate(260deg) scale(.6);opacity:0}}
+.outPanel{text-align:center;max-width:440px}
+.outPanel h2{font-size:32px;margin:6px 0}
+.outPanel p{margin:4px 0 14px}
+.olBtns{display:flex;gap:10px;justify-content:center;margin-top:4px}
+.olBtns .lf{width:30px;height:30px}
+.ver{font-size:12px;opacity:.6;letter-spacing:.5px}
+.tver{display:block;margin:-6px 0 8px}
+.verRow{margin:8px 0 4px;font-size:12px;display:flex;gap:10px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.older{font-size:12px;opacity:.8;text-align:left}
+.older summary{cursor:pointer;text-decoration:underline;opacity:.75}
+.older a{display:inline-block;color:var(--ink);padding:2px 6px;font-size:13px}
+.older[open]{flex-basis:100%;text-align:center}
+@media (max-height:500px){#livesHud{top:calc(var(--sat) + 54px)}.tver{margin:-4px 0 4px}}

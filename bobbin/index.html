@@ -20,6 +20,7 @@
 
   <div id="hud" class="hidden">
     <div id="prizeHud" class="pill"><span class="bubIcon"></span><b id="prizeCount">0</b><span class="of">/<span id="prizeTotal">0</span></span></div>
+    <div id="livesHud" class="pill" aria-label="Lives"><i class="lf"></i><i class="lf"></i><i class="lf"></i></div>
     <div id="timeHud" class="pill small">0:00</div>
     <button id="pauseBtn" class="roundBtn" aria-label="Pause"><span></span><span></span></button>
   </div>
@@ -38,6 +39,7 @@
     <div class="titleCard">
       <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
       <p class="sub">A little handmade world to poke and play with</p>
+      <span class="ver tver">v1.1</span>
       <div class="menu">
         <button class="btn big" id="playBtn">Play</button>
         <button class="btn" id="levelsBtn">Levels</button>
@@ -82,6 +84,7 @@
     <div class="panel">
       <h2>Settings</h2>
       <div class="sliders"></div>
+      <div class="verRow"><span class="ver">Bobbin v1.1</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <button class="btn small back" data-go="title">Back</button>
     </div>
   </section>
@@ -98,7 +101,21 @@
         <button class="btn" id="quitBtn">Levels</button>
       </div>
       <div class="sliders"></div>
+      <div class="verRow"><span class="ver">Bobbin v1.1</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · Esc to pause</p>
+    </div>
+  </section>
+
+  <!-- Out of lives -->
+  <section id="outLives" class="screen hidden">
+    <div class="panel outPanel">
+      <div class="olBtns"><i class="lf gone"></i><i class="lf gone"></i><i class="lf gone"></i></div>
+      <h2>Out of lives!</h2>
+      <p id="olText">Bobbin needs a little rest. Shake off the fluff and try again?</p>
+      <div class="menu row">
+        <button class="btn big" id="retryBtn">Try level again</button>
+        <button class="btn" id="outLevelsBtn">Level select</button>
+      </div>
     </div>
   </section>
 
