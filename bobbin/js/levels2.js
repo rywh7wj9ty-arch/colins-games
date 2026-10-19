@@ -57,3 +57,20 @@ L(14,3,'Balloon Belfry','New: balloons that float you up. Attic combos.','Grab a
   {s:'balloon',h:5},{s:'train',len:16,speed:4},{s:'balloon',h:6},{s:'toybtn',tl:8},{s:'pulley',d:3.6},{s:'balloon',h:6.5},{s:'jellydrop',h:4.2},
   {s:'zip',len:18,drop:2.2,speed:6.5},{s:'pistons',n:5,speed:1.9,stair:true},{s:'balloon',h:7},{s:'train',len:22,speed:4.4},{s:'ropes',n:3,sp:4.8},{s:'timed',n:4,slack:1.7}]);
 })();
+(function(){
+function L(id,world,name,blurb,intro,segs){var d={id:id,world:world,name:name,blurb:blurb,theme:WORLDS[world].theme,intro:intro,segs:segs,w:200};
+  d.build=function(b){COURSE.build(b,d)};LEVELS.push(d)}
+/* ---- World 4: Garden Shed ---- */
+L(15,4,'Watering Can Way','New: watering cans fill planters that open doors.','Welcome to the Garden Shed!\nThirsty planters open doors',[
+  {s:'can'},{s:'hops',n:5,gap:2.1,rise:1.1},{s:'boingwall',h:4.2},{s:'train',len:16,speed:4},{s:'can'},{s:'jelly',n:4,sp:3.8,top:-1.8},{s:'toybtn',tl:8},
+  {s:'pulley',d:3.4},{s:'can'},{s:'zip',len:18,drop:2.2,speed:6.5},{s:'balloon',h:6},{s:'pistons',n:4,speed:1.8},{s:'beltlever',len:12,speed:9},{s:'ropes',n:3,sp:4.8},{s:'boingwall',h:4.6},{s:'timed',n:3,slack:1.8}]);
+L(16,4,'Flowerpot Lifts','New: flowerpot lifts that wake up when watered.','Water the planters to\nwake the flowerpot lifts',[
+  {s:'potlift',h:4.2},{s:'train',len:18,speed:4.2},{s:'potlift',h:5},{s:'beltlever',len:12,speed:9},{s:'balloon',h:6.5},{s:'potlift',h:5.5},
+  {s:'jellydrop',h:4.2},{s:'toybtn',tl:8,look:'car'},{s:'pulley',d:3.6},{s:'ropes',n:3,sp:4.8},{s:'hops',n:5,gap:2.2,rise:1.1},{s:'pistons',n:5,speed:1.9,stair:true},{s:'timed',n:3,slack:1.8}]);
+L(17,4,'Breezy Greenhouse','New: fans and switches. Ride the breeze.','Flip a switch to start\na fan. Breezes lift you!',[
+  {s:'fan',h:4.5},{s:'fanpush'},{s:'hops',n:4,gap:2.1,rise:1.1},{s:'fan',h:5.5},{s:'potlift',h:5},{s:'train',len:20,speed:4.4},{s:'fanpush'},
+  {s:'balloon',h:6.5},{s:'fan',h:6.5},{s:'toybtn',tl:9,look:'car'},{s:'jelly',n:4,sp:3.8,top:-1.8},{s:'pulley',d:3.6},{s:'zip',len:18,drop:2.2,speed:6.5},{s:'ropes',n:3,sp:4.8},{s:'timed',n:4,slack:1.7}]);
+L(18,4,'Magnet Potting Bench','New: magnet cranes and tins. Shed combos.','Magnets pick up tins.\nSwitch them off to drop',[
+  {s:'magnet'},{s:'fan',h:5.5},{s:'potlift',h:5},{s:'magnet',speed:1.8},{s:'train',len:20,speed:4.4},{s:'toybtn',tl:9},{s:'fanpush'},{s:'jellydrop',h:4.2},
+  {s:'magnet',speed:2.0},{s:'balloon',h:7},{s:'pulley',d:3.8},{s:'pistons',n:5,speed:1.9,stair:true},{s:'beltlever',len:12,speed:9},{s:'ropes',n:3,sp:4.8},{s:'timed',n:4,slack:1.7}]);
+})();
