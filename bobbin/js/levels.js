@@ -1,6 +1,6 @@
 /* Level layouts. Units are metres, y grows downward, floor surface at y=0. */
 var LEVELS=[
-{ id:1, name:'The Workshop', blurb:'Learn to waddle, hop, push, pull, swing and boing.', w:114, theme:'workshop',
+{ id:1, world:0, name:'The Workshop', blurb:'Learn to waddle, hop, push, pull, swing and boing.', w:114, theme:'workshop',
   build:function(b){
     b.spawn(2.5,-0.6);
     b.cp(2.5,0);
@@ -60,7 +60,7 @@ var LEVELS=[
     b.exit(109.5,-1.7);
   }
 },
-{ id:2, name:'The Rube Goldberg Room', blurb:'Levers, a ruler see-saw, a flying ball, springs and a drawbridge.', w:104, theme:'machine',
+{ id:2, world:0, name:'The Rube Goldberg Room', blurb:'Levers, a ruler see-saw, a flying ball, springs and a drawbridge.', w:104, theme:'machine',
   build:function(b){
     b.spawn(2.2,-0.6);
     b.cp(2.2,0);
