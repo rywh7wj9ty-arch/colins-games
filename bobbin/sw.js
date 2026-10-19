@@ -1,4 +1,4 @@
-var V="bobbin-20261019023356";
+var V="bobbin-20261019030623";
 var FILES=['./','index.html','style.css','manifest.webmanifest','js/planck.min.js','js/audio.js','js/gfx.js','js/levels.js','js/course.js','js/levels2.js','js/game.js','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(n){return n.indexOf('bobbin-')===0&&n!==V}).map(function(n){return caches.delete(n)}))}).then(function(){return self.clients.claim()}))});
