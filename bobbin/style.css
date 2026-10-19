@@ -229,3 +229,34 @@ body.portrait #mapBar h2{display:none}body.portrait #mapBar{gap:6px}body.portrai
 @media (max-height:500px){#endCrit{font-size:13px;margin:4px auto 0}.endRows div{padding-bottom:1px}}
 @media (orientation:landscape){#costume{justify-content:flex-end}.costumePanel{margin:auto 0 auto auto;max-width:min(560px,58vw)}}
 #endStars .st{color:#f5a623;text-shadow:0 3px 0 rgba(150,90,10,.35)}
+/* v1.4 bosses */
+.mNode.boss{width:66px;height:66px;margin:-33px 0 0 -33px;font-size:30px;border-radius:18px;background:radial-gradient(circle at 35% 30%,#fff 0 6%,var(--wc) 45%);box-shadow:0 4px 0 rgba(90,58,40,.45),0 0 0 4px #ffd23f,0 6px 14px rgba(60,30,10,.3)}
+.mNode.boss::before{display:none}
+.mNode.boss.locked{font-size:22px;box-shadow:0 4px 0 rgba(90,58,40,.35),0 0 0 3px #e8d6bf}
+.mNode.boss.done{box-shadow:0 4px 0 rgba(90,58,40,.45),0 0 0 4px #7fe0c0,0 6px 14px rgba(60,30,10,.3)}
+.mNode.boss .mSt{bottom:-20px}
+.lvTile.bossTile{background:#fff6dc;border:2px dashed #ffd23f}.lvTile.bossTile .num{background:#ffd23f;font-size:18px}
+.wItem.bossHat em{color:#b07a00}.wItem.bossHat.locked canvas{filter:grayscale(1) brightness(.85);opacity:.6}
+/* v1.4 level creator */
+#creator{display:block;padding:0;overflow:hidden;touch-action:none;background:transparent}
+#edBar{position:absolute;left:0;right:0;top:0;height:calc(var(--sat) + 50px);padding:calc(var(--sat) + 6px) calc(var(--sar) + 8px) 6px calc(var(--sal) + 8px);display:flex;align-items:center;gap:6px;z-index:4;
+  background:repeating-linear-gradient(90deg,#fff6e6 0 18px,#fff0d6 18px 36px);box-shadow:0 3px 0 rgba(90,58,40,.2);overflow-x:auto;overflow-y:hidden}
+#edBar .mBtn{padding:6px 10px;font-size:15px;min-height:36px}
+#edBar .edName{margin-right:auto;max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+#edBar .edTest{background:#4fd1a5;color:#fff}
+#edTouch{position:absolute;left:0;right:0;top:calc(var(--sat) + 50px);bottom:calc(var(--sab) + 70px);z-index:2;touch-action:none}
+#edPal{position:absolute;left:0;right:0;bottom:0;height:calc(var(--sab) + 70px);padding:6px calc(var(--sar) + 8px) calc(var(--sab) + 6px) calc(var(--sal) + 8px);display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;z-index:4;
+  background:repeating-linear-gradient(90deg,#fff6e6 0 18px,#fff0d6 18px 36px);box-shadow:0 -3px 0 rgba(90,58,40,.2);touch-action:pan-x}
+.edItem{touch-action:none;flex:0 0 auto;width:62px;height:58px;border-radius:12px;background:#fffaf0;box-shadow:0 3px 0 rgba(90,58,40,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1.05;touch-action:none;user-select:none;-webkit-user-select:none}
+.edItem canvas{width:40px;height:30px;pointer-events:none}.edItem span{pointer-events:none;white-space:nowrap}
+.edItem.on{outline:3px solid #ff7fae}
+#edSel{position:absolute;right:calc(var(--sar) + 8px);top:calc(var(--sat) + 58px);display:flex;flex-wrap:wrap;gap:5px;z-index:5;max-width:60vw;justify-content:flex-end}
+#edSel .mBtn{min-width:42px;padding:5px 8px;font-size:16px}#edSel .edDel{background:#ffd6d6}
+#edZoom{position:absolute;left:calc(var(--sal) + 8px);top:calc(var(--sat) + 58px);display:flex;flex-direction:column;gap:6px;z-index:5}
+#edZoom .mBtn{width:40px;height:40px;padding:0;font-size:20px}
+#edPanel{position:absolute;inset:0;z-index:8;background:rgba(255,231,194,.6);display:flex;align-items:center;justify-content:center;padding:calc(var(--sat) + 10px) calc(var(--sar) + 10px) calc(var(--sab) + 10px) calc(var(--sal) + 10px)}
+.edP{max-height:100%;overflow-y:auto;max-width:560px}.edPClose{position:absolute;right:10px;top:10px}
+.edP h3{margin:0 0 8px;font-size:20px}.edP textarea{width:100%;height:92px;font:13px/1.3 ui-monospace,Menlo,monospace;border-radius:10px;border:2px dashed rgba(90,58,40,.35);padding:8px;background:#fff;word-break:break-all}
+.edP .row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;align-items:center}.edP .msg{min-height:1.2em;font-size:14px;color:#c0392b}.edP .msg.ok{color:#2f9e74}
+.edLv{display:flex;align-items:center;gap:6px;background:#fff;border-radius:12px;padding:6px 8px;margin:6px 0}.edLv b{margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edLv.cur{outline:2px solid #ff7fae}.edThemes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.edThemes button{padding:10px;border-radius:12px;color:#fff;font-size:15px}

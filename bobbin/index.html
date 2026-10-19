@@ -40,10 +40,11 @@
     <div class="titleCard">
       <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
       <p class="sub">A little handmade world to poke and play with</p>
-      <span class="ver tver">v1.3</span>
+      <span class="ver tver">v1.4</span>
       <div class="menu">
         <button class="btn big" id="playBtn">Play</button>
         <button class="btn" id="levelsBtn">World Map</button>
+        <button class="btn" id="creatorBtn">Level Creator</button>
         <button class="btn" id="costumeBtn">Wardrobe</button>
         <button class="btn" id="statsBtn">Stats</button>
         <button class="btn" id="settingsBtn">Settings</button>
@@ -70,6 +71,7 @@
       <span class="mPill wallet"><span class="bubIcon"></span><b id="mapWallet">0</b></span>
       <button class="mBtn" id="mapStick">Stickers</button>
       <button class="mBtn" id="mapList">List</button>
+      <button class="mBtn" id="mapCreate">Create</button>
     </div>
     <div id="mapScroll"><div id="mapInner"><canvas id="mapBob" width="70" height="80"></canvas></div></div>
     <div id="stickTray" class="hidden"><div class="trayHead"><b>Your stickers</b><span>drag onto the map · drop here to put back</span><button class="mBtn" id="trayClose">✕</button></div><div id="trayItems"></div><p id="trayEmpty">No stickers yet: buy some in the Wardrobe.</p></div>
@@ -114,12 +116,37 @@
     <div class="panel">
       <h2>Settings</h2>
       <div class="sliders"></div>
-      <div class="verRow"><span class="ver">Bobbin v1.3</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <div class="verRow"><span class="ver">Bobbin v1.4</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <button class="btn small back" data-go="title">Back</button>
     </div>
   </section>
 
   <!-- Pause -->
+  <section id="creator" class="screen hidden">
+    <div id="edBar">
+      <button class="mBtn" id="edBack">‹ Back</button>
+      <button class="mBtn edName" id="edName">My level</button>
+      <button class="mBtn" id="edUndo" aria-label="Undo">↶</button>
+      <button class="mBtn" id="edTheme">Theme</button>
+      <button class="mBtn" id="edLevels">Levels</button>
+      <button class="mBtn" id="edShare">Share</button>
+      <button class="mBtn edTest" id="edTest">▶ Test</button>
+    </div>
+    <div id="edTouch"></div>
+    <div id="edSel" class="hidden">
+      <button class="mBtn" data-a="rot" aria-label="Rotate">⟳</button>
+      <button class="mBtn" data-a="w-" aria-label="Narrower">↔−</button>
+      <button class="mBtn" data-a="w+" aria-label="Wider">↔+</button>
+      <button class="mBtn" data-a="h-" aria-label="Shorter">↕−</button>
+      <button class="mBtn" data-a="h+" aria-label="Taller">↕+</button>
+      <button class="mBtn" data-a="opt" aria-label="Style">🎨</button>
+      <button class="mBtn" data-a="dup" aria-label="Copy">⧉</button>
+      <button class="mBtn edDel" data-a="del" aria-label="Delete">🗑</button>
+    </div>
+    <div id="edZoom"><button class="mBtn" id="edZin" aria-label="Zoom in">＋</button><button class="mBtn" id="edZout" aria-label="Zoom out">－</button></div>
+    <div id="edPal"></div>
+    <div id="edPanel" class="hidden"><div class="panel edP"><button class="mBtn edPClose" id="edPClose">✕</button><div id="edPBody"></div></div></div>
+  </section>
   <section id="pause" class="screen hidden">
     <div class="panel">
       <h2>Paused</h2>
@@ -131,7 +158,7 @@
         <button class="btn" id="quitBtn">World Map</button>
       </div>
       <div class="sliders"></div>
-      <div class="verRow"><span class="ver">Bobbin v1.3</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <div class="verRow"><span class="ver">Bobbin v1.4</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · Esc to pause</p>
     </div>
   </section>
