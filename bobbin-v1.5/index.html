@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bobbin v1.5">
+<meta name="theme-color" content="#ffd9a0">
+<title>Bobbin v1.5</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="cv"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="prizeHud" class="pill"><span class="bubIcon"></span><b id="prizeCount">0</b><span class="of">/<span id="prizeTotal">0</span></span></div>
+    <div id="livesHud" class="pill" aria-label="Lives"><i class="lf"></i><i class="lf"></i><i class="lf"></i></div>
+    <div id="timeHud" class="pill small">0:00</div>
+    <div id="ghostHud" class="pill small hidden">👻 —</div>
+    <button id="pauseBtn" class="roundBtn" aria-label="Pause"><span></span><span></span></button>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div id="stickZone"><div id="stickBase"><div id="stickKnob"></div></div></div>
+    <button id="grabBtn" class="actBtn" aria-label="Grab"><i>✋</i><b>Grab</b></button>
+    <button id="jumpBtn" class="actBtn" aria-label="Jump"><i>⤒</i><b>Jump</b></button>
+  </div>
+
+  <div id="a2hsCard" class="hidden" role="dialog" aria-label="Full screen tip">
+    <button class="mBtn a2X" id="a2hsX" aria-label="Close">✕</button>
+    <div class="a2Ill"><div class="a2Phone"><span class="a2Bar"><svg class="shareIc" viewBox="0 0 24 28" aria-hidden="true"><path d="M7 10H4.5A1.5 1.5 0 0 0 3 11.5v13A1.5 1.5 0 0 0 4.5 26h15a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 19.5 10H17" fill="none" stroke="#2f8fe0" stroke-width="2" stroke-linecap="round"/><path d="M12 17V2M7.5 6.5 12 2l4.5 4.5" fill="none" stroke="#2f8fe0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div><span class="a2Arrow">➜</span><div class="a2Home"><img src="icons/apple-touch-icon.png" alt=""><small>Bobbin</small></div></div>
+    <p><b>Want full screen?</b><br>Tap <b>Share</b> <svg class="shareIc" viewBox="0 0 24 28" aria-hidden="true"><path d="M7 10H4.5A1.5 1.5 0 0 0 3 11.5v13A1.5 1.5 0 0 0 4.5 26h15a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 19.5 10H17" fill="none" stroke="#2f8fe0" stroke-width="2" stroke-linecap="round"/><path d="M12 17V2M7.5 6.5 12 2l4.5 4.5" fill="none" stroke="#2f8fe0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> then <b>Add to Home Screen</b>, then open Bobbin from your Home Screen.</p>
+    <button class="btn small" id="a2hsOk">Got it</button>
+  </div>
+  <div id="toast"></div>
+  <div id="rotateTip" class="hidden"><span>📱↻ Turn your phone sideways for a bigger view</span><button id="rotateOk">OK</button></div>
+
+  <!-- Title -->
+  <section id="title" class="screen">
+    <div class="titleCard">
+      <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
+      <p class="sub">A little handmade world to poke and play with</p>
+      <span class="ver tver">v1.5</span>
+      <div class="menu">
+        <button class="btn big" id="playBtn">Play</button>
+        <button class="btn" id="levelsBtn">World Map</button>
+        <button class="btn" id="creatorBtn">Level Creator</button>
+        <button class="btn" id="costumeBtn">Wardrobe</button>
+        <button class="btn" id="statsBtn">Stats</button>
+        <button class="btn" id="settingsBtn">Settings</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Levels -->
+  <section id="levels" class="screen hidden">
+    <div class="panel wide">
+      <h2>Pick a level</h2>
+      <div id="levelTotals"></div>
+      <div id="levelCards"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- World map (v1.3) -->
+  <section id="map" class="screen hidden">
+    <div id="mapBar">
+      <button class="mBtn" id="mapBack">‹ Back</button>
+      <h2>The Craft Table</h2>
+      <span class="mPill" id="mapStars">★ 0/60</span>
+      <span class="mPill wallet"><span class="bubIcon"></span><b id="mapWallet">0</b></span>
+      <button class="mBtn" id="mapStick">Stickers</button>
+      <button class="mBtn" id="mapList">List</button>
+      <button class="mBtn" id="mapCreate">Create</button>
+    </div>
+    <div id="mapScroll"><div id="mapInner"><canvas id="mapBob" width="70" height="80"></canvas></div></div>
+    <div id="stickTray" class="hidden"><div class="trayHead"><b>Your stickers</b><span>drag onto the map · drop here to put back</span><button class="mBtn" id="trayClose">✕</button></div><div id="trayItems"></div><p id="trayEmpty">No stickers yet: buy some in the Wardrobe.</p></div>
+    <div id="lvPop" class="hidden">
+      <div class="lpCard">
+        <button class="mBtn lpX" id="lpClose" aria-label="Close">✕</button>
+        <p id="lpWorld"></p><h3 id="lpName"></h3><p id="lpBlurb"></p>
+        <div id="lpStars"></div>
+        <div class="lpRows"><span>Best time</span><b id="lpBest">—</b><span>Par time</span><b id="lpPar">—</b><span>Best prizes</span><b id="lpPrizes">—</b><span>Ghost</span><b id="lpGhost">—</b></div>
+        <label class="ttRow"><input type="checkbox" id="lpTT"><span class="tog"></span><span>Time Trial · race your ghost</span></label>
+        <p id="lpHow"></p>
+        <button class="btn big" id="lpPlay">Play</button>
+      </div>
+    </div>
+    <div id="stickFloat" class="hidden"></div>
+  </section>
+
+  <!-- Costume -->
+  <section id="costume" class="screen hidden">
+    <div class="panel costumePanel">
+      <div class="wardHead"><h2>Wardrobe</h2><span class="wallet" title="Prize bubbles to spend"><span class="bubIcon"></span><b id="wardWallet">0</b></span></div>
+      <div id="wardTabs"><button data-tab="col" class="on">Colours</button><button data-tab="hat">Hats</button><button data-tab="pat">Patterns</button><button data-tab="stk">Stickers</button></div>
+      <p class="hint" id="wardHint">Pick a yarn colour</p>
+      <div id="swatches"></div>
+      <div id="wardItems" class="hidden"></div>
+      <div id="patCols" class="hidden"></div>
+      <button class="btn back" data-go="title">Done</button>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section id="stats" class="screen hidden">
+    <div class="panel">
+      <h2>Your stats</h2>
+      <div id="statsList"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- Settings (title) -->
+  <section id="settings" class="screen hidden">
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="sliders"></div>
+      <div class="optRow"><button class="btn small" id="tvBtn">📺 TV mode: Auto</button><button class="btn small fsBtn hidden">⛶ Full screen</button><button class="btn small" id="fsTipsBtn">📱 Full screen tips</button></div>
+      <div class="verRow"><span class="ver">Bobbin v1.5</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
+  <!-- Pause -->
+  <section id="creator" class="screen hidden">
+    <div id="edBar">
+      <button class="mBtn" id="edBack">‹ Back</button>
+      <button class="mBtn edName" id="edName">My level</button>
+      <button class="mBtn" id="edUndo" aria-label="Undo">↶</button>
+      <button class="mBtn" id="edTheme">Theme</button>
+      <button class="mBtn" id="edLevels">Levels</button>
+      <button class="mBtn" id="edShare">Share</button>
+      <button class="mBtn edTest" id="edTest">▶ Test</button>
+    </div>
+    <div id="edTouch"></div>
+    <div id="edSel" class="hidden">
+      <button class="mBtn" data-a="rot" aria-label="Rotate">⟳</button>
+      <button class="mBtn" data-a="w-" aria-label="Narrower">↔−</button>
+      <button class="mBtn" data-a="w+" aria-label="Wider">↔+</button>
+      <button class="mBtn" data-a="h-" aria-label="Shorter">↕−</button>
+      <button class="mBtn" data-a="h+" aria-label="Taller">↕+</button>
+      <button class="mBtn" data-a="opt" aria-label="Style">🎨</button>
+      <button class="mBtn" data-a="dup" aria-label="Copy">⧉</button>
+      <button class="mBtn edDel" data-a="del" aria-label="Delete">🗑</button>
+    </div>
+    <div id="edZoom"><button class="mBtn" id="edZin" aria-label="Zoom in">＋</button><button class="mBtn" id="edZout" aria-label="Zoom out">－</button></div>
+    <div id="edPal"></div>
+    <div id="edPanel" class="hidden"><div class="panel edP"><button class="mBtn edPClose" id="edPClose">✕</button><div id="edPBody"></div></div></div>
+  </section>
+  <section id="pause" class="screen hidden">
+    <div class="panel">
+      <h2>Paused</h2>
+      <div class="menu row">
+        <button class="btn" id="resumeBtn">Resume</button>
+        <button class="btn" id="cpBtn">Back to checkpoint</button>
+        <button class="btn" id="resetPiecesBtn">Reset puzzle pieces</button>
+        <button class="btn" id="restartBtn">Restart level</button>
+        <button class="btn" id="quitBtn">World Map</button>
+      </div>
+      <div class="sliders"></div>
+      <div class="optRow"><button class="btn small fsBtn hidden">⛶ Full screen</button></div>
+      <div class="verRow"><span class="ver">Bobbin v1.5</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · R checkpoint · Esc to pause · Controllers work too 🎮</p>
+    </div>
+  </section>
+
+  <!-- Out of lives -->
+  <section id="outLives" class="screen hidden">
+    <div class="panel outPanel">
+      <div class="olBtns"><i class="lf gone"></i><i class="lf gone"></i><i class="lf gone"></i></div>
+      <h2>Out of lives!</h2>
+      <p id="olText">Bobbin needs a little rest. Shake off the fluff and try again?</p>
+      <div class="menu row">
+        <button class="btn big" id="retryBtn">Try level again</button>
+        <button class="btn" id="outLevelsBtn">World Map</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- End -->
+  <section id="end" class="screen hidden">
+    <div class="panel endPanel">
+      <h2 id="endTitle">Level complete!</h2>
+      <div id="endStars"></div>
+      <div class="endRows">
+        <div><span>Prize bubbles</span><b id="endPrizes">0/0</b></div>
+        <div><span>Time</span><b id="endTime">0:00</b></div>
+        <div><span>Best</span><b id="endBest">-</b></div>
+        <div><span>Par</span><b id="endPar">-</b></div>
+        <div><span>Wallet</span><b id="endEarn">+0</b></div>
+      </div>
+      <ul id="endCrit"></ul>
+      <p id="endGhost" class="hidden"></p>
+      <p id="endNote"></p>
+      <div id="endingCard" class="hidden"><div class="ecBig">🎉 The Grand Button Box is complete! 🎉</div><p id="ecText"></p><p class="ecThanks">Thanks for playing, button-hunter!</p></div>
+      <div class="menu row">
+        <button class="btn big" id="nextBtn">Next level</button>
+        <button class="btn" id="replayBtn">Play again</button>
+        <button class="btn" id="endLevelsBtn">World Map</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/planck.min.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/gfx.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/course.js"></script>
+<script src="js/levels2.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
