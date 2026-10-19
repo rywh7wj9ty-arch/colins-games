@@ -22,6 +22,7 @@
     <div id="prizeHud" class="pill"><span class="bubIcon"></span><b id="prizeCount">0</b><span class="of">/<span id="prizeTotal">0</span></span></div>
     <div id="livesHud" class="pill" aria-label="Lives"><i class="lf"></i><i class="lf"></i><i class="lf"></i></div>
     <div id="timeHud" class="pill small">0:00</div>
+    <div id="ghostHud" class="pill small hidden">👻 —</div>
     <button id="pauseBtn" class="roundBtn" aria-label="Pause"><span></span><span></span></button>
   </div>
 
@@ -39,11 +40,11 @@
     <div class="titleCard">
       <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
       <p class="sub">A little handmade world to poke and play with</p>
-      <span class="ver tver">v1.2</span>
+      <span class="ver tver">v1.3</span>
       <div class="menu">
         <button class="btn big" id="playBtn">Play</button>
-        <button class="btn" id="levelsBtn">Levels</button>
-        <button class="btn" id="costumeBtn">Dress Up</button>
+        <button class="btn" id="levelsBtn">World Map</button>
+        <button class="btn" id="costumeBtn">Wardrobe</button>
         <button class="btn" id="statsBtn">Stats</button>
         <button class="btn" id="settingsBtn">Settings</button>
       </div>
@@ -60,12 +61,41 @@
     </div>
   </section>
 
+  <!-- World map (v1.3) -->
+  <section id="map" class="screen hidden">
+    <div id="mapBar">
+      <button class="mBtn" id="mapBack">‹ Back</button>
+      <h2>The Craft Table</h2>
+      <span class="mPill" id="mapStars">★ 0/60</span>
+      <span class="mPill wallet"><span class="bubIcon"></span><b id="mapWallet">0</b></span>
+      <button class="mBtn" id="mapStick">Stickers</button>
+      <button class="mBtn" id="mapList">List</button>
+    </div>
+    <div id="mapScroll"><div id="mapInner"><canvas id="mapBob" width="70" height="80"></canvas></div></div>
+    <div id="stickTray" class="hidden"><div class="trayHead"><b>Your stickers</b><span>drag onto the map · drop here to put back</span><button class="mBtn" id="trayClose">✕</button></div><div id="trayItems"></div><p id="trayEmpty">No stickers yet: buy some in the Wardrobe.</p></div>
+    <div id="lvPop" class="hidden">
+      <div class="lpCard">
+        <button class="mBtn lpX" id="lpClose" aria-label="Close">✕</button>
+        <p id="lpWorld"></p><h3 id="lpName"></h3><p id="lpBlurb"></p>
+        <div id="lpStars"></div>
+        <div class="lpRows"><span>Best time</span><b id="lpBest">—</b><span>Par time</span><b id="lpPar">—</b><span>Best prizes</span><b id="lpPrizes">—</b><span>Ghost</span><b id="lpGhost">—</b></div>
+        <label class="ttRow"><input type="checkbox" id="lpTT"><span class="tog"></span><span>Time Trial · race your ghost</span></label>
+        <p id="lpHow"></p>
+        <button class="btn big" id="lpPlay">Play</button>
+      </div>
+    </div>
+    <div id="stickFloat" class="hidden"></div>
+  </section>
+
   <!-- Costume -->
   <section id="costume" class="screen hidden">
     <div class="panel costumePanel">
-      <h2>Dress up Bobbin</h2>
-      <p class="hint">Pick a yarn colour</p>
+      <div class="wardHead"><h2>Wardrobe</h2><span class="wallet" title="Prize bubbles to spend"><span class="bubIcon"></span><b id="wardWallet">0</b></span></div>
+      <div id="wardTabs"><button data-tab="col" class="on">Colours</button><button data-tab="hat">Hats</button><button data-tab="pat">Patterns</button><button data-tab="stk">Stickers</button></div>
+      <p class="hint" id="wardHint">Pick a yarn colour</p>
       <div id="swatches"></div>
+      <div id="wardItems" class="hidden"></div>
+      <div id="patCols" class="hidden"></div>
       <button class="btn back" data-go="title">Done</button>
     </div>
   </section>
@@ -84,7 +114,7 @@
     <div class="panel">
       <h2>Settings</h2>
       <div class="sliders"></div>
-      <div class="verRow"><span class="ver">Bobbin v1.2</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <div class="verRow"><span class="ver">Bobbin v1.3</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <button class="btn small back" data-go="title">Back</button>
     </div>
   </section>
@@ -98,10 +128,10 @@
         <button class="btn" id="cpBtn">Back to checkpoint</button>
         <button class="btn" id="resetPiecesBtn">Reset puzzle pieces</button>
         <button class="btn" id="restartBtn">Restart level</button>
-        <button class="btn" id="quitBtn">Levels</button>
+        <button class="btn" id="quitBtn">World Map</button>
       </div>
       <div class="sliders"></div>
-      <div class="verRow"><span class="ver">Bobbin v1.2</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <div class="verRow"><span class="ver">Bobbin v1.3</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · Esc to pause</p>
     </div>
   </section>
@@ -114,7 +144,7 @@
       <p id="olText">Bobbin needs a little rest. Shake off the fluff and try again?</p>
       <div class="menu row">
         <button class="btn big" id="retryBtn">Try level again</button>
-        <button class="btn" id="outLevelsBtn">Level select</button>
+        <button class="btn" id="outLevelsBtn">World Map</button>
       </div>
     </div>
   </section>
@@ -128,13 +158,17 @@
         <div><span>Prize bubbles</span><b id="endPrizes">0/0</b></div>
         <div><span>Time</span><b id="endTime">0:00</b></div>
         <div><span>Best</span><b id="endBest">-</b></div>
+        <div><span>Par</span><b id="endPar">-</b></div>
+        <div><span>Wallet</span><b id="endEarn">+0</b></div>
       </div>
+      <ul id="endCrit"></ul>
+      <p id="endGhost" class="hidden"></p>
       <p id="endNote"></p>
       <div id="endingCard" class="hidden"><div class="ecBig">🎉 The Grand Button Box is complete! 🎉</div><p id="ecText"></p><p class="ecThanks">Thanks for playing, button-hunter!</p></div>
       <div class="menu row">
         <button class="btn big" id="nextBtn">Next level</button>
         <button class="btn" id="replayBtn">Play again</button>
-        <button class="btn" id="endLevelsBtn">Levels</button>
+        <button class="btn" id="endLevelsBtn">World Map</button>
       </div>
     </div>
   </section>
