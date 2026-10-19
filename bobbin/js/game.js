@@ -3,7 +3,7 @@
 'use strict';
 var pl=planck,V=pl.Vec2;
 var G=30,STEP=1/120,R=0.48,JUMP_V=11.2,BOING_V=16.8,MAXRUN=6.4;
-var CAT={GROUND:1,PLAYER:2,OBJ:4,LEVER:8,HAND:16,ROPE:32};var BELT_SIGN=1;
+var CAT={GROUND:1,PLAYER:2,OBJ:4,LEVER:8,HAND:16,ROPE:32};var BELT_SIGN=-1;
 var COSTUMES=[['Sky','#4aa8ff'],['Marigold','#ff9f43'],['Mint','#3cc893'],['Berry','#ff6fa8'],['Lilac','#9f82ff'],['Sunny','#f5c518'],['Teal','#25b8c4'],['Cocoa','#b07a52']];
 var cv=document.getElementById('cv'),g=cv.getContext('2d');
 var W=800,H=450,DPR=1,S=40,viewW=20,viewH=11,portrait=false;
@@ -419,7 +419,7 @@ function mechUpdate(lv,dt){
     var p=moverPos(mv,mv.s),c=bd.getPosition();bd.setLinearVelocity(V((p[0]-c.x)/dt,(p[1]+mv.h/2-c.y)/dt))});
   lv.wheels.forEach(function(wh){var active=!wh.sig||sig(wh.sig);wh.spin=approach(wh.spin||0,active?wh.speed:0,dt*0.5);wh.a+=wh.spin*dt;
     wh.seats.forEach(function(bd,i){var a=wh.a+i*Math.PI*2/wh.n,c=bd.getPosition();bd.setLinearVelocity(V((wh.cx+Math.cos(a)*wh.r-c.x)/dt,(wh.cy+Math.sin(a)*wh.r+0.2-c.y)/dt))})});
-  lv.belts.forEach(function(bt){var tv=bt.speed;if(bt.sig){if(bt.sigMode==='rev')tv=sig(bt.sig)?-bt.speed:bt.speed;else tv=sig(bt.sig)?bt.speed:0}bt.v=approach(bt.v,tv,dt*4);bt.ph+=bt.v*dt});
+  lv.belts.forEach(function(bt){var tv=bt.speed;if(bt.sig){if(bt.sigMode==='rev')tv=sig(bt.sig)?-bt.speed:bt.speed;else tv=sig(bt.sig)?bt.speed:0}bt.v=approach(bt.v,tv,dt*4);bt.ph+=bt.v*dt;if(Math.abs(bt.v)>0.05)lv.objs.forEach(function(o){var q=o.body.getPosition();if(q.x>bt.x-0.6&&q.x<bt.x+bt.w+0.6&&q.y<bt.y&&q.y>bt.y-1.6&&!o.body.isAwake())o.body.setAwake(true)})});
   lv.jellies.forEach(function(j){j.sq=Math.max(0,j.sq-dt*2.2)});
   lv.zips.forEach(function(z){var held=!!(player&&player.grab&&player.grab.ud.type==='zip'&&player.grab.ud.zip===z);
     if(held&&!z.held)SND.sfx('zip');z.held=held;if(held)z.idle=0;else z.idle+=dt;
@@ -878,7 +878,7 @@ function startLevel(id,resume){var def=LEVELS.filter(function(d){return d.id===i
   if(!resume||resume.lvl!==id){save.resume=null;persist()}
   SND.setWorld(def.world||0);var wd=(typeof WORLDS!=='undefined')&&WORLDS[def.world||0];toast((wd&&def.id>2?wd.name+' · ':'')+def.id+'. '+def.name)}
 function isUnlocked(id){if(id<=1)return true;var p=save.best[id-1];return !!(p&&p.done)||!!(save.best[id]&&save.best[id].done)}
-function finishLevel(){var lv=L;if(lv.finished)return;lv.finished=true;lv.finishT=0;release(player,true);SND.sfx('finish');confetti(lv.exit.x,lv.exit.y,70);setExpr(player,'joy',3);
+function finishLevel(){var lv=L;if(lv.finished)return;lv.finished=true;lv.finishT=0;release(player,true);SND.sfx('finish');confetti(lv.exit.x,lv.exit.y,70);if(lv.def.finale){[0.5,1.1,1.7,2.3].forEach(function(dl,k){setTimeout(function(){if(L===lv){confetti(lv.exit.x+(k%2?-3:3),lv.exit.y-2-k*0.6,60);SND.sfx(k%2?'full':'pop',k*2)}},dl*1000)})}setExpr(player,'joy',3);
   var id=lv.def.id,b=save.best[id]||{};var total=lv.prizes.length;lv.newBest=!b.time||lv.t<b.time;
   save.best[id]={time:lv.newBest?lv.t:b.time,prizes:Math.max(b.prizes||0,lv.got),total:total,done:true};
   save.stats.finishes++;save.resume=null;persist()}
@@ -891,6 +891,7 @@ function showEnd(){var lv=L,id=lv.def.id,b=save.best[id];state='end';hud.classLi
   for(var i=0;i<stars;i++)(function(i){setTimeout(function(){se.children[i].classList.add('on');SND.sfx('pop',i*2)},350+i*280)})(i);
   var note=lv.newBest?'New best time!':'';if(lv.got===lv.prizes.length)note=(note?note+' ':'')+'Every prize bubble popped!';
   document.getElementById('endNote').textContent=note;
+  var ec=document.getElementById('endingCard'),last=LEVELS[LEVELS.length-1].id===id;if(ec){if(last){var tt=levelTotals();document.getElementById('ecText').textContent=(tt.done===LEVELS.length?'Bobbin sewed up all '+LEVELS.length+' boxes!':'You reached the very last box!')+' Levels '+tt.done+'/'+LEVELS.length+' · Prizes '+tt.prizes+'/'+tt.total+' · Total best time '+fmt(tt.time);ec.classList.remove('hidden')}else ec.classList.add('hidden')}
   var nx=document.getElementById('nextBtn');var nxt=LEVELS.filter(function(d){return d.id===id+1})[0];nx.textContent=nxt?'Next level':'Back to start';
   showScreen('end')}
 function pauseGame(){if(state!=='play')return;state='paused';showScreen('pause');release(player,true);persist()}

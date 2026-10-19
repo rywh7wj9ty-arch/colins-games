@@ -161,16 +161,15 @@ S.magnet=function(c,P){var b=c.b;var x0=c.lead(3,c.hint('magnet','Switch the mag
 /* ---------- grand finale: Rube Goldberg chains ---------- */
 // water -> planter starts the belt -> belt carries the dough ball into the bowl -> bridge drops
 S.chain1=function(c,P){var b=c.b;var x0=c.lead(3,c.hint('chain1','Water the planter... then\nwatch the chain reaction!'));var x=c.x,sa='ca'+c.n,sb='cb'+c.n,nm='cd'+c.n;
-  c.G(x,x+4.4);canPlanter(c,x,sa);var bx=x+4.4;b.block(bx,-1.6,7,1.6,{topCol:c.col(),tape:0.3});b.belt(bx,-2.0,7,2.2,{sig:sa,sigMode:'on'});
-  b.ball(nm,bx+1.0,-2.6,0.55,{density:0.8,zone:[x0,-12,16,12]});var bk=bx+8.4;c.G(bx+7,bk+3.6);b.basket(sb,bk,0,2.6,0.8);
-  var pitX=bk+3.6,len=4.2;b.pit(pitX,0.7,len,6);b.bridge(sb,pitX,0,len);c.P(pitX+len/2,-1.2);c.P(bx+3.5,-3.4);c.G(pitX+len,pitX+len+3.5);
-  b.watch(function(dt,A){if(!A.sig(sa))return;var o=A.obj(nm);if(!o||A.held(o))return;var q=o.body.getPosition(),v=o.body.getLinearVelocity();if(q.x>bx&&q.x<bx+7&&q.y<-2.2&&q.y>-3.2&&v.x<2.0){o.body.setLinearVelocity({x:Math.min(2.2,v.x+dt*12),y:v.y});o.body.setAwake(true)}});
-  b.route({t:'chain1',pe:x+2.0,lx:x+3.2,sig:sa,bsig:sb,belt:bx,pit:pitX,end:pitX+len+1.4});c.x=pitX+len+3.5};
+  c.G(x,x+4.4);canPlanter(c,x,sa);var bx=x+4.4;c.G(bx,bx+16);b.block(bx,-1.0,7,1.0,{mat:'wood'});b.belt(bx,-1.4,7,2.2,{sig:sa,sigMode:'on'});
+  b.box(nm,bx+1.2,-2.0,1.1,1.1,{kind:'bag',density:1.0,zone:[x0,-12,22,12]});b.button(sb,bx+7.3,0,2.6,{minMass:0.6});
+  var pitX=bx+16,len=4.2;b.pit(pitX,0.7,len,6);b.bridge(sb,pitX,0,len);c.P(pitX+len/2,-1.2);c.P(bx+3.5,-2.6);c.G(pitX+len,pitX+len+3.5);
+  b.route({t:'chain1',pe:x+2.0,lx:x+3.2,sig:sa,bsig:sb,belt:bx,btn:bx+7.3,pit:pitX,end:pitX+len+1.4});c.x=pitX+len+3.5};
 // switch the fan -> seed packet presses the button -> the button wakes the toy -> the toy opens the door
 S.chain2=function(c,P){var b=c.b;var x0=c.lead(3,c.hint('chain2','One switch starts it all.\nFollow the threads!'));var x=c.x,sg='cf'+c.n,bs='cs'+c.n,bt='ct'+c.n,nm='cp'+c.n,tn='cy'+c.n;c.G(x,x+24);
   b.toggle(sg,x+0.9,0);b.fan(x+2,-0.05,7.9,0.85,{dir:'right',power:5,sig:sg});var o=b.box(nm,x+3.4,-0.36,0.9,0.7,{kind:'paper',density:0.3,grab:true,zone:[x0,-10,13,10]});o.light=true;o.body.getFixtureList().setFriction(0.15);o.ext=0.35;
-  b.block(x+2,-1.35,8,0.5,{topCol:c.col(),tape:0.3});b.button(bs,x+8.1,0,1.8,{minMass:0.15});b.block(x+10,-1.35,0.6,1.35,{mat:'wood'});
-  b.toy(tn,x+11.6,-0.36,{w:1.1,h:0.7,sig:bs,speed:1.8,look:'car',zone:[x+10,-10,14,10]});b.block(x+13.4,-1.3,6,0.5,{topCol:c.col(),tape:0.3});
+  b.block(x+2,-1.35,17.4,0.5,{topCol:c.col(),tape:0.3});b.button(bs,x+8.1,0,1.8,{minMass:0.15});b.block(x+10,-0.85,0.6,0.85,{mat:'wood'});
+  b.toy(tn,x+11.6,-0.36,{w:1.1,h:0.7,sig:bs,speed:1.8,look:'car',zone:[x+10,-10,14,10]});
   var g=x+20;b.button(bt,g-1.75,0,1.6,{minMass:0.4});b.gate(bt,g,-3.2,0.7,3.2,{dy:-3.1,mode:'latch'});b.block(g-0.1,-14,0.9,10.8,{mat:'wood'});c.P(x+6,-2.3);c.P(x+16,-2.3);c.P(g+2,-1.2);
   b.route({t:'chain2',tx:x+0.9,sig:sg,bsig:bs,tsig:bt,roof:x+2,gate:g});c.x=x+24};
 /* ---------- level assembly ---------- */
@@ -178,6 +177,10 @@ function build(b,def){var c=mk(b,def);b.spawn(2.5,-0.6);
   c.G(0,6.5);c.x=6.5;
   if(def.intro)b.sign(4.4,0,def.intro);
   def.segs.forEach(function(sp,i){c.n=i;var f=S[sp.s];if(!f)throw new Error('segment '+sp.s);var xs=c.x;f(c,sp);if(c.last){c.last.xs=xs;c.last.xe=c.x}});
-  var x=c.x;c.G(x,x+16);b.cp(x+1.2,0);b.sign(x+4,0,'Hop into the\ncomfy exit!');c.P(x+7,-1.3);c.P(x+8.6,-2.3);c.P(x+10.2,-3.3);b.exit(x+12.5,-1.7);b.setW(x+16);
+  var x=c.x;if(def.finale){c.G(x,x+30);b.cp(x+1.2,0);b.sign(x+3.4,0,'You did it! Bounce down the\nvictory parade to the big box!');
+    for(var k=0;k<3;k++){var px=x+6+k*5.2;b.boing(px,0,1.7,{look:'pin'});c.P(px+0.85,-3);c.P(px+0.85,-4.6);c.P(px+3.4,-3.6)}
+    c.P(x+23,-1.3);c.P(x+24.6,-2.3);c.P(x+26.2,-3.3);b.exit(x+27,-1.7);b.setW(x+30);
+    b.route({t:'parade',pads:[x+6,x+11.2,x+16.4],exit:x+27});return c}
+  c.G(x,x+16);b.cp(x+1.2,0);b.sign(x+4,0,'Hop into the\ncomfy exit!');c.P(x+7,-1.3);c.P(x+8.6,-2.3);c.P(x+10.2,-3.3);b.exit(x+12.5,-1.7);b.setW(x+16);
   return c}
 return {build:build,S:S}})();
