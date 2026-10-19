@@ -147,6 +147,7 @@ export const MODES = {
   ultra: { id: 'ultra', name: 'Ultra', levelUp: true, timeLimit: 120000 },
   zen: { id: 'zen', name: 'Zen', levelUp: true, maxGravityLevel: 4, noTopOut: true },
   daily: { id: 'daily', name: 'Daily', levelUp: true, timeLimit: 180000 },
+  puzzle: { id: 'puzzle', name: 'Puzzle', levelUp: false, puzzle: true },
 };
 
 export function emptyBoard() { return Array.from({ length: ROWS }, () => new Uint8Array(COLS)); }
@@ -161,7 +162,9 @@ export class Game {
     this.baseLockDelay = opts.lockDelay ?? 500; this.moveLimit = opts.moveLimit ?? 15;
     this.board = emptyBoard();
     this.rng = mulberry32(this.seed); this.bag = new Bag(this.rng);
-    this.queue = []; this.fillQueue();
+    this.puzzle = opts.puzzle || null;
+    this.queue = [];
+    if (this.puzzle) { this.queue = this.puzzle.pieces.slice(); } else this.fillQueue();
     this.hold = null; this.holdUsed = false;
     this.score = 0; this.lines = 0; this.level = this.startLevel;
     this.combo = -1; this.b2b = -1; this.time = 0; this.pieces = 0;
@@ -172,6 +175,7 @@ export class Game {
       pcs: 0, maxCombo: 0, maxB2B: 0, attack: 0, holds: 0, inputs: 0, zenResets: 0,
     };
     this.events = [];
+    if (this.puzzle) this.setBoard(this.puzzle.board);
     this.held = { left: false, right: false }; this.dasDir = 0; this.dasT = 0; this.arrT = 0;
     this.soft = false; this.gravT = 0; this.lockT = 0; this.resets = 0; this.lowest = 0;
     this.lastRot = false; this.lastKick = -1;
@@ -179,7 +183,7 @@ export class Game {
   }
   emit(e) { this.events.push(e); if (this.events.length > 200) this.events.shift(); }
   drainEvents() { const e = this.events; this.events = []; return e; }
-  fillQueue() { while (this.queue.length < 7) this.queue.push(this.bag.next()); }
+  fillQueue() { if (this.puzzle) return; while (this.queue.length < 7) this.queue.push(this.bag.next()); }
   get gravityLevel() { return this.def.maxGravityLevel ? Math.min(this.level, this.def.maxGravityLevel) : this.level; }
   get lockDelay() { return lockDelayFor(this.level, this.baseLockDelay); }
 
@@ -197,7 +201,9 @@ export class Game {
   ghostY() { const p = this.cur; let y = p.y; while (this.fits(p.type, p.rot, p.x, y + 1)) y++; return y; }
 
   spawn(type) {
-    const t = type || this.queue.shift();
+    let t = type || this.queue.shift();
+    if (!t && this.puzzle && this.hold) { t = this.hold; this.hold = null; } // last piece lives in hold
+    if (!t) { this.cur = null; this.end('failed', 'nopieces'); return; } // puzzle: out of pieces
     this.fillQueue();
     this.cur = { type: t, rot: 0, x: 3, y: HIDDEN - 2 };
     this.lockT = 0; this.gravT = 0; this.resets = 0; this.lastRot = false; this.lastKick = -1;
@@ -291,6 +297,7 @@ export class Game {
   }
   holdPiece() {
     if (this.over || !this.cur || this.holdUsed) return false;
+    if (!this.hold && !this.queue.length) return false; // puzzle: nothing to swap in
     this.st.inputs++; this.st.holds++;
     const t = this.cur.type;
     const prev = this.hold;
@@ -367,6 +374,7 @@ export class Game {
     this.cur = null;
     if (lockOut) { this.topOut('lockout'); if (this.over) return; }
     if (this.def.goalLines && this.lines >= this.def.goalLines) { this.end('complete'); return; }
+    if (this.puzzle && this.board.every(r => r.every(v => !v))) { this.end('complete'); return; }
     this.spawn();
   }
 
@@ -420,6 +428,7 @@ export class Game {
       pieces: this.pieces, pps: this.pieces / (t / 1000), apm: this.st.attack / (t / 60000), attack: this.st.attack,
       clears: { single: this.st.single, double: this.st.double, triple: this.st.triple, tetris: this.st.tetris },
       tspin: { ...this.st.tspin }, pcs: this.st.pcs, maxCombo: Math.max(0, this.st.maxCombo), maxB2B: Math.max(0, this.st.maxB2B),
+      puzzle: this.puzzle ? this.puzzle.id : null, piecesLeft: this.queue.length + (this.hold ? 1 : 0),
       result: this.result, completed: this.mode === 'sprint' ? this.result === 'complete' : true,
       holds: this.st.holds, inputs: this.st.inputs, zenResets: this.st.zenResets, seed: this.seed,
     };

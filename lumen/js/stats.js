@@ -12,6 +12,10 @@ export const DEFAULT_SETTINGS = {
   music: 0.7, sfx: 0.8,
   effects: 'high',        // 'high' | 'reduced'
   shake: true, ghost: true, grid: true, lean: true,
+  brightness: 1.0,        // v2: 0.8 .. 1.3
+  swipeUp: 'hold',        // 'hold' | 'hard' | 'off'
+  flickDown: 'hard',      // 'hard' | 'off'
+  rumble: true, raceGhost: true,
 };
 
 function zeroT() { return { mini0: 0, mini1: 0, mini2: 0, full0: 0, full1: 0, full2: 0, full3: 0 }; }
@@ -24,7 +28,7 @@ export function newStats() {
     lifetime: { games: 0, lines: 0, timeMs: 0, pieces: 0, score: 0, attack: 0, clears: zeroC(), tspin: zeroT(), pcs: 0, maxCombo: 0, maxB2B: 0, bestPPS: 0, bestAPM: 0, holds: 0, zenResets: 0 },
     modes, recent: [],
     daily: { lastDate: null, streak: 0, bestStreak: 0, days: {} },
-    achievements: {},
+    achievements: {}, extra: {}, puzzles: {},
   };
 }
 
@@ -41,6 +45,8 @@ export function sanitizeStats(raw) {
   if (Array.isArray(raw.recent)) out.recent = raw.recent.slice(-RECENT_N);
   if (raw.daily) out.daily = { ...out.daily, ...raw.daily, days: { ...(raw.daily.days || {}) } };
   if (raw.achievements && typeof raw.achievements === 'object') out.achievements = { ...raw.achievements };
+  if (raw.extra && typeof raw.extra === 'object') out.extra = { ...raw.extra };
+  if (raw.puzzles && typeof raw.puzzles === 'object') out.puzzles = { ...raw.puzzles };
   return out;
 }
 
@@ -68,11 +74,17 @@ export const ACHIEVEMENTS = [
   { id: 'quicksilver', name: 'Quicksilver', desc: 'Sprint 40 in under 90 seconds', test: (s) => s.mode === 'sprint' && s.result === 'complete' && s.timeMs < 90000 },
   { id: 'bright_minute', name: 'Bright Minutes', desc: 'Score 30,000 in Ultra', test: (s) => s.mode === 'ultra' && s.score >= 30000 },
   { id: 'ascent', name: 'Ascent', desc: 'Reach level 10 in Marathon', test: (s) => s.mode === 'marathon' && s.level >= 10 },
-  { id: 'into_sun', name: 'Into the Sun', desc: 'Reach level 16, the Solar Crown', test: (s) => s.level >= 16 && s.mode !== 'zen' },
+  { id: 'into_sun', name: 'Into the Sun', desc: 'Reach level 16', test: (s) => s.level >= 16 && s.mode !== 'zen' },
   { id: 'marathoner', name: 'Long Light', desc: 'Clear 150 lines in one Marathon', test: (s) => s.mode === 'marathon' && s.lines >= 150 },
   { id: 'velocity', name: 'Velocity', desc: '2 pieces per second over 100+ pieces', test: (s) => s.pieces >= 100 && s.pps >= 2 },
   { id: 'stillness', name: 'Stillness', desc: 'Stay in Zen for 10 minutes', test: (s) => s.mode === 'zen' && s.timeMs >= 600000 },
   { id: 'ritual', name: 'Ritual', desc: 'Play the Daily three days running', test: (s, st) => st.daily.streak >= 3 },
+  { id: 'puzzler', name: 'Puzzler', desc: 'Solve your first puzzle', test: (s, st) => puzzleCount(st) >= 1 },
+  { id: 'puzzle10', name: 'Glazier', desc: 'Solve 10 puzzles', test: (s, st) => puzzleCount(st) >= 10 },
+  { id: 'puzzle30', name: 'Master Glazier', desc: 'Solve all 30 puzzles', test: (s, st) => puzzleCount(st) >= 30 },
+  { id: 'stars90', name: 'Starlit', desc: 'Earn all 90 puzzle stars', test: (s, st) => puzzleStars(st) >= 90 },
+  { id: 'ghostbuster', name: 'Outrun', desc: 'Beat your Sprint ghost', test: (s, st) => (st.extra.ghostWins | 0) >= 1 },
+  { id: 'tetris10', name: 'Glass Storm', desc: '10 Tetrises in total', test: (s, st) => st.lifetime.clears.tetris >= 10 },
   { id: 'centurion', name: 'Thousand Lights', desc: 'Clear 1,000 lines in total', test: (s, st) => st.lifetime.lines >= 1000 },
 ];
 
@@ -141,15 +153,31 @@ export function liveUnlocks(st, s) {
   return out;
 }
 
+// ---------- v2: puzzles, ghost, extra lifetime ----------
+export const PUZZLE_KEY = 'lumen.puzzles.v2', GHOST_KEY = 'lumen.ghost.v2';
+function puzzleCount(st) { return Object.values(st.puzzles || {}).filter(p => p.stars > 0).length; }
+function puzzleStars(st) { return Object.values(st.puzzles || {}).reduce((a, p) => a + (p.stars | 0), 0); }
+export { puzzleCount, puzzleStars };
+export function loadJSON(k, d) { try { const s = store(); const r = s && s.getItem(k); return r ? JSON.parse(r) : d; } catch (e) { return d; } }
+export function saveJSON(k, v) { try { const s = store(); s && s.setItem(k, JSON.stringify(v)); } catch (e) { /* */ } }
+/** Fold a puzzle attempt into lifetime stats and check achievements. Returns unlocked ids. */
+export function recordPuzzle(st, s, dateISO = new Date().toISOString()) {
+  const L = st.lifetime; L.pieces += s.pieces; L.lines += s.lines; L.timeMs += s.timeMs; L.score += s.score;
+  for (const k in s.clears) L.clears[k] += s.clears[k]; for (const k in s.tspin) L.tspin[k] += s.tspin[k];
+  st.extra.puzzleTries = (st.extra.puzzleTries | 0) + 1;
+  const unlocked = [];
+  for (const a of ACHIEVEMENTS) { if (st.achievements[a.id]) continue; let ok = false; try { ok = a.test(s, st); } catch (e) { ok = false; } if (ok) { st.achievements[a.id] = dateISO; unlocked.push(a.id); } }
+  return unlocked;
+}
 export function avgPPS(st) { return st.lifetime.timeMs > 0 ? st.lifetime.pieces / (st.lifetime.timeMs / 1000) : 0; }
 export function avgAPM(st) { return st.lifetime.timeMs > 0 ? st.lifetime.attack / (st.lifetime.timeMs / 60000) : 0; }
 
 // ---------- storage ----------
 function store() { try { return window.localStorage; } catch (e) { return null; } }
 export function loadStats() {
-  try { const s = store(); const raw = s && s.getItem(STATS_KEY); return sanitizeStats(raw ? JSON.parse(raw) : null); } catch (e) { return newStats(); }
+  try { const s = store(); const raw = s && s.getItem(STATS_KEY); const st = sanitizeStats(raw ? JSON.parse(raw) : null); st.puzzles = loadJSON(PUZZLE_KEY, {}) || {}; return st; } catch (e) { return newStats(); }
 }
-export function saveStats(st) { try { const s = store(); s && s.setItem(STATS_KEY, JSON.stringify(st)); return true; } catch (e) { return false; } }
+export function saveStats(st) { try { const s = store(); const { puzzles, ...rest } = st; s && s.setItem(STATS_KEY, JSON.stringify(rest)); if (puzzles) s.setItem(PUZZLE_KEY, JSON.stringify(puzzles)); return true; } catch (e) { return false; } }
 export function loadSettings() {
   try { const s = store(); const raw = s && s.getItem(SETTINGS_KEY); return { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) }; } catch (e) { return { ...DEFAULT_SETTINGS }; }
 }

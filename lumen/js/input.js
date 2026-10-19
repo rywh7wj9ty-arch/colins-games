@@ -84,10 +84,11 @@ export class Input {
       else if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) p.mode = 'v';
     }
     // flicks work from either mode
-    if (dy > 26 && v.vy > 1.0 && Math.abs(v.vy) > Math.abs(v.vx) * 1.6) { g.hardDrop(); p.mode = 'done'; return; }
+    const st = this.app.settings;
+    if (st.flickDown !== 'off' && dy > 26 && v.vy > 1.0 && Math.abs(v.vy) > Math.abs(v.vx) * 1.6) { g.hardDrop(); p.mode = 'done'; return; }
     // swipe up = hold: a fast flick, or any deliberate upward drag of ~1.5 cells that isn't a sideways drag
     const upFar = p.mode !== 'h' && dy < -Math.max(40, S * 1.5) && Math.abs(dy) > Math.abs(dx) * 1.5;
-    if ((dy < -34 && v.vy < -0.7 && Math.abs(v.vy) > Math.abs(v.vx) * 1.4) || upFar) { g.holdPiece(); p.mode = 'done'; return; }
+    if (st.swipeUp !== 'off' && ((dy < -34 && v.vy < -0.7 && Math.abs(v.vy) > Math.abs(v.vx) * 1.4) || upFar)) { this.upAction(g); p.mode = 'done'; return; }
     if (p.mode === 'h') {
       const target = Math.trunc(dx / S);
       const delta = target - p.moved;
@@ -123,9 +124,55 @@ export class Input {
     }
     if (p.mode !== 'done') {
       const v = this.velocity(p), dy = p.y - p.ay;
-      if (dy > 26 && v.vy > 0.8 && Math.abs(v.vy) > Math.abs(v.vx) * 1.6) g.hardDrop();
-      else if (dy < -34 && v.vy < -0.5 && p.mode !== 'h') g.holdPiece();
+      const st = this.app.settings;
+      if (st.flickDown !== 'off' && dy > 26 && v.vy > 0.8 && Math.abs(v.vy) > Math.abs(v.vx) * 1.6) g.hardDrop();
+      else if (st.swipeUp !== 'off' && dy < -34 && v.vy < -0.5 && p.mode !== 'h') this.upAction(g);
     }
+  }
+
+  upAction(g) { if (this.app.settings.swipeUp === 'hard') g.hardDrop(); else g.holdPiece(); }
+
+  // ---------------- gamepad (v2) ----------------
+  // Standard mapping: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Select, 9 Start, 12-15 D-pad. Left stick works as a D-pad.
+  pollPads() {
+    const pads = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
+    if (!pads.length) { if (this.padOn) { this.padOn = false; } return; }
+    if (!this.padOn) { this.padOn = true; this.app.onPadConnected(pads[0]); }
+    this.pad = pads[0];
+    const prev = this.padPrev || {}; const now = {};
+    for (const p of pads) {
+      p.buttons.forEach((b, i) => { if (b && (b.pressed || b.value > 0.5)) now[i] = 1; });
+      const ax = p.axes || [];
+      if (ax[0] < -0.5) now[14] = 1; if (ax[0] > 0.5) now[15] = 1; if (ax[1] < -0.6) now[12] = 1; if (ax[1] > 0.6) now[13] = 1;
+    }
+    this.padPrev = now;
+    const a = this.app, g = this.game;
+    const down = i => now[i] && !prev[i], up = i => !now[i] && prev[i];
+    if (a.screen !== 'game') {
+      // menus: D-pad moves focus, A presses, B goes back, Start resumes
+      const t = performance.now();
+      for (const [i, d] of [[12, -1], [13, 1], [14, -1], [15, 1]]) {
+        if (down(i)) { this.navT = t + 380; a.padNav(d, i < 14); }
+        else if (now[i] && t > (this.navT || 0)) { this.navT = t + 130; a.padNav(d, i < 14); }
+      }
+      if (down(0)) a.padPress(); if (down(1)) a.padBack(); if (down(9)) a.padStart();
+      return;
+    }
+    if (down(9) || down(8)) { a.togglePause(); return; }
+    if (!g) return;
+    if (down(14)) g.pressDir(-1); if (up(14)) g.releaseDir(-1);
+    if (down(15)) g.pressDir(1); if (up(15)) g.releaseDir(1);
+    if (down(13)) g.setSoft(true); if (up(13)) g.setSoft(false);
+    if (down(12)) g.hardDrop();
+    if (down(0)) g.rotate(1); if (down(1)) g.rotate(-1); if (down(3)) g.rotate(2);
+    if (down(2) || down(4) || down(5)) g.holdPiece();
+    if (down(7)) g.hardDrop(); if (down(6)) g.holdPiece();
+  }
+  rumble(strong, ms) {
+    const p = this.pad; if (!p || !this.app.settings.rumble) return;
+    try { const va = p.vibrationActuator || (p.hapticActuators && p.hapticActuators[0]);
+      if (va && va.playEffect) va.playEffect('dual-rumble', { duration: ms, strongMagnitude: strong, weakMagnitude: Math.min(1, strong + 0.2) }).catch(() => {});
+      else if (va && va.pulse) va.pulse(strong, ms); } catch (e) { /* unsupported */ }
   }
 
   // ---------------- on-screen buttons ----------------

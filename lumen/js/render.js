@@ -126,12 +126,12 @@ export class Renderer {
     const f = mk(w * d, h * d); const g = f.getContext('2d'); g.scale(d, d);
     const W = WORLDS[this.world]; const ac = rgb(W.accent), ac2 = rgb(W.accent2);
     rrect(g, 0.5, 0.5, w - 1, h - 1, c * 0.42);
-    const bgG = g.createLinearGradient(0, 0, 0, h); bgG.addColorStop(0, 'rgba(8,10,26,0.34)'); bgG.addColorStop(1, 'rgba(4,6,18,0.62)');
+    const bgG = g.createLinearGradient(0, 0, 0, h); bgG.addColorStop(0, 'rgba(255,255,255,0.20)'); bgG.addColorStop(1, 'rgba(255,255,255,0.12)');
     g.fillStyle = bgG; g.fill();
     const st = g.createLinearGradient(0, 0, w, h); st.addColorStop(0, css(ac, 0.55)); st.addColorStop(0.5, 'rgba(255,255,255,0.10)'); st.addColorStop(1, css(ac2, 0.45));
     g.lineWidth = 1.2; g.strokeStyle = st; g.stroke();
     // inner well
-    rrect(g, pad - 1, pad - 1, L.bw + 2, L.bh + 2, c * 0.18); g.fillStyle = 'rgba(0,0,0,0.22)'; g.fill();
+    rrect(g, pad - 1, pad - 1, L.bw + 2, L.bh + 2, c * 0.18); g.fillStyle = 'rgba(40,60,120,0.16)'; g.fill();
     g.strokeStyle = 'rgba(255,255,255,0.07)'; g.lineWidth = 1; g.stroke();
     if (this.showGrid) {
       g.strokeStyle = 'rgba(255,255,255,0.035)'; g.lineWidth = 1; g.beginPath();

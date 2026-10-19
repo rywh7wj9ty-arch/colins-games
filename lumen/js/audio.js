@@ -9,7 +9,7 @@ export class Sound {
   constructor() {
     this.ctx = null; this.music = 0.7; this.sfx = 0.8; this.cfg = WORLDS[0].music; this.pending = null;
     this.intensity = 0.2; this.playing = false; this.step = 0; this.nextT = 0; this.timer = null; this.chordIdx = 0;
-    this.rotIdx = 0; this.calm = false;
+    this.rotIdx = 0; this.calm = false; this.tension = 0; this.relief = 0;
   }
   get ready() { return !!this.ctx && this.ctx.state === 'running'; }
   unlock() {
@@ -89,7 +89,11 @@ export class Sound {
     }
   }
   playStep(step, t) {
-    const s = step % 16, I = this.calm ? Math.min(this.intensity, 0.45) : this.intensity;
+    const s = step % 16, I = this.calm ? Math.min(this.intensity, 0.45) : this.intensity * (1 - this.relief * 0.45);
+    // v2: tension pulse when the stack is high (a soft heartbeat + high shimmer), gone after big clears
+    const T = this.tension * (1 - this.relief);
+    if (T > 0.25 && (s === 0 || s === 3)) this.kick(t, 0.25 + T * 0.3);
+    if (T > 0.5 && s % 2 === 0) this.bell(this.chordNotes()[3] + 24, t, 0.015 + T * 0.02, 0.15, false);
     const bar = this.spb * 4; const ch = this.chordNotes();
     if (s === 0) this.pad(ch, t, bar * 1.02, I);
     if (I > 0.12) {
@@ -215,6 +219,11 @@ export class Sound {
     if (pc) for (let i = 0; i < 8; i++) this.bell(this.scaleNote(i * 2, this.cfg.root + 24), t0 + 0.4 + i * g * 0.5, 0.06, 1.2, true, this.sfxBus);
     if (b2b) this.bell(ch[3] + 24, t0 + g * n, 0.05, 1.0, true, this.sfxBus);
   }
+  combo(n) { // rising pitch with each combo step
+    if (!this.ok() || n < 1) return; const t = this.ctx.currentTime;
+    this.pluck(this.scaleNote(this.chordDeg() + Math.min(n, 14), this.cfg.root + 12), t + 0.05, 0.08, 0.25, 'triangle');
+  }
+  calmDown() { this.relief = 1; }
   levelUp() {
     if (!this.ok()) return; const t0 = this.nextGrid(4); const g = this.spb / 4;
     [0, 2, 4, 7].forEach((d, i) => this.bell(this.scaleNote(this.chordDeg() + d, this.cfg.root + 12), t0 + i * g * 0.75, 0.07, 1.4, true, this.sfxBus));

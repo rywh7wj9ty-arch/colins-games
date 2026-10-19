@@ -149,8 +149,8 @@ void main(){
   }
   col += uFlash * vec3(1., .96, .9) * .45;
   float vig = smoothstep(1.25, .25, length(p*vec2(.85, 1.15)));
-  col *= mix(.5, 1., vig);
-  col = mix(col, col*vec3(1.25, .55, .6) + vec3(.07, 0., .015), uDanger*(1. - vig*.7)*.85);
+  col *= mix(.86, 1., vig);
+  col = mix(col, col + vec3(.10, .09, .04)*(.6 + .4*sin(t*6.)), uDanger*(1. - vig*.6)*.6); // v2: gold shimmer, never red
   col *= 1. + uEnergy*.22;
   col += (h21(uv*uRes + fract(t*7.)*91.) - .5)*.03;
   col = col/(1. + col*.18);
