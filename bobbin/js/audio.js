@@ -111,6 +111,9 @@ var SND=(function(){
       case 'magnet':tone('sine',220,440,0.25,0.1,t);tone('sine',223,446,0.25,0.08,t);break;
       case 'train':playBuf(marimba(76),t,0.25,sfxG);playBuf(marimba(72),t+0.18,0.25,sfxG);break;
       case 'full':[72,76,79].forEach(function(m,i){playBuf(marimba(m+12),t+i*0.07,0.28,sfxG)});break;
+      case 'squish':{var o5=ctx.createOscillator(),g5=ctx.createGain();o5.type='sine';o5.frequency.setValueAtTime(420,t);o5.frequency.exponentialRampToValueAtTime(70,t+0.22);env(g5,t,0.005,0.35,0.26);o5.connect(g5);g5.connect(sfxG);o5.start(t);o5.stop(t+0.3);noise('lowpass',900,150,1.2,0.22,0.2,t);noise('bandpass',2400,800,2,0.1,0.06,t+0.02);break}
+      case 'lifeLost':playBuf(marimba(76),t,0.3,sfxG);playBuf(marimba(71),t+0.11,0.28,sfxG);playBuf(marimba(67),t+0.22,0.3,sfxG);tone('sine',800,1500,0.06,0.12,t);break;
+      case 'outLives':[72,67,64,60].forEach(function(m,i){playBuf(marimba(m),t+i*0.16,0.3,sfxG)});playBuf(pluck(48),t+0.64,0.3,sfxG);break;
       case 'thud':noise('lowpass',260,120,0.7,0.12,0.12+Math.min(0.2,p*0.02),t);break;
     }
   }

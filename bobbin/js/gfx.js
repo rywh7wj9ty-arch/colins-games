@@ -113,7 +113,8 @@ var GFX=(function(){
     g.beginPath();g.ellipse(fx,fy,0.24,0.19,0,0,7);stitch(g,'rgba(200,150,110,0.7)',0.02,[0.05,0.04]);
     // eyes (sewn buttons)
     var ex=0.105,ey=fy-0.04,blink=p.blink,ex1=fx-ex,ex2=fx+ex,expr=p.expr||'happy';
-    function eye(x){if(blink||expr==='joy'){g.beginPath();g.arc(x,ey+0.02,0.05,Math.PI*1.1,Math.PI*1.9);g.strokeStyle='#2b2230';g.lineWidth=0.035;g.stroke();return}
+    function eye(x){if(expr==='dizzy'){g.strokeStyle='#2b2230';g.lineWidth=0.032;g.lineCap='round';g.beginPath();g.moveTo(x-0.045,ey-0.045);g.lineTo(x+0.045,ey+0.045);g.moveTo(x+0.045,ey-0.045);g.lineTo(x-0.045,ey+0.045);g.stroke();return}
+      if(blink||expr==='joy'){g.beginPath();g.arc(x,ey+0.02,0.05,Math.PI*1.1,Math.PI*1.9);g.strokeStyle='#2b2230';g.lineWidth=0.035;g.stroke();return}
       var er=expr==='wow'?0.075:0.064;g.beginPath();g.arc(x,ey,er,0,7);g.fillStyle='#2b2230';g.fill();
       g.fillStyle='rgba(255,255,255,0.35)';g.beginPath();g.arc(x-0.022,ey,0.012,0,7);g.arc(x+0.022,ey,0.012,0,7);g.fill();
       g.fillStyle='#fff';g.beginPath();g.arc(x-0.024,ey-0.028,0.016,0,7);g.fill()}
@@ -126,6 +127,7 @@ var GFX=(function(){
     if(expr==='wow'){g.ellipse(fx,my+0.02,0.035,0.045,0,0,7);g.fillStyle='#7a3b2e';g.fill()}
     else if(expr==='effort'){g.moveTo(fx-0.07,my+0.02);g.lineTo(fx-0.035,my);g.lineTo(fx,my+0.02);g.lineTo(fx+0.035,my);g.lineTo(fx+0.07,my+0.02);g.stroke()}
     else if(expr==='joy'){g.moveTo(fx-0.08,my-0.01);g.quadraticCurveTo(fx,my+0.12,fx+0.08,my-0.01);g.closePath();g.fillStyle='#7a3b2e';g.fill();g.fillStyle='#ff9bb0';g.beginPath();g.ellipse(fx,my+0.05,0.03,0.015,0,0,7);g.fill()}
+    else if(expr==='dizzy'){g.moveTo(fx-0.08,my+0.02);g.quadraticCurveTo(fx-0.04,my-0.02,fx,my+0.02);g.quadraticCurveTo(fx+0.04,my+0.06,fx+0.08,my+0.02);g.stroke()}
     else if(expr==='sleepy'){g.moveTo(fx-0.03,my+0.01);g.lineTo(fx+0.03,my+0.01);g.stroke()}
     else{g.moveTo(fx-0.07,my-0.005);g.quadraticCurveTo(fx,my+0.07,fx+0.07,my-0.005);g.stroke();
       for(var s=-1;s<=1;s+=2){g.beginPath();g.moveTo(fx+s*0.035,my+0.015);g.lineTo(fx+s*0.04,my+0.05);g.lineWidth=0.012;g.stroke()}g.lineWidth=0.03}
