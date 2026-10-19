@@ -32,7 +32,7 @@ L(7,2,'Conveyor Café','New: conveyor belts. Flip them with levers.','Welcome to
   {s:'belts',n:4,speed:2.4,back:true},{s:'zip',len:14,drop:1.8,speed:6},{s:'beltlever',len:13,speed:9},{s:'levergate'},{s:'belts',n:4,speed:2.4},{s:'timed',n:3,slack:1.9},{s:'ropes',n:2,sp:4.8},{s:'belts',n:5,speed:2.6,back:true}]);
 L(8,2,'Jelly Wobble','New: jelly bounces. Hold jump to go higher.','Jelly is wobbly and bouncy.\nHold {JUMP} as you land!',[
   {s:'jelly',n:2},{s:'belts',n:3,speed:2.4,back:true},{s:'jelly',n:3,sp:3.8},{s:'jellydrop',h:4.0},{s:'ropes',n:2,sp:4.8},
-  {s:'jelly',n:4,sp:3.8,top:-1.8},{s:'beltlever',len:12},{s:'lift',h:4.6,speed:1.8},{s:'jellydrop',h:4.2}]);
+  {s:'jelly',n:4,sp:3.8,top:-1.8},{s:'beltlever',len:12},{s:'movers',n:3,span:5,speed:1.9},{s:'lift',h:4.6,speed:1.8},{s:'jellydrop',h:4.2}]);
 L(9,2,'Cupcake Pistons','New: cupcake pistons pumping up and down.','Cupcake pistons! Hop on\nwhen they pop up',[
   {s:'pistons',n:3},{s:'jelly',n:3,sp:3.8},{s:'pistons',n:4,speed:1.7},{s:'zip',len:16,drop:2,speed:6.5},
   {s:'pistons',n:5,speed:1.8,stair:true},{s:'jellydrop',h:4.2},{s:'beltlever',len:12,speed:9},{s:'pistons',n:5,speed:1.9,wait:0.65},{s:'boingwall',h:4.6}]);
