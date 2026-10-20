@@ -1,7 +1,7 @@
 // Thistledown - main: input, save, UI, loop.
 (function(){
 'use strict';
-var VERSION='v1.1',OLDER=[{v:'v1.0',url:'../thistledown-v1.0/'}]; // e.g. {v:'v1.0',url:'../thistledown-v1.0/'}
+var VERSION='v1.2',OLDER=[{v:'v1.1',url:'../thistledown-v1.1/'},{v:'v1.0',url:'../thistledown-v1.0/'}]; // e.g. {v:'v1.0',url:'../thistledown-v1.0/'}
 var S=TD_SIM,R=TD_R,AU=TD_AUDIO,AREAS=TD_AREAS,KEY='thistledown_save_v1',SKEY='thistledown_settings_v1';
 var $=function(id){return document.getElementById(id);};
 var set=Object.assign({music:0.7,sfx:0.8,bright:1,q:2,shake:1},JSON.parse(localStorage.getItem(SKEY)||'{}'));
