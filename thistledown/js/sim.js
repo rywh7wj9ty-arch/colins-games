@@ -88,18 +88,20 @@ function stepCrates(st,s,dt){
 function moveP(st,s,dx,dy,inp){
   var p=s.p,res={hx:0,hy:0};
   if(dx){var nx=p.x+dx;
+    if(!p.gr&&p.vy>-6&&rectSolid(st,s,nx-HW,p.y-HH,nx+HW,p.y+HH)){var ly=Math.floor(p.y+HH)-HH-1e-4;if(p.y-ly>0&&p.y-ly<0.28&&!rectSolid(st,s,nx-HW,ly-HH,nx+HW,ly+HH)){p.y=ly;if(p.vy>0)p.vy=0;}}
     if(rectSolid(st,s,nx-HW,p.y-HH,nx+HW,p.y+HH)){ if(dx>0)nx=Math.floor(nx+HW)-HW-1e-4;else nx=Math.floor(nx-HW)+1+HW+1e-4; if(rectSolid(st,s,nx-HW,p.y-HH,nx+HW,p.y+HH))nx=p.x; res.hx=dx>0?1:-1;}
     var ci=rectCrate(s,nx-HW,p.y-HH,nx+HW,p.y+HH,-1);
     if(ci>=0){var c=s.crates[ci];
       if(p.y+HH>c.y-0.4){ // side contact -> push
         if(p.gr){crateMoveX(st,s,ci,dx);p.push=true;}
         if(dx>0)nx=Math.min(nx,c.x-0.45-HW-1e-4);else nx=Math.max(nx,c.x+0.45+HW+1e-4);
-        res.hx=dx>0?1:-1;
+        if(!p.gr)res.hx=dx>0?1:-1;else res.cr=1;
       }
     }
     p.x=nx;
   }
   if(dy){var ny=p.y+dy;
+    if(dy<0&&rectSolid(st,s,p.x-HW,ny-HH,p.x+HW,ny+HH)){for(var cc=0.06;cc<=0.3;cc+=0.06){if(!rectSolid(st,s,p.x-HW+cc,ny-HH,p.x+HW+cc,ny+HH)&&!rectSolid(st,s,p.x-HW+cc,p.y-HH,p.x+HW+cc,p.y+HH)){p.x+=cc;break;}if(!rectSolid(st,s,p.x-HW-cc,ny-HH,p.x+HW-cc,ny+HH)&&!rectSolid(st,s,p.x-HW-cc,p.y-HH,p.x+HW-cc,p.y+HH)){p.x-=cc;break;}}}
     if(rectSolid(st,s,p.x-HW,ny-HH,p.x+HW,ny+HH)){ if(dy>0){ny=Math.floor(ny+HH)-HH-1e-4;res.hy=1;} else {ny=Math.floor(ny-HH)+1+HH+1e-4;res.hy=-1;} if(rectSolid(st,s,p.x-HW,ny-HH,p.x+HW,ny+HH)){ny=p.y;} }
     else if(dy>0&&!(inp.y>0.6&&inp.jump)){var ow=onewayBelow(st,s,p.x-HW,p.x+HW,p.y+HH,ny+HH);if(ow>=0){ny=ow-HH-1e-4;res.hy=1;}}
     var ci=rectCrate(s,p.x-HW+0.05,ny-HH,p.x+HW-0.05,ny+HH,-1);
@@ -223,7 +225,7 @@ function step(st,s,inp,dt){
   if(!wet&&p.water&&p.vy<0)s.ev.push(['splash',p.x,p.y]);
   p.water=wet;
   if(inp.x>0.3)p.face=1;else if(inp.x<-0.3)p.face=-1;
-  p.jb=inp.jumpP?0.12:Math.max(0,p.jb-dt);
+  p.jb=inp.jumpP?0.15:Math.max(0,p.jb-dt);
   // dash
   if(ab.dash&&inp.dashP&&p.canDash&&p.dcd<=0){
     var dd=Math.abs(inp.x)>0.3?(inp.x>0?1:-1):p.face;p.face=dd;
@@ -245,15 +247,15 @@ function step(st,s,inp,dt){
     if(p.jb>0&&!isWater(st,s,p.x,p.y-0.75)){p.vy=-14;p.jb=0;p.jumps=0;s.ev.push(['jump',p.x,p.y]);s.stats.jumps=(s.stats.jumps||0)+1;}
   } else {
     var target=inp.x*K.RUN;if(Math.abs(inp.x)<0.2)target=0;
-    if(p.lock<=0&&p.bashT<=0){var acc=p.gr?(target===0?60:75):42;var dv=target-p.vx;var m=acc*dt;p.vx+=Math.max(-m,Math.min(m,dv));}
+    if(p.lock<=0&&p.bashT<=0){var acc=p.gr?(target===0?48:(target*p.vx<0?95:58)):(target===0?26:40);var dv=target-p.vx;var m=acc*dt;p.vx+=Math.max(-m,Math.min(m,dv));}
     else if(p.bashT>0){p.vx+= (target-p.vx)*dt*1.5;}
-    if(p.push)p.vx=Math.max(-3,Math.min(3,p.vx));
+    if(p.push){p.vx=Math.max(-3,Math.min(3,p.vx));if(target)p.vx=Math.sign(target)*3;}
     var g=K.GRAV*(p.bashT>0?0.35:1);
     p.bashT=Math.max(0,p.bashT-dt);
     var updr=st.upd[Math.floor(p.y)*st.w+Math.floor(p.x)]&&p.y>0;
     var gliding=ab.glide&&inp.jump&&p.vy>-1&&!p.gr&&!p.cling&&p.bashT<=0;
     if(gliding){p.glide=true;if(updr){p.vy=Math.max(p.vy-80*dt,-9.5);}else{p.vy=Math.min(p.vy+g*dt,K.GLIDE);if(p.vy>K.GLIDE)p.vy=K.GLIDE;}}
-    else {p.vy=Math.min(p.vy+g*dt,K.MAXFALL);}
+    else {var hang=(inp.jump&&Math.abs(p.vy)<3.2&&p.bashT<=0)?0.55:(p.vy>0?1.12:1);p.vy=Math.min(p.vy+g*hang*dt,K.MAXFALL);}
     if(p.cling)p.vy=Math.min(p.vy,K.SLIDE);
     // jumping
     if(p.jb>0){
@@ -271,8 +273,8 @@ function step(st,s,inp,dt){
 }
 function subMove(st,s,dt,inp){
   var p=s.p,n=Math.max(1,Math.ceil(Math.max(Math.abs(p.vx),Math.abs(p.vy))*dt/0.35)),hx=0,hy=0;
-  for(var i=0;i<n;i++){var r=moveP(st,s,p.vx*dt/n,p.vy*dt/n,inp);if(r.hx){hx=r.hx;}if(r.hy){hy=r.hy;}}
-  if(hx&&p.grap<0){if(p.dashT<=0)p.vx=0;}
+  for(var i=0;i<n;i++){var r=moveP(st,s,p.vx*dt/n,p.vy*dt/n,inp);if(r.hx){hx=r.hx;}if(r.cr)p.push=true;if(r.hy){hy=r.hy;}}
+  if(p.push)p.vx=Math.max(-3,Math.min(3,p.vx));if(hx&&p.grap<0){if(p.dashT<=0)p.vx=0;}
   if(hy){if(hy>0&&p.vy>6){p.sq=-Math.min(0.4,p.vy/40);s.ev.push(['land',p.x,p.y+HH,p.vy]);}p.vy=0;if(hy<0&&p.grap>=0)p.grap=-1;}
   return {hx:hx,hy:hy};
 }
@@ -281,7 +283,7 @@ function after(st,s,inp,dt,r){
   // ground check
   var wasGr=p.gr;
   p.gr=!p.water&&(r.hy>0||(p.vy>=0&&(rectSolid(st,s,p.x-HW,p.y+HH,p.x+HW,p.y+HH+0.06)||rectCrate(s,p.x-HW+0.05,p.y+HH,p.x+HW-0.05,p.y+HH+0.06,-1)>=0||onewayBelow(st,s,p.x-HW,p.x+HW,p.y+HH-0.01,p.y+HH+0.05)>=0)));
-  if(p.gr){p.jumps=0;p.canDash=true;p.nocl=0;p.co=0.1;p.cling=0;p.clx=-99;
+  if(p.gr){p.jumps=0;p.canDash=true;p.nocl=0;p.co=0.13;p.cling=0;p.clx=-99;
     // collapse trigger
     var by=Math.floor(p.y+HH+0.05);for(var tx=Math.floor(p.x-HW);tx<=Math.floor(p.x+HW-1e-6);tx++){var idx=by*st.w+tx;if(tile(st,s,tx,by)===5&&s.col[idx]===0){s.col[idx]=0.0001;s.ev.push(['crack',tx+0.5,by+0.5]);}}
   } else p.co=Math.max(0,p.co-dt);

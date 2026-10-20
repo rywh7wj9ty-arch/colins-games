@@ -1,11 +1,11 @@
 // Thistledown - main: input, save, UI, loop.
 (function(){
 'use strict';
-var VERSION='v1.0',OLDER=[]; // e.g. {v:'v1.0',url:'../thistledown-v1.0/'}
+var VERSION='v1.1',OLDER=[{v:'v1.0',url:'../thistledown-v1.0/'}]; // e.g. {v:'v1.0',url:'../thistledown-v1.0/'}
 var S=TD_SIM,R=TD_R,AU=TD_AUDIO,AREAS=TD_AREAS,KEY='thistledown_save_v1',SKEY='thistledown_settings_v1';
 var $=function(id){return document.getElementById(id);};
-var set=Object.assign({music:0.7,sfx:0.8,bright:1,q:2},JSON.parse(localStorage.getItem(SKEY)||'{}'));
-function saveSet(){localStorage.setItem(SKEY,JSON.stringify(set));AU.setVol(set.music,set.sfx);$('cv').style.filter=set.bright!==1?'brightness('+set.bright+')':'';}
+var set=Object.assign({music:0.7,sfx:0.8,bright:1,q:2,shake:1},JSON.parse(localStorage.getItem(SKEY)||'{}'));
+function saveSet(){localStorage.setItem(SKEY,JSON.stringify(set));AU.setVol(set.music,set.sfx);R.shakeOn=!!set.shake;$('cv').style.filter=set.bright!==1?'brightness('+set.bright+')':'';}
 function newSave(){return {area:0,spawn:null,ab:{},maxHp:3,maxEn:1,got:{},latch:{},flood:{},mir:{},chase:{},bossDone:false,explored:{},stats:{time:0,deaths:0,jumps:0,dashes:0,bashes:0,grapples:0,light:0,hits:0},done:false,started:Date.now()};}
 var save=null;try{save=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
 function writeSave(){if(save)localStorage.setItem(KEY,JSON.stringify(save));}
@@ -95,8 +95,9 @@ function setupUI(){
   $('bTitle').onclick=function(){persist();writeSave();mode='title';paused=false;document.body.classList.remove('playing','paused');$('bContinue').style.display='';show('title');};
   $('mapClose').onclick=function(){paused=false;document.body.classList.remove('paused');show(null);};
   [['sMusic','music'],['sSfx','sfx'],['sBright','bright']].forEach(function(p){var el=$(p[0]);el.value=set[p[1]];var lab=$(p[0]+'V');function up(){set[p[1]]=+el.value;lab.textContent=p[1]==='bright'?Math.round(el.value*100)+'%':(+el.value===0?'Off':Math.round(el.value*100)+'%');saveSet();}el.oninput=up;up();});
+  var shb=$('sShake');function shl(){shb.textContent='Screen shake: '+(set.shake?'On':'Off');}shl();shb.onclick=function(){set.shake=set.shake?0:1;shl();saveSet();};
   var qb=$('sQ');function ql(){qb.textContent='Quality: '+['Low','Medium','High'][set.q];}ql();qb.onclick=function(){set.q=(set.q+2)%3;R.q=set.q;R.resize();ql();saveSet();};
-  $('older').innerHTML=OLDER.length?OLDER.map(function(o){return '<a href="'+o.url+'">'+o.v+'</a>';}).join(''):'<p class="dim">None yet. Earlier versions will appear here after updates.</p>';
+  $('older').innerHTML=OLDER.length?OLDER.map(function(o){return '<a class="oldv" href="'+o.url+'">Thistledown '+o.v+'</a>';}).join(''):'<p class="dim">None yet. Earlier versions will appear here after updates.</p>';
   $('bEnd').onclick=function(){show(null);mode='play';paused=false;document.body.classList.remove('paused');};
   // add to home screen hint
   var ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -112,43 +113,50 @@ function handle(ev){
      case 'orb':R.burst(e[1],e[2],'rgba(255,240,160,0.9)',8,3,0.6);break;
      case 'hcell':R.burst(e[1],e[2],'rgba(170,255,190,0.9)',24,5,1.2);toast('Life cell! You can take one more bump.');persist();writeSave();break;
      case 'ecell':R.burst(e[1],e[2],'rgba(160,220,255,0.9)',24,5,1.2);toast('Energy cell! Press Flare to clear nearby sprouts.');persist();writeSave();break;
-     case 'ability':R.flash(0.5);R.burst(s.p.x,s.p.y,'rgba(255,255,230,0.95)',40,7,1.4);var a=AREAS[ai].ents[e[2]];toast(a.text||ABN[e[1]],true);updButtons();persist();writeSave();break;
+     case 'ability':R.flash(0.5);rumble(0.5,300);R.burst(s.p.x,s.p.y,'rgba(255,255,230,0.95)',40,7,1.4);var a=AREAS[ai].ents[e[2]];toast(a.text||ABN[e[1]],true);updButtons();persist();writeSave();break;
      case 'shrine':R.burst(e[1],e[2],'rgba(170,255,230,0.9)',20,4,1);save.spawn={x:e[1],y:e[2]};persist();writeSave();toast('Saved');break;
-     case 'hurt':R.shake(0.8);R.burst(s.p.x,s.p.y,'rgba(255,255,255,0.9)',12,4,0.6);if(navigator.vibrate)navigator.vibrate(30);rumble(0.4,120);break;
+     case 'hurt':hitStop(0.09);R.shake(0.8);R.burst(s.p.x,s.p.y,'rgba(255,255,255,0.9)',12,4,0.6);if(navigator.vibrate)navigator.vibrate(30);rumble(0.4,120);break;
      case 'die':R.flash(0.4);toast('Restored at the shrine');break;
      case 'respawn':R.snap(s);break;
-     case 'bash':R.burst(e[1],e[2],'rgba(255,230,170,0.9)',16,6,0.6);R.shake(0.3);rumble(0.3,80);break;
-     case 'dash':R.burst(e[1],e[2],'rgba(220,255,250,0.8)',8,2,0.4);break;
-     case 'djump':R.burst(e[1],e[2]+0.4,'rgba(220,255,240,0.8)',10,3,0.5);break;
-     case 'land':if(e[3]>12)R.shake(0.15);R.burst(e[1],e[2],'rgba(255,255,240,0.6)',5,2,0.35);break;
+     case 'bash':hitStop(0.05);R.burst(e[1],e[2],'rgba(255,230,170,0.9)',16,6,0.6);R.shake(0.35);rumble(0.45,90);break;
+     case 'dash':R.burst(e[1],e[2],'rgba(220,255,250,0.8)',8,2,0.4);R.leaves(e[1],e[2],8,e[3]);R.dust(e[1],e[2]+0.4,4,2.5);rumble(0.2,60);break;
+     case 'djump':R.burst(e[1],e[2]+0.4,'rgba(220,255,240,0.8)',10,3,0.5);R.dust(e[1],e[2]+0.4,4,1.5,'rgba(220,255,245,0.7)');break;
+     case 'jump':if(!s.p.water)R.dust(e[1],e[2]+0.42,5,1.8);break;
+     case 'walljump':R.dust(e[1]+(s.p.face<0?0.3:-0.3),e[2],5,1.6);rumble(0.15,40);break;
+     case 'land':if(e[3]>12){R.shake(0.2);rumble(0.25,60);}R.dust(e[1],e[2],Math.min(10,3+Math.round(e[3]/3)),1.5+e[3]/10);break;
      case 'bramble':R.burst(e[1],e[2],'rgba(210,170,240,0.9)',8,4,0.6);break;
-     case 'door':R.shake(0.5);toast('A root door opens.');persist();writeSave();break;
+     case 'door':R.shake(0.5);rumble(0.4,200);toast('A root door opens.');persist();writeSave();break;
      case 'lever':R.shake(0.4);toast(e[1]?'Water rushes in!':'The water drains away.');persist();writeSave();break;
-     case 'enemyDie':R.burst(e[1],e[2],'rgba(200,180,255,0.9)',14,4,0.7);break;
+     case 'enemyDie':hitStop(0.06);rumble(0.35,80);R.burst(e[1],e[2],'rgba(200,180,255,0.9)',14,4,0.7);break;
      case 'flare':R.flash(0.25);R.burst(e[1],e[2],'rgba(200,240,255,0.9)',30,7,0.6);break;
      case 'chase':toast('Run!');R.shake(0.6);break;
      case 'chaseDone':toast('Safe!');persist();writeSave();break;
      case 'bossOn':toast('Grandmoth Ulma stirs in her sleep...',true);break;
-     case 'bossHit':R.shake(0.7);R.flash(0.3);toast(['She wakes! Thank you, little one.','Almost awake...','The dream is breaking!'][e[1]]||'');break;
+     case 'bossHit':hitStop(0.14);rumble(0.8,250);R.shake(0.7);R.flash(0.3);toast(['She wakes! Thank you, little one.','Almost awake...','The dream is breaking!'][e[1]]||'');break;
      case 'bossDone':save.bossDone=true;save.done=true;persist();writeSave();setTimeout(function(){mode='end';paused=true;show('ending');},2200);break;
-     case 'splash':R.burst(e[1],e[2],'rgba(220,250,255,0.9)',10,4,0.5);break;
+     case 'splash':R.burst(e[1],e[2],'rgba(220,250,255,0.9)',14,4,0.6);var wy=Math.floor(e[2]);while(wy>0&&S.isWater(st,s,e[1],wy-0.5))wy--;R.ripple(e[1],wy+0.05,true);R.ripple(e[1]+0.3,wy+0.05,false);rumble(0.15,50);break;
     }
   });
 }
-function rumble(m,ms){try{var g=navigator.getGamepads&&navigator.getGamepads()[0];if(g&&g.vibrationActuator)g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:m,weakMagnitude:m});}catch(e){}}
+var hs=0;function hitStop(v){hs=Math.max(hs,v);}
+function rumble(m,ms){if(!set.shake)m*=0.5;try{var pads=navigator.getGamepads?navigator.getGamepads():[];var g=null;for(var pi=0;pi<pads.length;pi++)if(pads[pi]){g=pads[pi];break;}if(g&&g.vibrationActuator)g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:m,weakMagnitude:m});}catch(e){}}
 function updButtons(){var ab=save?save.ab:{};['dash','bash','grapple'].forEach(function(k){var b=document.querySelector('.tb[data-k="'+(k==='grapple'?'grap':k)+'"]');if(b)b.style.display=ab[k]?'':'none';});var f=document.querySelector('.tb[data-k="flare"]');if(f)f.style.display=(s&&s.p.maxEn>0)?'':'none';}
 // ---------- HUD ----------
 function hud(){var p=s.p,h='';for(var i=0;i<p.maxHp;i++)h+='<i class="lf'+(i<p.hp?'':' e')+'"></i>';$('hp').innerHTML=h;var e='';for(i=0;i<p.maxEn;i++)e+='<i class="en'+(i<p.en?'':' e')+'"></i>';$('en').innerHTML=e;$('light').textContent=save.stats.light||0;
   $('useBtn').classList.toggle('on',s.use!=null||!!signT);
   if(msgT>0){msgT-=1/60;if(msgT<=0)$('toast').classList.remove('on');}}
 // ---------- loop ----------
-var last=performance.now(),acc=0,fpsA=[],frames=0;window.TD_FPS=0;
+var lowN=0,prevVx=0,last=performance.now(),acc=0,fpsA=[],frames=0;window.TD_FPS=0;
 function frame(now){
   requestAnimationFrame(frame);var dt=Math.min(0.1,(now-last)/1000);last=now;frames++;fpsA.push(dt);if(fpsA.length>60)fpsA.shift();
   if(frames%30===0){var a=0;fpsA.forEach(function(x){a+=x;});window.TD_FPS=Math.round(fpsA.length/a);}
+  // auto resolution: keep 60fps on phones by gently lowering render scale if frames drop
+  if(mode==='play'&&!paused&&frames%60===0&&frames>180){if(window.TD_FPS<50&&(R.as||1)>0.62){lowN=(lowN||0)+1;if(lowN>=2){R.as=Math.max(0.6,(R.as||1)-0.13);R.resize();lowN=0;}}else lowN=0;}
   var I=readInput();
   if(mode==='play'&&!paused&&s){
-    acc+=dt;var n=0;
+    if(hs>0){hs-=dt;acc=0;}else acc+=dt;var n=0;
+    if(s.p.gr&&Math.abs(s.p.vx)>6&&Math.random()<dt*7)R.dust(s.p.x-s.p.face*0.2,s.p.y+0.42,1,1);
+    if(s.p.gr&&prevVx*s.p.vx<0&&Math.abs(prevVx)>4)R.dust(s.p.x,s.p.y+0.42,4,2);prevVx=s.p.vx;
     while(acc>=1/60&&n<4){S.step(st,s,I,1/60);I.jumpP=I.dashP=I.bashP=I.grapP=I.useP=I.flareP=false;handle(s.ev.slice());save.stats.time=(save.stats.time||0)+1/60;acc-=1/60;n++;
       if(s.exit){persist();var nxt=s.exit==='next'?ai+1:ai-1;if(nxt>=0&&nxt<AREAS.length){var tst=S.build(AREAS[nxt]);loadArea(nxt,s.exit==='next'?tst.entry.prev:tst.entry.next);save.spawn=null;writeSave();}break;}}
     if(acc>1)acc=0;
