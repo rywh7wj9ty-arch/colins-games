@@ -12,7 +12,8 @@ var GAMES=[
  {id:'kickabout',name:'Kickabout',tagline:'Fast top-down football. 1P vs CPU or 2P.',url:'https://rywh7wj9ty-arch.github.io/colins-games/kickabout/',accent:'#5df27a'},
  {id:'sudoku-prism',name:'Sudoku Prism',tagline:'Glossy 3D sudoku with Killer and Zen modes, themes and smart hints.',url:'https://rywh7wj9ty-arch.github.io/colins-games/sudoku-prism/',accent:'#a98bff'},
  {id:'moonturn',name:'Moonturn',tagline:'Run round tiny moons. Twist them. Look again.',url:'https://rywh7wj9ty-arch.github.io/colins-games/moonturn/',accent:'#ff9a3c'},
- {id:'bobbin',name:"Bobbin's Button Box",tagline:'A handmade physics romp. Push, pull, swing and boing.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bobbin/',accent:'#4aa8ff'}
+ {id:'bobbin',name:"Bobbin's Button Box",tagline:'A handmade physics romp. Push, pull, swing and boing.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bobbin/',accent:'#4aa8ff'},
+ {id:'thistledown',name:'Thistledown',tagline:'A glowing forest spirit. Leap, bash and glide home.',url:'https://rywh7wj9ty-arch.github.io/colins-games/thistledown/',accent:'#7fe0c8'}
 ];
 (function(){
  var root=document.getElementById('games');
