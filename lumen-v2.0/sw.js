@@ -4,7 +4,7 @@
    - A new release installs in the background and waits. The page tells it to take over only when you are not mid-game,
      then reloads once, so the whole app switches version atomically.
    - All paths are relative, so it works at / or under a sub-path. */
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 const CACHE = 'lumenv20-' + VERSION;
 const ASSETS = [
   './', 'index.html', 'style.css', 'game.js', 'manifest.webmanifest',

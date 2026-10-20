@@ -9,7 +9,7 @@ import * as S from './js/stats.js';
 import { PUZZLES } from './js/puzzles.js';
 
 export const VERSION = '2.0';
-const OLDER = [['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
+const OLDER = [['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.has('debug');
 const $ = (s, r = document) => r.querySelector(s);
