@@ -1,0 +1,30 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Thistledown">
+<meta name="theme-color" content="#86dbe2"><title>Thistledown</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="icon" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css"></head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><div id="hp"></div><div id="en"></div><div class="lc"><i class="orbi"></i><span id="light">0</span></div></div>
+<div id="toast"></div><div id="sign"></div>
+<div id="touch"><div id="stickzone"></div><div id="stickbase"><div id="knob"></div></div>
+ <div id="btns"><button class="tb" data-k="grap" style="display:none">Grapple</button><button class="tb" data-k="bash" style="display:none">Bash</button><button class="tb" data-k="dash" style="display:none">Dash</button><button class="tb big" data-k="jump">Jump</button><button class="tb sm" data-k="flare">Flare</button><button class="tb sm" id="useBtn" data-k="use">Use</button></div>
+ <button id="pauseBtn" aria-label="Pause">II</button><button id="mapBtn" aria-label="Map">Map</button></div>
+<div id="title" class="panel"><h1>Thistledown</h1><p class="sub">A small light in a fading forest</p>
+ <button id="bContinue">Continue</button><button id="bNew">New journey</button><button class="bSettings">Settings</button><button class="bStats">Stats</button>
+ <p class="hint">Stick or arrows to move · Jump Z/Space · Dash X · Bash C (hold) · Grapple V · Use E · Flare F · Map M</p><div id="ver"></div></div>
+<div id="pause" class="panel"><h2>Paused</h2><button id="bResume">Resume</button><button id="bMap">Map</button><button id="bCheckpoint">Back to last checkpoint</button><button class="bSettings">Settings</button><button class="bStats">Stats</button><button id="bTitle">Save and quit to title</button></div>
+<div id="settings" class="panel"><h2>Settings</h2>
+ <label>Music <span id="sMusicV"></span><input type="range" id="sMusic" min="0" max="1" step="0.05"></label>
+ <label>Sound effects <span id="sSfxV"></span><input type="range" id="sSfx" min="0" max="1" step="0.05"></label>
+ <label>Brightness <span id="sBrightV"></span><input type="range" id="sBright" min="0.7" max="1.4" step="0.05"></label>
+ <button id="sQ">Quality</button>
+ <h3>Older versions</h3><div id="older"></div><button class="back">Back</button></div>
+<div id="stats" class="panel"><h2>Stats</h2><div id="statsBody"></div><button class="back">Back</button></div>
+<div id="map" class="panel wide"><h2>Map</h2><canvas id="mapcv"></canvas><button id="mapClose">Close</button></div>
+<div id="ending" class="panel"><h2>The Elder Tree blooms again</h2><p>Grandmoth Ulma blinks awake, and her bad dreams drift away like dandelion seeds. Light runs up the roots, through every branch, and out into the whole forest.</p><p>"Thank you, little Pip," she hums. "Stay as long as you like."</p><p class="dim">You can keep exploring for spirit light and cells you missed.</p><button id="bEnd">Keep exploring</button><button class="bStats">Stats</button></div>
+<div id="a2hs"><b>Play full screen</b><br>Tap <span class="sh">Share</span> then <b>Add to Home Screen</b>, and open Thistledown from your Home Screen.<button id="a2hsX">OK</button></div>
+<div id="rot">Turn your phone sideways to play</div>
+<script src="js/levels.js"></script><script src="js/sim.js"></script><script src="js/audio.js"></script><script src="js/render.js"></script><script src="js/game.js"></script>
+</body></html>
