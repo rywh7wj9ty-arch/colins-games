@@ -9,7 +9,7 @@ export class Sound {
   constructor() {
     this.ctx = null; this.music = 0.7; this.sfx = 0.8; this.cfg = WORLDS[0].music; this.pending = null;
     this.intensity = 0.2; this.playing = false; this.step = 0; this.nextT = 0; this.timer = null; this.chordIdx = 0;
-    this.rotIdx = 0; this.calm = false; this.tension = 0; this.relief = 0;
+    this.rotIdx = 0; this.calm = false; this.tension = 0; this.relief = 0; this.tempoMul = 1; this.beatIdx = 0;
   }
   get ready() { return !!this.ctx && this.ctx.state === 'running'; }
   unlock() {
@@ -52,7 +52,7 @@ export class Sound {
   resume() { if (this.ctx && this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); }
 
   // ---------- harmony helpers ----------
-  get spb() { return 60 / this.cfg.bpm; }
+  get spb() { return 60 / (this.cfg.bpm * this.tempoMul); }
   chordDeg() { return this.cfg.prog[this.chordIdx % this.cfg.prog.length]; }
   scaleNote(deg, base = this.cfg.root) { const sc = this.cfg.scale; const o = Math.floor(deg / sc.length); return base + sc[((deg % sc.length) + sc.length) % sc.length] + 12 * o; }
   chordNotes(deg = this.chordDeg(), base = this.cfg.root) { return [0, 2, 4, 6].map(k => this.scaleNote(deg + k, base)); }
@@ -224,6 +224,16 @@ export class Sound {
     this.pluck(this.scaleNote(this.chordDeg() + Math.min(n, 14), this.cfg.root + 12), t + 0.05, 0.08, 0.25, 'triangle');
   }
   calmDown() { this.relief = 1; }
+  // v2.2 "music that plays along": your moves add notes to the song, placed on the beat (Music volume)
+  beatNote(kind, n = 0) {
+    if (!this.ctx || this.ctx.state !== 'running' || this.music <= 0 || !this.playing) return;
+    const ch = this.chordNotes(), bus = this.musicBus;
+    if (kind === 'rot') { this.beatIdx = (this.beatIdx + 1) % 8; const seq = [0, 1, 2, 3, 2, 1, 3, 2]; this.bell(ch[seq[this.beatIdx]] + 24, this.nextGrid(4), 0.07, 0.6, true, bus); }
+    else if (kind === 'drop') { const t = this.nextGrid(2); this.bass(ch[0] - 24, t, this.spb * 0.7, 0.8); this.kick(t, 0.35); }
+    else if (kind === 'lock') { this.pluck(ch[(this.beatIdx + 2) % 4] + 12, this.nextGrid(4), 0.06, 0.3, 'triangle', bus); }
+    else if (kind === 'hold') { this.bell(ch[1] + 12, this.nextGrid(4), 0.05, 0.5, true, bus); }
+    else if (kind === 'clear') { const t0 = this.nextGrid(4), g = this.spb / 4; for (let i = 0; i < 2 + n * 2; i++) this.bell(ch[i % 4] + 24 + (i >= 4 ? 12 : 0), t0 + i * g * 0.5, 0.06, 0.8, true, bus); if (n >= 2) this.snare(t0 + g * 2, 0.14); }
+  }
   levelUp() {
     if (!this.ok()) return; const t0 = this.nextGrid(4); const g = this.spb / 4;
     [0, 2, 4, 7].forEach((d, i) => this.bell(this.scaleNote(this.chordDeg() + d, this.cfg.root + 12), t0 + i * g * 0.75, 0.07, 1.4, true, this.sfxBus));

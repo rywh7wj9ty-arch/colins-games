@@ -16,7 +16,8 @@ function rrect(g, x, y, w, h, r) {
 function mk(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; }
 const easeOut = t => 1 - Math.pow(1 - t, 3);
 
-export function blockSprite(px, color) {
+export function blockSprite(px, color, style) {
+  if (style && style !== 'glass' && STYLE_SPRITES[style]) return STYLE_SPRITES[style](px, color);
   const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
   const ins = Math.max(0.5, s * 0.04), w = s - ins * 2, r = s * 0.17;
   const base = rgb(color);
@@ -47,6 +48,93 @@ export function blockSprite(px, color) {
   st.addColorStop(0, 'rgba(255,255,255,0.85)'); st.addColorStop(0.5, css(shade(color, 0.4), 0.45)); st.addColorStop(1, css(shade(color, -0.2), 0.6));
   g.strokeStyle = st; g.lineWidth = lw; g.stroke();
   return c;
+}
+// ---- v2.2 piece styles (unlockable). 'glass' is the original sprite above. ----
+const STYLE_SPRITES = {
+  crystal(px, color) { // faceted gem: four lit facets meeting at a bright table
+    const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
+    const ins = Math.max(0.5, s * 0.05), a = ins, b = s - ins, t0 = s * 0.3, t1 = s * 0.7;
+    const face = (pts, f, al) => { g.beginPath(); g.moveTo(pts[0], pts[1]); for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]); g.closePath(); g.fillStyle = css(shade(color, f), al); g.fill(); };
+    face([a, a, b, a, t1, t0, t0, t0], 0.55, 0.95); face([b, a, b, b, t1, t1, t1, t0], 0.05, 0.92);
+    face([b, b, a, b, t0, t1, t1, t1], -0.35, 0.92); face([a, b, a, a, t0, t0, t0, t1], 0.25, 0.92);
+    face([t0, t0, t1, t0, t1, t1, t0, t1], 0.42, 0.96);
+    g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = Math.max(1, s * 0.035);
+    g.beginPath(); g.moveTo(a, a); g.lineTo(t0, t0); g.moveTo(b, a); g.lineTo(t1, t0); g.moveTo(b, b); g.lineTo(t1, t1); g.moveTo(a, b); g.lineTo(t0, t1); g.stroke();
+    g.strokeRect(t0, t0, t1 - t0, t1 - t0); g.strokeStyle = 'rgba(255,255,255,0.9)'; g.strokeRect(a, a, b - a, b - a);
+    const hs = g.createRadialGradient(s * 0.38, s * 0.36, 0, s * 0.38, s * 0.36, s * 0.14); hs.addColorStop(0, 'rgba(255,255,255,0.95)'); hs.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = hs; g.fillRect(0, 0, s, s);
+    return c;
+  },
+  neon(px, color) { // a dark glass tile with a bright tube of light round the edge
+    const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
+    const ins = s * 0.12, w = s - ins * 2, r = s * 0.2;
+    rrect(g, s * 0.05, s * 0.05, s * 0.9, s * 0.9, r); g.fillStyle = css(shade(color, -0.55), 0.55); g.fill();
+    g.shadowColor = color; g.shadowBlur = s * 0.22; g.lineWidth = Math.max(1.5, s * 0.1);
+    rrect(g, ins, ins, w, w, r * 0.8); g.strokeStyle = css(shade(color, 0.25), 1); g.stroke();
+    g.shadowBlur = 0; g.lineWidth = Math.max(1, s * 0.04); g.strokeStyle = 'rgba(255,255,255,0.9)'; rrect(g, ins, ins, w, w, r * 0.8); g.stroke();
+    const rg = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s * 0.4); rg.addColorStop(0, css(rgb(color), 0.35)); rg.addColorStop(1, css(rgb(color), 0)); g.fillStyle = rg; g.fillRect(0, 0, s, s);
+    return c;
+  },
+  stained(px, color) { // stained glass: rich colour, mottled, held in a lead came
+    const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
+    const base = rgb(color); const gr = g.createLinearGradient(0, 0, s, s);
+    gr.addColorStop(0, css(shade(color, 0.35), 0.97)); gr.addColorStop(1, css(shade(color, -0.15), 0.95));
+    g.fillStyle = gr; g.fillRect(0, 0, s, s);
+    let seed = (base[0] * 7 + base[1] * 13 + base[2] * 17) | 0; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 7; i++) { const x = rnd() * s, y = rnd() * s, rr = s * (0.12 + rnd() * 0.22); const m = g.createRadialGradient(x, y, 0, x, y, rr); m.addColorStop(0, `rgba(255,255,255,${0.12 + rnd() * 0.2})`); m.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = m; g.fillRect(0, 0, s, s); }
+    g.strokeStyle = 'rgba(60,64,80,0.85)'; g.lineWidth = Math.max(1, s * 0.05);
+    g.beginPath(); g.moveTo(s * 0.1, s * 0.55); g.lineTo(s * 0.5, s * 0.42); g.lineTo(s * 0.9, s * 0.62); g.moveTo(s * 0.5, s * 0.42); g.lineTo(s * 0.42, s * 0.05); g.stroke();
+    g.lineWidth = Math.max(1.5, s * 0.1); g.strokeStyle = 'rgba(70,74,92,0.95)'; g.strokeRect(g.lineWidth / 2, g.lineWidth / 2, s - g.lineWidth, s - g.lineWidth);
+    g.lineWidth = Math.max(1, s * 0.03); g.strokeStyle = 'rgba(255,255,255,0.35)'; g.strokeRect(s * 0.1, s * 0.1, s * 0.8, s * 0.8);
+    return c;
+  },
+  frost(px, color) { // frosted ice: pale, milky, sparkling edges
+    const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
+    const ins = Math.max(0.5, s * 0.04), w = s - ins * 2, r = s * 0.14;
+    const gr = g.createLinearGradient(0, 0, 0, s); gr.addColorStop(0, css(shade(color, 0.72), 0.95)); gr.addColorStop(1, css(shade(color, 0.3), 0.9));
+    rrect(g, ins, ins, w, w, r); g.fillStyle = gr; g.fill();
+    g.save(); rrect(g, ins, ins, w, w, r); g.clip();
+    let seed = s * 31 + rgb(color)[0]; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 26; i++) { g.fillStyle = `rgba(255,255,255,${0.25 + rnd() * 0.5})`; const z = Math.max(1, s * 0.03 * (0.5 + rnd())); g.fillRect(rnd() * s, rnd() * s, z, z); }
+    g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = Math.max(1, s * 0.025);
+    g.beginPath(); for (let i = 0; i < 3; i++) { const x = rnd() * s, y = rnd() * s; g.moveTo(x, y); g.lineTo(x + s * 0.25, y - s * 0.12); g.moveTo(x + s * 0.12, y - s * 0.06); g.lineTo(x + s * 0.16, y + s * 0.1); } g.stroke();
+    g.restore();
+    rrect(g, ins, ins, w, w, r); g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = Math.max(1, s * 0.06); g.stroke();
+    return c;
+  },
+};
+// ---- v2.2 board skins: drawn over the classic frame ----
+function drawBoardSkin(g, skin, w, h, pad, L, c, ac, ac2) {
+  g.save();
+  if (skin === 'crystal') {
+    g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1;
+    const n = 9; g.beginPath();
+    for (let i = 0; i <= n; i++) { const y = pad + L.bh * i / n; g.moveTo(1, y); g.lineTo(pad - 1, y + L.bh / n / 2); g.moveTo(w - 1, y); g.lineTo(w - pad + 1, y + L.bh / n / 2); }
+    g.stroke();
+    const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(200,230,255,0.28)'); gr.addColorStop(0.08, 'rgba(200,230,255,0)'); gr.addColorStop(0.92, 'rgba(200,230,255,0)'); gr.addColorStop(1, 'rgba(200,230,255,0.28)');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    rrect(g, 2, 2, w - 4, h - 4, c * 0.4); g.strokeStyle = 'rgba(220,240,255,0.8)'; g.lineWidth = 1.5; g.stroke();
+  } else if (skin === 'neon') {
+    g.shadowBlur = c * 0.6;
+    g.shadowColor = css(ac, 1); rrect(g, 2, 2, w - 4, h - 4, c * 0.4); g.strokeStyle = css(ac, 0.95); g.lineWidth = 2.5; g.stroke();
+    g.shadowColor = css(ac2, 1); rrect(g, pad - 3, pad - 3, L.bw + 6, L.bh + 6, c * 0.22); g.strokeStyle = css(ac2, 0.9); g.lineWidth = 1.5; g.stroke();
+  } else if (skin === 'stained') {
+    const cols = [[255, 140, 160], [255, 214, 120], [130, 220, 255], [170, 150, 255], [140, 240, 180]];
+    const seg = L.bh / 10;
+    for (let i = 0; i < 10; i++) for (const x0 of [1, w - pad + 1]) {
+      const col = cols[(i + (x0 > 1 ? 2 : 0)) % cols.length];
+      g.fillStyle = css(col, 0.45); g.fillRect(x0, pad + i * seg, pad - 2, seg);
+      g.strokeStyle = 'rgba(70,74,92,0.9)'; g.lineWidth = 1.5; g.strokeRect(x0, pad + i * seg, pad - 2, seg);
+    }
+    rrect(g, pad - 2, pad - 2, L.bw + 4, L.bh + 4, c * 0.2); g.strokeStyle = 'rgba(80,84,102,0.95)'; g.lineWidth = 2; g.stroke();
+  } else if (skin === 'frost') {
+    const gr = g.createLinearGradient(0, pad, 0, pad + L.bh); gr.addColorStop(0, 'rgba(235,245,255,0.16)'); gr.addColorStop(0.2, 'rgba(235,245,255,0)'); gr.addColorStop(0.8, 'rgba(235,245,255,0)'); gr.addColorStop(1, 'rgba(235,245,255,0.22)');
+    g.fillStyle = gr; g.fillRect(pad, pad, L.bw, L.bh);
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    g.fillStyle = 'rgba(255,255,255,0.75)';
+    for (let i = 0; i < 160; i++) { const side = rnd() < 0.5; const x = side ? rnd() * pad * 1.6 : w - rnd() * pad * 1.6; const y = rnd() * h; const z = 0.6 + rnd() * 1.6; g.fillRect(x, y, z, z); }
+    rrect(g, 1.5, 1.5, w - 3, h - 3, c * 0.42); g.strokeStyle = 'rgba(240,250,255,0.85)'; g.lineWidth = 2; g.stroke();
+  }
+  g.restore();
 }
 function glowSprite(px, color, a = 0.6) {
   const s = Math.max(8, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d'); const base = rgb(color);
@@ -100,13 +188,14 @@ export class Renderer {
       const pal = this.palette(i); const o = { block: [], glow: [], ghost: [], dot: [], shard: [], mini: [], flash: null };
       pal.forEach((col, k) => {
         const id = k + 1;
-        o.block[id] = blockSprite(L.cell * d, col);
-        o.mini[id] = blockSprite(Math.max(L.hold.m, L.next.m) * d, col);
+        o.block[id] = blockSprite(L.cell * d, col, this.pieceStyle);
+        o.mini[id] = blockSprite(Math.max(L.hold.m, L.next.m) * d, col, this.pieceStyle);
         o.glow[id] = glowSprite(L.cell * 3 * d, col, 0.55);
         o.ghost[id] = ghostSprite(L.cell * d, col);
         o.dot[id] = glowSprite(24 * d, col, 0.95);
         o.shard[id] = shardSprite(Math.max(6, L.cell * 0.45) * d, col);
       });
+      { const gc = '#c9d3ea'; o.block[8] = blockSprite(L.cell * d, gc, this.pieceStyle); o.glow[8] = glowSprite(L.cell * 3 * d, gc, 0.3); o.dot[8] = glowSprite(24 * d, gc, 0.95); o.shard[8] = shardSprite(Math.max(6, L.cell * 0.45) * d, gc); o.ghost[8] = o.ghost[1]; o.mini[8] = o.block[8]; } // v2.2 garbage
       o.flash = glowSprite(L.cell * 1.6 * d, '#ffffff', 0.9);
       o.white = blockSprite(L.cell * d, '#f4f8ff');
       return o;
@@ -145,6 +234,7 @@ export class Renderer {
     const lip = g.createLinearGradient(pad, 0, pad + L.bw, 0);
     lip.addColorStop(0, css(ac, 0)); lip.addColorStop(0.5, css(ac, 0.6)); lip.addColorStop(1, css(ac, 0));
     g.fillStyle = lip; g.fillRect(pad, pad - 1, L.bw, 1.5);
+    if (this.boardSkin && this.boardSkin !== 'classic') drawBoardSkin(g, this.boardSkin, w, h, pad, L, c, ac, ac2);
     this.frame = { c: f, pad, w, h };
     // side panels (hold / next)
     const panel = (b) => {
@@ -322,6 +412,8 @@ export class Renderer {
     const ox = L.bx + L.bw / 2, oy = L.by + L.bh;
     g.setTransform(d, 0, 0, d, 0, 0);
     g.translate(ox + sx, oy + sy + this.kick); g.rotate(this.lean); g.translate(-ox, -oy);
+    const flip = !!this.flip; // v2.2 "upside down" challenge rule: the well is drawn mirrored top-to-bottom
+    if (flip) { g.save(); const fcy = L.by + L.bh / 2; g.translate(0, 2 * fcy); g.scale(1, -1); }
 
     // frame
     const F = this.frame; g.drawImage(F.c, L.bx - F.pad, L.by - F.pad, F.w, F.h);
@@ -349,7 +441,12 @@ export class Renderer {
       g.globalCompositeOperation = 'source-over';
     }
     // stack
-    g.drawImage(this.stackC, L.bx - this.stackM, L.by - this.stackM, this.stackC.width / d, this.stackC.height / d);
+    if (this.stackAlpha != null && this.stackAlpha < 1) { // v2.2 invisible / dark rules: the stack shows only just after a lock
+      this.reveal = Math.max(0, (this.reveal || 0) - dt / 0.7);
+      g.globalAlpha = Math.min(1, this.stackAlpha + this.reveal);
+      if (g.globalAlpha > 0.01) g.drawImage(this.stackC, L.bx - this.stackM, L.by - this.stackM, this.stackC.width / d, this.stackC.height / d);
+      g.globalAlpha = 1;
+    } else g.drawImage(this.stackC, L.bx - this.stackM, L.by - this.stackM, this.stackC.width / d, this.stackC.height / d);
     // world wave front
     if (this.wave < 1) {
       const y = L.by + L.bh * (1 - this.wave);
@@ -430,6 +527,12 @@ export class Renderer {
       g.save();
       if (this.twist) { g.translate(pcx, pcy); g.rotate(this.twist); g.translate(-pcx, -pcy); }
       const lockK = game.grounded() ? Math.min(1, game.lockT / game.lockDelay) : 0;
+      if (this.tspinHint && p.type === 'T' && game.lastRot && game.detectSpin() !== 'none') { // v2.2: the T glows when a spin is set up
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.55 + 0.35 * Math.sin(this.time * 12);
+        const gs = this.sprites[this.world].glow[6];
+        for (const [cx, cy] of cells) { const yy = vy + cy; if (yy < HIDDEN - 2) continue; g.drawImage(gs, this.bx(vx + cx - 1.5), this.by(yy - 1.5), c * 4, c * 4); }
+        g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      }
       if (!this.reduced) {
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.5 + 0.15 * Math.sin(this.time * 5);
         for (const [cx, cy] of cells) { const yy = vy + cy; if (yy < HIDDEN - 2) continue; g.drawImage(sp.glow[id], this.bx(vx + cx - 1), this.by(yy - 1), c * 3, c * 3); }
@@ -448,12 +551,69 @@ export class Renderer {
       }
       g.restore();
     }
+    if (this.cracks && this.cracks.length) this.drawCracks(dt);
+    if (flip) { this.drawRings(dt); this.stepParticles(dt); this.drawParticles(); g.restore(); this.drawHold(game); this.drawNext(game); return; }
     // side panels
     this.drawHold(game); this.drawNext(game);
     // rings
     this.drawRings(dt);
     // particles
     this.stepParticles(dt); this.drawParticles();
+  }
+  // ---- v2.2 bigger line clears: glass cracks with light bursting through, and a sunburst for a Tetris ----
+  addCracks(rows, lines, tetris) {
+    const L = this.L, c = L.cell; this.cracks = this.cracks || [];
+    for (const y of rows) {
+      const pts = []; let px = L.bx - c * 0.3, py = this.by(y + 0.5);
+      pts.push([px, py]);
+      while (px < L.bx + L.bw + c * 0.3) { px += c * (0.35 + Math.random() * 0.5); pts.push([px, this.by(y + 0.5) + (Math.random() - 0.5) * c * 0.8]); }
+      const branches = [];
+      for (let i = 1; i < pts.length - 1; i += 2) { const [x0, y0] = pts[i]; const a = (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 0.8); branches.push([x0, y0, x0 + Math.cos(a) * c * 0.9, y0 + Math.sin(a) * c * 0.9 * (Math.random() < 0.5 ? -1 : 1)]); }
+      this.cracks.push({ kind: 'crack', pts, branches, t: 0, dur: tetris ? 1.0 : 0.6, y: this.by(y + 0.5) });
+    }
+    if (tetris) {
+      const cy = this.by(rows.reduce((a, b) => a + b, 0) / rows.length + 0.5);
+      this.cracks.push({ kind: 'sun', x: L.bx + L.bw / 2, y: cy, t: 0, dur: 1.6, rot: Math.random() * TAU });
+      const n = this.reduced ? 30 : 110;
+      for (let i = 0; i < n; i++) { const a = Math.random() * TAU, sp = 200 + Math.random() * 520; this.emit(L.bx + L.bw / 2, cy, Math.cos(a) * sp, Math.sin(a) * sp, 0.8 + Math.random() * 0.9, 1, 1 + (i % 7), 1, 1.6, 60); }
+    }
+  }
+  drawCracks(dt) {
+    const g = this.g, L = this.L, c = L.cell;
+    g.globalCompositeOperation = 'lighter';
+    for (const k of this.cracks) {
+      k.t += dt; const p = Math.min(1, k.t / k.dur); if (p >= 1) continue;
+      if (k.kind === 'crack') {
+        const grow = Math.min(1, p * 4), fade = 1 - Math.max(0, (p - 0.35) / 0.65);
+        // light leaking through the crack
+        const gr = g.createLinearGradient(0, k.y - c * 1.4, 0, k.y + c * 1.4);
+        gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, `rgba(255,250,235,${0.55 * fade})`); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(L.bx - c, k.y - c * 1.4, L.bw + 2 * c, c * 2.8);
+        const n = Math.max(2, Math.ceil(k.pts.length * grow));
+        g.strokeStyle = `rgba(255,255,255,${0.95 * fade})`; g.lineWidth = Math.max(1.5, c * 0.09); g.lineJoin = 'round';
+        g.beginPath(); g.moveTo(k.pts[0][0], k.pts[0][1]); for (let i = 1; i < n; i++) g.lineTo(k.pts[i][0], k.pts[i][1]); g.stroke();
+        g.lineWidth = Math.max(1, c * 0.05); g.beginPath();
+        for (const [x0, y0, x1, y1] of k.branches) if (x0 <= k.pts[n - 1][0]) { g.moveTo(x0, y0); g.lineTo(x0 + (x1 - x0) * grow, y0 + (y1 - y0) * grow); }
+        g.stroke();
+        // rays shooting out of the crack
+        if (!this.reduced) for (let i = 0; i < 6; i++) { const x = L.bx + L.bw * (i + 0.5) / 6; const h = c * 3.5 * grow; const rg = g.createLinearGradient(0, k.y, 0, k.y - h); rg.addColorStop(0, `rgba(255,255,240,${0.3 * fade})`); rg.addColorStop(1, 'rgba(255,255,240,0)'); g.fillStyle = rg; g.fillRect(x - c * 0.12, k.y - h, c * 0.24, h); g.fillRect(x - c * 0.12, k.y, c * 0.24, h * 0.6); }
+      } else if (k.kind === 'sun') {
+        const e = easeOut(Math.min(1, p * 2.2)), fade = 1 - p;
+        const R = Math.max(L.w, L.h) * (0.3 + e);
+        const rays = this.reduced ? 10 : 18;
+        for (let i = 0; i < rays; i++) {
+          const a = k.rot + i * TAU / rays + p * 0.6, w2 = 0.07;
+          const gr = g.createRadialGradient(k.x, k.y, 0, k.x, k.y, R);
+          gr.addColorStop(0, `rgba(255,255,255,${0.55 * fade})`); gr.addColorStop(1, 'rgba(255,240,210,0)');
+          g.fillStyle = gr; g.beginPath(); g.moveTo(k.x, k.y); g.arc(k.x, k.y, R, a - w2, a + w2); g.closePath(); g.fill();
+        }
+        const core = g.createRadialGradient(k.x, k.y, 0, k.x, k.y, c * 6 * (0.5 + e));
+        core.addColorStop(0, `rgba(255,255,255,${0.8 * fade})`); core.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = core; g.fillRect(k.x - c * 10, k.y - c * 10, c * 20, c * 20);
+      }
+    }
+    this.cracks = this.cracks.filter(k => k.t < k.dur);
+    g.globalCompositeOperation = 'source-over';
   }
   drawMini(type, cx, cy, m, alpha = 1, sp = this.sprites[this.world]) {
     const b = pieceBounds(type); const id = TYPE_ID[type]; const g = this.g;

@@ -87,10 +87,10 @@ export function localDateStr(d = new Date()) {
 export function dailySeed(dateStr) { return hashString('lumen-daily:' + dateStr); }
 
 export class Bag {
-  constructor(rng) { this.rng = rng; this.pool = []; }
+  constructor(rng, types) { this.rng = rng; this.pool = []; this.types = types && types.length ? types : TYPES; }
   next() {
     if (!this.pool.length) {
-      const a = TYPES.slice();
+      const a = this.types.slice();
       for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
       this.pool = a;
     }
@@ -155,13 +155,16 @@ export function emptyBoard() { return Array.from({ length: ROWS }, () => new Uin
 export class Game {
   constructor(opts = {}) {
     this.mode = opts.mode || 'marathon';
-    this.def = MODES[this.mode] || MODES.marathon;
+    this.def = opts.def || MODES[this.mode] || MODES.marathon;
+    // v2.2 options (all off by default, so a plain Game plays exactly like v2.1)
+    this.tspinBonus = opts.tspinBonus || 0; this.noHold = !!opts.noHold; this.garbageQ = [];
+    this.grng = mulberry32(((opts.seed != null ? opts.seed : 0) ^ 0x9E3779B9) >>> 0);
     this.seed = opts.seed != null ? opts.seed >>> 0 : (Math.random() * 2 ** 32) >>> 0;
     this.startLevel = opts.startLevel || 1;
     this.das = opts.das ?? 133; this.arr = opts.arr ?? 10; this.sdf = opts.sdf ?? 30;
     this.baseLockDelay = opts.lockDelay ?? 500; this.moveLimit = opts.moveLimit ?? 15;
     this.board = emptyBoard();
-    this.rng = mulberry32(this.seed); this.bag = new Bag(this.rng);
+    this.rng = mulberry32(this.seed); this.bag = new Bag(this.rng, opts.bagTypes);
     this.puzzle = opts.puzzle || null;
     this.queue = [];
     if (this.puzzle) { this.queue = this.puzzle.pieces.slice(); } else this.fillQueue();
@@ -184,7 +187,7 @@ export class Game {
   emit(e) { this.events.push(e); if (this.events.length > 200) this.events.shift(); }
   drainEvents() { const e = this.events; this.events = []; return e; }
   fillQueue() { if (this.puzzle) return; while (this.queue.length < 7) this.queue.push(this.bag.next()); }
-  get gravityLevel() { return this.def.maxGravityLevel ? Math.min(this.level, this.def.maxGravityLevel) : this.level; }
+  get gravityLevel() { const l = this.def.maxGravityLevel ? Math.min(this.level, this.def.maxGravityLevel) : this.level; return this.def.gravityAdd ? l + this.def.gravityAdd : l; }
   get lockDelay() { return lockDelayFor(this.level, this.baseLockDelay); }
 
   cellsOf(p = this.cur) { return SHAPES[p.type][p.rot].map(([cx, cy]) => [p.x + cx, p.y + cy]); }
@@ -214,6 +217,16 @@ export class Game {
   }
 
   topOut(reason) {
+    if (this.def.relax) { // v2.2 Relax: no game over; the bottom of the well melts away instead
+      const cells = [];
+      for (let y = ROWS - 10; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (this.board[y][x]) cells.push([x, y, this.board[y][x]]);
+      const keep = this.board.slice(0, ROWS - 10); while (keep.length < ROWS) keep.unshift(new Uint8Array(COLS));
+      this.board = keep; this.st.zenResets++; this.combo = -1;
+      this.emit({ type: 'zenclear', cells, relax: true });
+      if (this.cur) { let guard = 0; while (!this.fits(this.cur.type, this.cur.rot, this.cur.x, this.cur.y) && guard++ < 20) this.cur.y++; }
+      if (this.cur && !this.fits(this.cur.type, this.cur.rot, this.cur.x, this.cur.y)) { this.board = emptyBoard(); this.cur.y = HIDDEN - 2; }
+      return;
+    }
     if (this.def.noTopOut) {
       const cells = [];
       for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (this.board[y][x]) cells.push([x, y, this.board[y][x]]);
@@ -296,7 +309,7 @@ export class Game {
     this.lock();
   }
   holdPiece() {
-    if (this.over || !this.cur || this.holdUsed) return false;
+    if (this.over || !this.cur || this.holdUsed || this.noHold) return false;
     if (!this.hold && !this.queue.length) return false; // puzzle: nothing to swap in
     this.st.inputs++; this.st.holds++;
     const t = this.cur.type;
@@ -358,7 +371,8 @@ export class Game {
     const b2bBonus = difficult && this.b2b >= 1;
     const gained = clearScore({ lines, spin, level: this.level, b2b: b2bBonus, combo: Math.max(0, this.combo), pc });
     const atk = attackFor({ lines, spin, b2b: b2bBonus, combo: Math.max(0, this.combo), pc });
-    this.score += gained; this.st.attack += atk;
+    const bonus = this.tspinBonus && spin !== 'none' ? Math.floor(gained * this.tspinBonus) : 0;
+    this.score += gained + bonus; this.st.attack += atk;
     if (spin === 'full') this.st.tspin['full' + lines]++;
     else if (spin === 'mini') this.st.tspin['mini' + Math.min(lines, 2)]++;
     else if (lines) this.st[['', 'single', 'double', 'triple', 'tetris'][lines]]++;
@@ -368,10 +382,11 @@ export class Game {
     this.lines += lines;
     if (this.def.levelUp) this.level = Math.max(this.level, this.startLevel + Math.floor(this.lines / 10));
     this.holdUsed = false;
-    this.emit({ type: 'lock', cells, piece: p.type, spin, lines });
-    if (lines || spin !== 'none') this.emit({ type: 'clear', rows, rowCells, lines, spin, b2b: b2bBonus, b2bCount: this.b2b, combo: this.combo, pc, score: gained, attack: atk, name: clearName(lines, spin), difficult });
+    this.emit({ type: 'lock', cells, piece: p.type, spin, lines, rot: p.rot, x: p.x, y: p.y, lr: this.lastRot, lk: this.lastKick });
+    if (lines || spin !== 'none') this.emit({ type: 'clear', rows, rowCells, lines, spin, b2b: b2bBonus, b2bCount: this.b2b, combo: this.combo, pc, score: gained + bonus, bonus, attack: atk, name: clearName(lines, spin), difficult });
     if (this.level > prevLevel) this.emit({ type: 'levelup', level: this.level });
     this.cur = null;
+    if (!lines && this.garbageQ.length) this.applyGarbage();
     if (lockOut) { this.topOut('lockout'); if (this.over) return; }
     if (this.def.goalLines && this.lines >= this.def.goalLines) { this.end('complete'); return; }
     if (this.puzzle && this.board.every(r => r.every(v => !v))) { this.end('complete'); return; }
@@ -419,6 +434,26 @@ export class Game {
       this.lockT += dt;
       if (this.lockT >= this.lockDelay) this.lock();
     } else this.lockT = 0;
+  }
+
+  // ---- v2.2 garbage (Versus CPU, rising tide) ----
+  queueGarbage(n, hole) {
+    if (n <= 0 || this.over) return;
+    if (hole == null) hole = Math.floor(this.grng() * COLS);
+    this.garbageQ.push({ n, hole }); this.emit({ type: 'gq', n, hole });
+  }
+  get pendingGarbage() { return this.garbageQ.reduce((a, g) => a + g.n, 0); }
+  cancelGarbage(n) { // returns what is left over after cancelling incoming lines
+    while (n > 0 && this.garbageQ.length) { const g = this.garbageQ[0]; const k = Math.min(n, g.n); g.n -= k; n -= k; if (!g.n) this.garbageQ.shift(); }
+    return n;
+  }
+  applyGarbage() {
+    let total = 0;
+    for (const { n, hole } of this.garbageQ) {
+      for (let i = 0; i < n; i++) { this.board.shift(); const r = new Uint8Array(COLS).fill(8); r[hole] = 0; this.board.push(r); total++; }
+    }
+    this.garbageQ = [];
+    if (total) this.emit({ type: 'garbage', n: total });
   }
 
   summary() {

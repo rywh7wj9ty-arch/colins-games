@@ -165,6 +165,13 @@ function mixVec(a, b, t) {
   return o;
 }
 
+// v2.2 level-up feel: rotate the sky's hues a little (radians). hue 0 leaves the world exactly as designed.
+function hueRot(c, a) {
+  const cs = Math.cos(a), sn = Math.sin(a), k = 1 / 3, q = Math.sqrt(k);
+  const m = [cs + (1 - cs) * k, k * (1 - cs) - q * sn, k * (1 - cs) + q * sn];
+  return [c[0] * m[0] + c[1] * m[1] + c[2] * m[2], c[0] * m[2] + c[1] * m[0] + c[2] * m[1], c[0] * m[1] + c[1] * m[2] + c[2] * m[0]].map(v => Math.max(0, Math.min(1, v)));
+}
+function hueVec(v, a) { const o = { ...v }; for (const k of ['A', 'B', 'C', 'D']) if (Array.isArray(v[k]) || ArrayBuffer.isView(v[k])) o[k] = hueRot(Array.from(v[k]), a); return o; }
 export class Background {
   constructor(canvas) {
     this.canvas = canvas; this.ok = false; this.scale = 0.6; this.time = 0;
@@ -202,8 +209,8 @@ export class Background {
     if (this.canvas.width !== cw || this.canvas.height !== ch) { this.canvas.width = cw; this.canvas.height = ch; }
   }
   setQuality(reduced) { this.scale = reduced ? 0.38 : 0.6; this.lowFps = reduced; if (this.w) this.resize(this.w, this.h); }
-  setWorld(i, instant) {
-    const target = worldVec(WORLDS[i]);
+  setWorld(i, instant, hue = 0) {
+    const target = hue ? hueVec(worldVec(WORLDS[i]), hue) : worldVec(WORLDS[i]);
     const cur = this.current();
     if (instant) { this.from = target; this.to = target; this.mixT = 1; return; }
     this.from = cur; this.to = target; this.mixT = 0;

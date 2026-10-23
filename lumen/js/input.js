@@ -6,7 +6,7 @@ export class Input {
     window.addEventListener('keyup', e => this.keyUp(e));
     window.addEventListener('blur', () => this.releaseAll());
   }
-  get game() { const a = this.app; return a.screen === 'game' && a.running && a.game && !a.game.over ? a.game : null; }
+  get game() { const a = this.app; return a.screen === 'game' && a.running && a.game && !a.game.over && !a.replay ? a.game : null; }
   releaseAll() { const g = this.app.game; if (g) { g.held.left = g.held.right = false; g.dasDir = 0; g.setSoft(false); } this.keys.clear(); this.ptrs.clear(); this.multi = null; }
 
   // ---------------- keyboard ----------------

@@ -1,7 +1,7 @@
 /* LUMEN stats, records, achievements. Pure aggregation (recordGame) + thin localStorage wrappers. */
 export const STATS_KEY = 'lumen.stats.v1';
 export const SETTINGS_KEY = 'lumen.settings.v1';
-export const MODE_IDS = ['marathon', 'sprint', 'ultra', 'zen', 'daily'];
+export const MODE_IDS = ['marathon', 'sprint', 'ultra', 'zen', 'daily', 'journey', 'versus', 'relax', 'challenge'];
 const TOP_N = 10, RECENT_N = 60;
 
 export const DEFAULT_SETTINGS = {
@@ -16,6 +16,9 @@ export const DEFAULT_SETTINGS = {
   swipeUp: 'hold',        // 'hold' | 'hard' | 'off'
   flickDown: 'hard',      // 'hard' | 'off'
   rumble: true, raceGhost: true,
+  // v2.2: every new feature can be switched off on its own (all off = v2.1)
+  features: { journey: true, beat: true, shatter: true, versus: true, challenges: true, skins: true, tspin: true, relax: true, replays: true, levelfeel: true },
+  pieceStyle: 'glass', boardSkin: 'classic', cpuLevel: 'medium',
 };
 
 function zeroT() { return { mini0: 0, mini1: 0, mini2: 0, full0: 0, full1: 0, full2: 0, full3: 0 }; }
@@ -179,6 +182,6 @@ export function loadStats() {
 }
 export function saveStats(st) { try { const s = store(); const { puzzles, ...rest } = st; s && s.setItem(STATS_KEY, JSON.stringify(rest)); if (puzzles) s.setItem(PUZZLE_KEY, JSON.stringify(puzzles)); return true; } catch (e) { return false; } }
 export function loadSettings() {
-  try { const s = store(); const raw = s && s.getItem(SETTINGS_KEY); return { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) }; } catch (e) { return { ...DEFAULT_SETTINGS }; }
+  try { const s = store(); const raw = s && s.getItem(SETTINGS_KEY); const o = { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) }; o.features = { ...DEFAULT_SETTINGS.features, ...((o.features && typeof o.features === 'object') ? o.features : {}) }; return o; } catch (e) { return { ...DEFAULT_SETTINGS, features: { ...DEFAULT_SETTINGS.features } }; }
 }
 export function saveSettings(v) { try { const s = store(); s && s.setItem(SETTINGS_KEY, JSON.stringify(v)); } catch (e) { /* private mode */ } }
