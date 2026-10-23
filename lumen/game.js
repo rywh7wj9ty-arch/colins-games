@@ -7,8 +7,9 @@ import { Sound } from './js/audio.js';
 import { Input } from './js/input.js';
 import * as S from './js/stats.js';
 import { PUZZLES } from './js/puzzles.js';
+import { installV22, MODE_INFO22 } from './js/v22.js';
 
-export const VERSION = '2.1';
+export const VERSION = '2.2';
 const OLDER = [['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v2.0', '../lumen-v2.0/', 'bright pastel look'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.has('debug');
@@ -32,6 +33,7 @@ const MODE_INFO = {
   daily: { name: 'Daily', desc: 'Same pieces for everyone today. Three minutes.' },
   puzzle: { name: 'Puzzle', desc: '30 hand-picked wells. Empty each one with the pieces given.' },
 };
+Object.assign(MODE_INFO, MODE_INFO22);
 const MODE_ORDER = ['marathon', 'sprint', 'ultra', 'zen'];
 
 class App {
@@ -125,7 +127,7 @@ class App {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     this.fx.resize(L, dpr);
     this.bg.resize(w, h);
-    this.placeHud(); this.placeV2();
+    this.placeHud(); this.placeV2(); if (this.cpu) { this.placeV22(); this.drawCpu(); }
   }
   placeHud() {
     const L = this.L, c = L.cell, hud = $('#hud');
@@ -167,7 +169,8 @@ class App {
     const s = this.settings;
     document.body.style.filter = Math.abs((s.brightness || 1) - 1) > 0.01 ? `brightness(${s.brightness})` : '';
     const reduced = s.effects === 'reduced';
-    this.fx.setOptions({ reduced, reducedMotion: this.reducedMotion, shakeOn: s.shake && !this.reducedMotion, leanOn: s.lean, showGhost: s.ghost, showGrid: s.grid });
+    this.v22Apply();
+    this.fx.setOptions({ reduced, reducedMotion: this.reducedMotion, shakeOn: s.shake && !this.reducedMotion && this.mode !== 'relax', leanOn: s.lean, showGhost: s.ghost, showGrid: s.grid });
     this.bg.setQuality(reduced);
     this.sound.setVolumes(s.music, s.sfx);
     if (this.game) { this.game.das = s.das; this.game.arr = s.arr; this.game.sdf = s.sdf; }
@@ -189,6 +192,7 @@ class App {
     if (name === 'stats') this.buildStats();
     if (name === 'settings') this.buildSettings();
     if (name === 'puzzles') this.buildPuzzles();
+    this.v22Show(name);
     this.padFocus = -1;
     if (name !== 'game' && name !== 'pause') this.maybeApplyUpdate();
   }
@@ -210,9 +214,12 @@ class App {
       case 'restart': this.restart(); break;
       case 'quit': this.quit(); break;
       case 'again': this.startGame(this.mode); break;
-      case 'next': this.startGame('puzzle', (this.puzzleIdx || 0) + 1); break;
+      case 'next': if (!this.v22Next()) this.startGame('puzzle', (this.puzzleIdx || 0) + 1); break;
+      case 'rs1': this.setReplaySpeed(1); break; case 'rs2': this.setReplaySpeed(2); break; case 'rs4': this.setReplaySpeed(4); break;
+      case 'rexit': this.quit(); this.show('replays', false); break;
+      case 'tspin-tut': this.startGame('tspin'); break;
       case 'puzzles': this.quit(); this.show('puzzles', false); break;
-      case 'end-zen': if (this.game) { this.show('game'); this.game.end('ended'); } break;
+      case 'end-zen': if (this.game) { this.show('game'); if (this.replay) { this.quit(); this.show('replays', false); } else this.game.end('ended'); } break;
     }
   }
   menuKey(e) {
@@ -236,22 +243,25 @@ class App {
     html += `<button class="mode daily" data-mode="daily"><span class="glint"></span><span class="m-name">Daily Challenge</span><span class="m-desc">${MODE_INFO.daily.desc}</span><span class="m-best">${dBest != null ? 'Today ' + fmtInt(dBest) : 'Not played today'}${streak ? ' &nbsp;·&nbsp; streak ' + streak + (streak > 1 ? ' days' : ' day') : ''}</span></button>`;
     const P = this.stats.puzzles || {}; const solved = S.puzzleCount(this.stats), stars = S.puzzleStars(this.stats);
     html += `<button class="mode puzzle" data-mode="puzzle"><span class="glint"></span><span class="m-name">Puzzles</span><span class="m-desc">${MODE_INFO.puzzle.desc}</span><span class="m-best">${solved ? solved + ' / 30 solved · ' + stars + '★' : 'Not played yet'}</span></button>`;
-    el.innerHTML = html;
+    html += this.v22Modes();
+    el.innerHTML = html; this.v22TitleNav();
     const vt = $('#ver-tag'); if (vt) vt.textContent = 'version ' + VERSION;
-    $$('.mode', el).forEach(b => b.addEventListener('click', () => b.dataset.mode === 'puzzle' ? this.show('puzzles', true) : this.startGame(b.dataset.mode)));
+    $$('.mode', el).forEach(b => b.addEventListener('click', () => b.dataset.mode === 'puzzle' ? this.show('puzzles', true) : this.v22ModeClick(b.dataset.mode) || this.startGame(b.dataset.mode)));
   }
   dailyDate() { return qs.get('date') || localDateStr(); }
 
   // ---------------------------------------------------------------- game flow
-  startGame(mode, pIdx) {
+  startGame(mode, pIdx, extra) {
     this.clearTimers();
+    if (!(extra && extra.replay)) this.replay = null;
     this.mode = mode;
     const s = this.settings;
     let seed = qs.has('seed') ? +qs.get('seed') : undefined;
     if (mode === 'daily') seed = dailySeed(this.dailyDate());
     let puzzle = null;
     if (mode === 'puzzle') { this.puzzleIdx = clamp(pIdx ?? this.puzzleIdx ?? 0, 0, PUZZLES.length - 1); puzzle = PUZZLES[this.puzzleIdx]; }
-    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf, puzzle });
+    const o22 = this.v22Opts(mode, extra); this.lastOpts = o22;
+    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf, puzzle, ...o22 });
     this.slowT = 0; this.ghostRec = []; this.ghostRun = null; this.combo0 = 0;
     if (mode === 'sprint' && s.raceGhost) { const gh = S.loadJSON(S.GHOST_KEY, null); if (gh && Array.isArray(gh.locks)) this.ghostRun = { ...gh, i: 0, board: Array.from({ length: 20 }, () => new Uint8Array(10)), lines: 0 }; }
     $('#ghostcv').style.display = this.ghostRun && this.L.side ? '' : 'none'; $('#ghost-pace').textContent = '';
@@ -263,9 +273,10 @@ class App {
     this.bg.setWorld(this.world, false); this.bg.board = 1;
     this.setAccent(this.world);
     this.sound.unlock(); this.sound.setVolumes(s.music, s.sfx);
-    this.sound.startMusic(this.world, mode === 'zen');
+    this.sound.startMusic(this.world, mode === 'zen' || mode === 'relax');
     this.layout();
     this.show('game');
+    this.v22Start();
     $('#hud-world').textContent = WORLDS[this.world].name;
     this.running = false;
     this.countdown(DEBUG && qs.has('nocd') ? 0 : 1);
@@ -286,7 +297,8 @@ class App {
     if (!this.game || this.game.over || this.screen !== 'game') return;
     this.clearTimers(); this.running = false; this.input.releaseAll();
     $('#pause-sub').textContent = MODE_INFO[this.mode].name + ' · ' + WORLDS[this.world].name;
-    $('#btn-endzen').style.display = this.mode === 'zen' ? '' : 'none';
+    $('#btn-endzen').style.display = this.mode === 'zen' || this.mode === 'relax' || this.replay ? '' : 'none';
+    $('#btn-endzen').textContent = this.replay ? 'Stop replay' : 'End session';
     this.show('pause');
   }
   resume() {
@@ -297,7 +309,7 @@ class App {
     this.timers.push(setTimeout(() => { cd.textContent = ''; }, 700));
   }
   quit() {
-    this.clearTimers(); this.running = false; this.game = null; this.input.releaseAll();
+    this.clearTimers(); this.running = false; this.game = null; this.input.releaseAll(); this.v22Stop();
     this.fx.P.n = 0; this.bg.board = 0; this.bg.danger = 0;
     this.sound.startMusic(this.titleWorld, true);
     this.show('title');
@@ -317,11 +329,14 @@ class App {
     const dt = clamp((ts - this.last) / 1000, 0, 0.1); this.last = ts;
     const g = this.game;
     const slow = this.slowT > 0 ? 0.3 : 1; if (this.slowT > 0) this.slowT -= dt;
-    if (g && this.screen === 'game' && this.running && !g.over && this.timeScale !== 0) { g.update(dt * 1000 * slow); this.stepGhost(g); }
+    if (g && this.screen === 'game' && this.running && !g.over && this.timeScale !== 0) {
+      if (this.replay) this.stepReplay(dt, slow); else { g.update(dt * 1000 * slow); this.stepGhost(g); }
+      this.v22Frame(dt, slow);
+    }
     if (this.input.pollPads) this.input.pollPads();
     this.sound.relief = Math.max(0, (this.sound.relief || 0) - dt / 5);
     if (g) {
-      this.processEvents(g);
+      this.processEvents(g); this.v22Sample();
       const wi = this.worldFor(g);
       if (wi !== this.world) this.changeWorld(wi);
     }
@@ -329,14 +344,15 @@ class App {
       // stack height drives danger + music intensity
       let top = ROWS; for (let y = HIDDEN - 2; y < ROWS; y++) if (g.board[y].some(v => v)) { top = y; break; }
       const height = ROWS - top; this.stackH = height;
-      const danger = this.mode === 'zen' ? 0 : clamp((height - 13) / 5, 0, 1);
+      const danger = this.mode === 'zen' || this.mode === 'relax' ? 0 : clamp((height - 13) / 5, 0, 1);
       this.fx.danger += (danger - this.fx.danger) * Math.min(1, dt * 4);
       this.bg.danger = this.fx.danger * 0.8;
       const lvlIn = this.mode === 'sprint' ? (g.lines % 8) / 8 : ((g.level - 1) % 3) / 3;
       const target = clamp(0.22 + lvlIn * 0.3 + this.world * 0.06 + height / 20 * 0.3 + Math.max(0, g.combo) * 0.05 + (g.b2b > 0 ? 0.05 : 0), 0, 1);
       this.intensity += (target - this.intensity) * Math.min(1, dt * 0.8);
       this.sound.intensity = this.intensity; this.bg.energy = this.intensity * 0.6;
-      this.sound.tension = this.mode === 'zen' || this.mode === 'puzzle' ? 0 : clamp((height - 9) / 8, 0, 1);
+      this.sound.tension = this.mode === 'zen' || this.mode === 'puzzle' || this.mode === 'relax' ? 0 : clamp((height - 9) / 8, 0, 1);
+      if (this.mode === 'relax') { this.intensity = Math.min(this.intensity, 0.3); this.sound.intensity = this.intensity; this.bg.energy = 0.08; }
     } else {
       this.titleT += dt;
       if (this.titleT > 14) { this.titleT = 0; this.titleWorld = (this.titleWorld + 1) % WORLDS.length; this.bg.setWorld(this.titleWorld); this.fx.setWorld(this.titleWorld); this.setAccent(this.titleWorld); }
@@ -365,9 +381,10 @@ class App {
         case 'hold': this.sound.hold(); break;
         case 'clear': this.onClear(e, g); break;
         case 'levelup': this.onLevel(g); break;
-        case 'zenclear': this.popup('Breathe', 'the well is clear again', 'big', WORLDS[this.world].accent2); this.sound.success(); this.bg.pulseAt(0.5, 0.5); break;
+        case 'zenclear': if (e.relax) { this.popup('Let go', 'the well softens', 'world', WORLDS[this.world].accent2); this.bg.pulseAt(0.5, 0.5); break; } this.popup('Breathe', 'the well is clear again', 'big', WORLDS[this.world].accent2); this.sound.success(); this.bg.pulseAt(0.5, 0.5); break;
         case 'end': this.onEnd(e, g); break;
       }
+      this.v22Event(e, g);
     }
     if (softTicks) this.sound.softTick();
   }
@@ -389,7 +406,7 @@ class App {
     $('#hud-b2b').textContent = g.b2b >= 1 ? 'BACK-TO-BACK ×' + g.b2b : '';
     $('#hud-b2b').classList.toggle('on', g.b2b >= 1);
     // achievements as they happen
-    const live = S.liveUnlocks(this.stats, g.summary());
+    const live = this.replay || this.mode === 'tspin' ? [] : S.liveUnlocks(this.stats, g.summary());
     for (const id of live) if (!this.liveToasted.has(id)) { this.liveToasted.add(id); this.achToast(id); }
   }
   onLevel(g) {
@@ -426,7 +443,7 @@ class App {
     this.shownScore += (g.score - this.shownScore) * Math.min(1, dt * 12); if (Math.abs(g.score - this.shownScore) < 1) this.shownScore = g.score;
     set('score', fmtInt(this.shownScore));
     if (this.mode === 'puzzle') { set('level', String(this.puzzleIdx + 1)); this.lbl('level', 'Puzzle'); set('lines', String(g.queue.length + (g.hold ? 1 : 0) + (g.cur ? 1 : 0))); this.lbl('lines', 'Pieces'); }
-    else if (this.mode === 'sprint') { set('level', String(Math.max(0, 40 - g.lines))); this.lbl('level', 'Left'); }
+    else if (this.mode === 'sprint' || (g.def.goalLines && this.mode !== 'puzzle')) { set('level', String(Math.max(0, (g.def.goalLines || 40) - g.lines))); this.lbl('level', 'Left'); }
     else { set('level', String(g.level)); this.lbl('level', 'Level'); }
     if (this.mode !== 'puzzle') { set('lines', String(g.lines)); this.lbl('lines', 'Lines'); }
     const lim = g.def.timeLimit;
@@ -438,6 +455,7 @@ class App {
   onEnd(e, g) {
     this.running = false; this.input.releaseAll();
     const summary = g.summary();
+    if (this.v22End(e, g, summary)) return;
     if (this.mode === 'puzzle') return this.onPuzzleEnd(e, g, summary);
     if (e.result === 'topout') this.input.rumble(1, 400);
     if (this.mode === 'sprint' && e.result === 'complete') this.saveGhost(summary);
@@ -455,13 +473,14 @@ class App {
     const out = S.recordGame(this.stats, summary, new Date().toISOString(), this.mode === 'daily' ? this.dailyDate() : day);
     this.stats = out.stats; S.saveStats(this.stats);
     this.lastResult = { summary, ...out };
+    this.v22Record(e, summary);
     this.timers.push(setTimeout(() => this.showResults(), DEBUG && qs.has('nocd') ? 300 : 1500));
   }
   showResults() {
     const { summary: s, records: r, unlocked } = this.lastResult; const st = this.stats; const M = st.modes[s.mode];
     $('#res-next').hidden = true;
     $('#res-mode').textContent = MODE_INFO[s.mode].name + (s.mode === 'daily' ? ' · ' + this.dailyDate() : '');
-    const titles = { topout: 'Game Over', complete: 'Complete', timeup: 'Time', ended: 'Session complete' };
+    const titles = { topout: 'Game Over', complete: 'Complete', timeup: 'Time', ended: 'Session complete', win: 'You win' };
     $('#res-title').textContent = titles[s.result] || 'Results';
     const isRecord = r.score || r.time || (r.rank === 1 && !r.first);
     const banner = $('#res-record');
@@ -499,6 +518,7 @@ class App {
     const t0 = performance.now(), dur = 1100;
     const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); const e = 1 - Math.pow(1 - k, 3); scoreEl.textContent = fmtBig(Math.round(big * e)); if (k < 1 && this.screen === 'results') requestAnimationFrame(step); else scoreEl.textContent = fmtBig(big); };
     step(); setTimeout(() => { scoreEl.textContent = fmtBig(big); }, dur + 200);
+    this.v22Results();
     if (isRecord) this.celebrate();
     unlocked.filter(id => !this.liveToasted.has(id)).forEach((id, i) => setTimeout(() => this.achToast(id), 600 + i * 900));
   }
@@ -528,7 +548,8 @@ class App {
   // ---------------------------------------------------------------- stats screen
   buildStats() {
     const st = this.stats; const tabs = $('#stats-tabs');
-    const order = ['marathon', 'sprint', 'ultra', 'zen', 'daily'];
+    const order = ['marathon', 'sprint', 'ultra', 'zen', 'daily'].concat(['journey', 'versus', 'relax', 'challenge'].filter(m => this.feat(m === 'challenge' ? 'challenges' : m)));
+    if (!order.includes(this.statsTab)) this.statsTab = 'marathon';
     tabs.innerHTML = order.map(m => `<button data-tab="${m}" class="${m === this.statsTab ? 'on' : ''}">${MODE_INFO[m].name}</button>`).join('');
     $$('button', tabs).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.statsTab = b.dataset.tab; this.buildStats(); }));
     const m = this.statsTab, M = st.modes[m]; const sprint = m === 'sprint';
@@ -621,6 +642,7 @@ class App {
       else if (type === 'range') html += `<div class="set-row">${left}<div class="slider"><input type="range" data-key="${key}" min="${r[4]}" max="${r[5]}" step="${r[6]}" value="${s[key]}"><output>${r[7](s[key])}</output></div></div>`;
       else if (type === 'toggle') html += `<div class="set-row">${left}<button class="toggle${s[key] ? ' on' : ''}" data-key="${key}" aria-label="${label}"></button></div>`;
     }
+    html += this.v22Settings();
     html += `<h3>Your data</h3><div class="set-actions"><button data-act2="export">Export stats</button><button data-act2="copy">Copy stats</button><button data-act2="reset-settings">Reset settings</button><button class="danger" data-act2="reset">Reset stats</button></div>`;
     html += `<h3>Older versions</h3><p class="older">${OLDER.map(([v, href, d]) => `<a href="${href}">${v}</a><span class="dim">${d}</span>`).join(' ')}</p>`;
     html += `<div class="about">LUMEN ${VERSION} · <button data-act2="update" style="text-decoration:underline">Check for update</button> <span id="upd-msg"></span></div>`;
@@ -635,7 +657,8 @@ class App {
       const key = inp.dataset.key; const v = +inp.value; inp.nextElementSibling.textContent = fmts[key](v);
       this.settings[key] = v; S.saveSettings(this.settings); this.applySettingsLite(key);
     }));
-    $$('.toggle', body).forEach(t => t.addEventListener('click', e => { e.stopPropagation(); const k = t.dataset.key; this.setSetting(k, !this.settings[k]); t.classList.toggle('on', this.settings[k]); }));
+    this.v22BindSettings(body);
+    $$('.toggle:not(.ftoggle)', body).forEach(t => t.addEventListener('click', e => { e.stopPropagation(); const k = t.dataset.key; this.setSetting(k, !this.settings[k]); t.classList.toggle('on', this.settings[k]); }));
     $$('[data-act2]', body).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.settingsAction(b.dataset.act2, b); }));
   }
   applySettingsLite(key) {
@@ -674,7 +697,7 @@ class App {
   }
 
   // ---------------------------------------------------------------- v2.0 additions
-  worldFor(g) { return this.mode === 'puzzle' ? worldIndexFor('puzzle', (this.puzzleIdx || 0) + 1, 0) : worldIndexFor(this.mode, g.level, g.lines); }
+  worldFor(g) { const w22 = this.v22WorldFor(g); if (w22 != null) return w22; return this.mode === 'puzzle' ? worldIndexFor('puzzle', (this.puzzleIdx || 0) + 1, 0) : worldIndexFor(this.mode, g.level, g.lines); }
   setCombo(c) {
     const el = $('#hud-combo'); if (!el) return;
     if (c >= 1) { el.textContent = (c + 1) + '× COMBO'; el.classList.add('on'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); this.sound.combo(c); setTimeout(() => el.classList.remove('bump'), 160); }
@@ -805,5 +828,6 @@ class App {
   }
 }
 
+installV22(App);
 const app = new App();
 app.boot().catch(e => { console.error(e); if (window.__lumenFail) window.__lumenFail('Startup failed: ' + (e && e.message ? e.message : e)); });

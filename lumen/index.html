@@ -71,6 +71,7 @@
   <div id="hud-b2b"></div>
   <div id="hud-combo"></div>
   <div id="ghost-pace"></div>
+  <div id="gmeter" style="display:none"><i></i></div>
   <button id="btn-pause" aria-label="Pause"><span></span><span></span></button>
 </div>
 
@@ -89,6 +90,10 @@
 </div>
 
 <canvas id="ghostcv" style="display:none"></canvas>
+<canvas id="cpucv" style="display:none"></canvas>
+<div id="tspin-call"></div>
+<div id="tut-tip" hidden></div>
+<div id="replay-bar" hidden><span class="rb-l">REPLAY</span><button data-do="rs1" data-rs="1">1×</button><button data-do="rs2" data-rs="2">2×</button><button data-do="rs4" data-rs="4">4×</button><button data-do="rexit">Exit</button></div>
 <div id="popups"></div>
 <div id="countdown"></div>
 
@@ -97,7 +102,7 @@
   <div class="title-wrap">
     <h1 class="logo" aria-label="Lumen"><span>L</span><span>U</span><span>M</span><span>E</span><span>N</span></h1>
     <p class="tagline">a game of light and falling glass</p>
-    <p class="ver-tag" id="ver-tag">version 2.1</p>
+    <p class="ver-tag" id="ver-tag">version 2.2</p>
     <div class="modes" id="mode-list"></div>
     <nav class="title-nav">
       <button data-go="stats">Records</button>
@@ -147,6 +152,38 @@
     <p class="sub" id="pz-sum"></p>
     <p class="sub">Empty the whole well with exactly the pieces shown. Solve one to open more. Faster solves earn more stars.</p>
     <div class="pz-grid" id="pz-grid"></div>
+  </div>
+</section>
+
+<!-- v2.2 JOURNEY -->
+<section class="screen scroll" id="scr-journey">
+  <div class="panel wide">
+    <div class="panel-head"><h2>Journey</h2><button class="close" data-back aria-label="Close">&#x2715;</button></div>
+    <p class="sub">The light has gone out of six worlds. Clear each world's lines under its own rule to light it again and open the next.</p>
+    <div class="jr-list" id="jr-list"></div>
+  </div>
+</section>
+<!-- v2.2 VERSUS -->
+<section class="screen scroll" id="scr-versus">
+  <div class="panel wide">
+    <div class="panel-head"><h2>Versus CPU</h2><button class="close" data-back aria-label="Close">&#x2715;</button></div>
+    <p class="sub">Doubles, triples, Tetrises, T-spins and combos send grey garbage lines to your opponent. Clearing lines cancels lines coming at you. Last one standing wins.</p>
+    <div class="modes" id="vs-list"></div>
+  </div>
+</section>
+<!-- v2.2 CHALLENGES -->
+<section class="screen scroll" id="scr-challenges">
+  <div class="panel wide">
+    <div class="panel-head"><h2>Challenges</h2><button class="close" data-back aria-label="Close">&#x2715;</button></div>
+    <div id="ch-body"></div>
+  </div>
+</section>
+<!-- v2.2 REPLAYS -->
+<section class="screen scroll" id="scr-replays">
+  <div class="panel wide">
+    <div class="panel-head"><h2>Replays</h2><button class="close" data-back aria-label="Close">&#x2715;</button></div>
+    <p class="sub">Your best game in each mode, saved on this device.</p>
+    <div id="rep-list"></div>
   </div>
 </section>
 
@@ -206,6 +243,7 @@
         <li>Tetrises and T-spins in a row are <b>back-to-back</b> (&times;1.5). Clears on consecutive pieces build a <b>combo</b>.</li>
         <li>Empty the whole well for a <b>Perfect Clear</b>.</li>
       </ul>
+      <p id="tut-btn" hidden><button class="primary" data-do="tspin-tut">Try the T-spin tutorial</button></p>
       <h3>Worlds</h3>
       <p>Every few levels the world changes: Dawn Tide, Aurora Veil, Neon Rain, Crystal Hollow, Deep Field and the Solar Crown. The music grows with you.</p>
       <h3>On iPhone and iPad</h3>

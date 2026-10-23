@@ -4,11 +4,11 @@
    - A new release installs in the background and waits. The page tells it to take over only when you are not mid-game,
      then reloads once, so the whole app switches version atomically.
    - All paths are relative, so it works at / or under a sub-path. */
-const VERSION = '2.1.0';
+const VERSION = '2.2.0';
 const CACHE = 'lumen-' + VERSION;
 const ASSETS = [
   './', 'index.html', 'style.css', 'game.js', 'manifest.webmanifest',
-  'js/rules.js', 'js/puzzles.js', 'js/worlds.js', 'js/bg.js', 'js/render.js', 'js/audio.js', 'js/input.js', 'js/stats.js',
+  'js/rules.js', 'js/puzzles.js', 'js/worlds.js', 'js/bg.js', 'js/render.js', 'js/audio.js', 'js/input.js', 'js/stats.js', 'js/v22.js',
   'fonts/outfit.woff2', 'fonts/cormorant-italic.woff2',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/favicon-32.png',
 ];
