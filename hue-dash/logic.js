@@ -3,7 +3,8 @@ export const DT = 1 / 120;
 export const G = 60, JUMP = 18, DJUMP = 16, PAD = 27, HOLD_T = 0.22, HOLD_G = 0.42;
 export const PW = 0.3, PH = 1.4;
 // forgiveness windows (seconds): coyote jump after leaving a ledge, buffered jump before landing, colour-touch grace
-export const COYOTE = 0 /* off: the always-available air jump already covers late ledge taps, and a full ground jump here broke the verified level routes */, BUFFER = 0.12, GRACE = 0.07;
+// v1.1: coyote time on (every level route re-verified by the solver), longer buffer, apex hang, step-up ledges
+export const COYOTE = 0.09, BUFFER = 0.14, GRACE = 0.08, APEX_V = 4, APEX_G = 0.62, STEP_UP = 0.42, RAMP_T = 0.7;
 export const COLORS = [null, 'magenta', 'gold', 'cyan'];
 
 export function nextColor(c, n) { return (c % n) + 1; }
@@ -40,7 +41,12 @@ export function newState(lvl) {
     dead: false, cause: '', fin: false, gems: 0, boosts: 0, boostT: 0, switches: 0, jumpsN: 0, fallT: {}, grav: 0, padT: 0, events: null, airT: 0, bufT: 0, graceT: 0, coy: true, saves: 0 };
 }
 export function clone(s) { const c = { ...s }; c.fallT = { ...s.fallT }; return c; }
-export function speedAt(lvl, s) { return lvl.v0 + (lvl.v1 - lvl.v0) * Math.min(1, s.x / lvl.end) + (s.boostT > 0 ? 4 : 0); }
+// smooth acceleration: eases up from 55% speed over the first RAMP_T seconds; boosts fade in and out
+export function speedAt(lvl, s) {
+  const k = Math.min(1, s.t / RAMP_T), ease = 0.55 + 0.45 * k * k * (3 - 2 * k);
+  const b = s.boostT > 0 ? 4 * Math.min(1, (1.4 - s.boostT) / 0.18, s.boostT / 0.35) : 0;
+  return (lvl.v0 + (lvl.v1 - lvl.v0) * Math.min(1, s.x / lvl.end)) * ease + b;
+}
 
 function die(s, cause) { s.dead = true; s.cause = cause; }
 
@@ -59,6 +65,7 @@ export function step(s, lvl, inp) {
   if (!inp.jh) s.holding = false;
   let g = G;
   if (s.holding && s.vy * s.gs > 0 && s.holdT < HOLD_T) { g *= HOLD_G; s.holdT += DT; }
+  else if (Math.abs(s.vy) < APEX_V) g *= APEX_G;   // a little hang time at the top of every arc
   s.vy -= g * s.gs * DT;
   const t = s.t;
   const px = s.x, py = s.y;
@@ -80,10 +87,12 @@ export function step(s, lvl, inp) {
     if (gs > 0) {
       if (s.vy <= 0 && py >= top - eps) { s.y = top; s.vy = 0; s.grounded = true; if (!support || (s.x >= p.x && s.x <= p.x + p.w)) support = p; }
       else if (s.vy > 0 && py + PH <= bot + eps) { s.y = bot - PH; s.vy = 0; touch(s, p, t); }
+      else if (top - s.y <= STEP_UP) { s.y = top; s.vy = 0; s.grounded = true; s.stepUps = (s.stepUps || 0) + 1; if (!support) support = p; }   // forgiving edge: clipped a lip, pop up onto it
       else { die(s, 'crash'); return s; }
     } else {
       if (s.vy >= 0 && py <= bot + eps) { s.y = bot; s.vy = 0; s.grounded = true; if (!support || (s.x >= p.x && s.x <= p.x + p.w)) support = p; }
       else if (s.vy < 0 && py - PH >= top - eps) { s.y = top + PH; s.vy = 0; touch(s, p, t); }
+      else if (s.y - bot <= STEP_UP) { s.y = bot; s.vy = 0; s.grounded = true; s.stepUps = (s.stepUps || 0) + 1; if (!support) support = p; }
       else { die(s, 'crash'); return s; }
     }
     if (s.dead) return s;

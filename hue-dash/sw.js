@@ -5,8 +5,8 @@
    - versioned files (?v=...) are only ever answered with that exact version, never another release's file;
    - the previous release's cache is kept one extra release, so a page that is still open during an update
      can finish loading its own files. */
-const VERSION = '202610162218';
-const CACHE = 'huedash-' + VERSION;
+const VERSION = '202610240033';
+const CACHE = 'huedash-main-' + VERSION;   // v1.1+: own prefix; frozen copies (hue-dash-v1.0/ etc.) use huedash-vX.Y- and never touch these
 const ASSETS = [
   './', 'index.html', 'style.css?v=' + VERSION, 'logic.js?v=' + VERSION, 'levels.js?v=' + VERSION, 'game.js?v=' + VERSION, 'audio.js?v=' + VERSION,
   'manifest.webmanifest?v=' + VERSION, 'fredoka.ttf', 'vendor/three/three.module.js',
@@ -25,7 +25,9 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     // keep this release and the newest older one (cache names sort by their date-based version)
-    const old = (await caches.keys()).filter(k => k.startsWith('huedash-') && k !== CACHE).sort();
+    const all = await caches.keys();
+    await Promise.all(all.filter(k => /^huedash-\d/.test(k)).map(k => caches.delete(k)));   // pre-1.1 main caches
+    const old = all.filter(k => k.startsWith('huedash-main-') && k !== CACHE).sort();
     const keep = old.filter(k => k < CACHE).pop();
     await Promise.all(old.filter(k => k !== keep).map(k => caches.delete(k)));
     await self.clients.claim();
