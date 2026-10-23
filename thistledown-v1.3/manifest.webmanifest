@@ -1,0 +1,2 @@
+{"name":"Thistledown","short_name":"Thistledown","description":"A small light in a fading forest.","start_url":"./","scope":"./","display":"fullscreen","orientation":"landscape","background_color":"#1d4a63","theme_color":"#1d4a63",
+"icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
