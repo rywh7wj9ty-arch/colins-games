@@ -1,7 +1,7 @@
 // Thistledown - procedural audio (original). Piano/strings ambient + SFX.
 (function(root){
 'use strict';
-var A={ctx:null,music:0.7,sfx:0.8,area:-1,on:false};
+var A={ctx:null,music:0.7,sfx:0.8,area:-1,on:false,md:'normal',lv:1};var MM={quiet:0.55,normal:1,boss:1.15,chase:1.3};
 var ctx,mG,sG,rev,master,nextT=0,step=0,timer=null;
 var SONGS=[
  {root:57,ch:[[0,4,7,11],[-3,0,4,7],[-7,-3,0,4],[-5,-1,2,7]],tempo:0.42},  // A-ish major, gentle
@@ -33,17 +33,21 @@ function strings(t,ms,dur,v){
 function sched(){
   if(!ctx||A.area<0)return;var S=SONGS[A.area%SONGS.length];
   while(nextT<ctx.currentTime+0.6){
+    var md=A.md,inten=md==='chase'?2:md==='boss'?1:md==='quiet'?-1:0;
     var bar=Math.floor(step/8),ch=S.ch[bar%4],pos=step%8,t=nextT;
+    if(inten>=1){var pv=inten===2?0.16:0.1;if(pos%2===0)piano(t,S.root-24+ch[0],pv,0.5);if(inten===2){strings(t,[S.root+ch[pos%2?2:1]+12],S.tempo*0.9,0.1);}}
+    if(inten===2&&pos===4)strings(t,[S.root-12+ch[0],S.root+ch[2],S.root+12+ch[1]],S.tempo*4.2,0.16);
     if(pos===0){strings(t,[S.root-12+ch[0],S.root+ch[1],S.root+ch[2]],S.tempo*8.4,0.18);piano(t,S.root-12+ch[0],0.22,3.5);}
     var pat=[0,2,1,3,2,1,3,2];var r=(step*7919+bar*13)%11;
-    if(pos!==7||r>4){var n=S.root+12+ch[pat[pos]%ch.length]+(r===3&&pos===4?12:0);piano(t+(r%3)*0.012,n,0.11+(pos===0?0.05:0),2.4);}
+    if(inten<0&&pos%2===1){}else if(pos!==7||r>4){var n=S.root+12+ch[pat[pos]%ch.length]+(r===3&&pos===4?12:0);piano(t+(r%3)*0.012,n,0.11+(pos===0?0.05:0),2.4);}
     if(bar%4===3&&pos===6)piano(t,S.root+24+ch[3%ch.length],0.06,3);
-    nextT+=S.tempo;step++;
+    nextT+=S.tempo*(inten===2?0.62:inten===1?0.8:inten<0?1.2:1);step++;
   }
 }
 A.start=function(){init();if(!ctx)return;if(ctx.state==='suspended')ctx.resume();if(!timer){nextT=ctx.currentTime+0.1;timer=setInterval(sched,150);}A.on=true;};
+A.mood=function(m){if(A.md===m)return;A.md=m;if(mG&&ctx)mG.gain.setTargetAtTime(A.music*0.5*MM[m],ctx.currentTime,0.8);};
 A.setArea=function(i){if(A.area!==i){A.area=i;step=0;if(ctx)nextT=ctx.currentTime+0.3;}};
-A.setVol=function(m,s){A.music=m;A.sfx=s;if(mG){mG.gain.value=m*0.5;sG.gain.value=s*0.6;}};
+A.setVol=function(m,s){A.music=m;A.sfx=s;if(mG){mG.gain.value=m*0.5*MM[A.md];sG.gain.value=s*0.6;}};
 function tone(type,f0,f1,dur,v,delay){if(!ctx||A.sfx<=0)return;var t=ctx.currentTime+(delay||0),o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(sG);o.start(t);o.stop(t+dur+0.02);}
 function noise(dur,f,v,q){if(!ctx||A.sfx<=0)return;var t=ctx.currentTime,len=Math.floor(ctx.sampleRate*dur),b=ctx.createBuffer(1,len,ctx.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*(1-i/len);var s=ctx.createBufferSource();s.buffer=b;var bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q||1;var g=ctx.createGain();g.gain.value=v;s.connect(bp);bp.connect(g);g.connect(sG);s.start(t);}
 var last={};
@@ -77,6 +81,21 @@ A.sfx_=function(n,a){
    case 'chase':tone('sawtooth',110,80,1.2,0.12);break;
    case 'chaseDone':[72,79,84].forEach(function(m,i){tone('sine',mtof(m),mtof(m),1,0.12,i*0.1);});break;
    case 'bossHit':tone('sine',500,250,0.6,0.2);[79,83].forEach(function(m,i){tone('sine',mtof(m),mtof(m),0.8,0.1,0.2+i*0.1);});break;
+   case 'shoot':tone('triangle',1400,2400,0.12,0.08);noise(0.1,5000,0.06);break;
+   case 'switch':[76,83,88].forEach(function(m,i){tone('sine',mtof(m),mtof(m),0.6,0.1,i*0.06);});break;
+   case 'shatter':noise(0.3,3500,0.18,0.8);tone('triangle',2000,900,0.25,0.06);break;
+   case 'petal':[79,83,86,91,95].forEach(function(m,i){tone('sine',mtof(m),mtof(m),1.4,0.11,i*0.12);});break;
+   case 'night':[64,67,71].forEach(function(m,i){tone('sine',mtof(m),mtof(m),1.5,0.08,i*0.2);});break;
+   case 'warp':tone('sine',300,900,0.6,0.12);break;
+   case 'well':[67,74,79].forEach(function(m,i){tone('sine',mtof(m),mtof(m),1,0.08,i*0.1);});break;
+   case 'bossTell':tone('triangle',330,330,0.18,0.1);tone('triangle',440,440,0.18,0.08,0.2);break;
+   case 'gustTell':noise(0.6,900,0.12,0.5);break;
+   case 'gust':noise(1.3,600,0.2,0.4);break;
+   case 'bossStun':case 'bossOpen':[84,88].forEach(function(m,i){tone('sine',mtof(m),mtof(m),0.4,0.09,i*0.08);});break;
+   case 'trialStart':[72,72,84].forEach(function(m,i){tone('square',mtof(m),mtof(m),0.15,0.05,i*0.25);});break;
+   case 'trialDone':[72,76,79,84].forEach(function(m,i){tone('sine',mtof(m),mtof(m),0.8,0.12,i*0.09);});break;
+   case 'chaseCp':tone('sine',mtof(84),mtof(84),0.5,0.1);break;
+   case 'trueEnd':
    case 'bossDone':[60,64,67,72,76,79,84].forEach(function(m,i){tone('sine',mtof(m),mtof(m),2,0.12,i*0.15);});break;
   }
 };
