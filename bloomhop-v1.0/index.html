@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bloomhop</title>
+<meta name="theme-color" content="#7fd4ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bloomhop">
+<link rel="manifest" href="manifest.webmanifest?v=202610242330">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css?v=202610242330">
+<script>
+window.__V = '202610242330';
+window.__bootFail = function (msg) {
+  if (window.__booted) return;
+  var e = document.getElementById('err'); if (!e) return;
+  document.getElementById('loading').style.display = 'none';
+  e.style.display = 'flex'; document.getElementById('errmsg').textContent = String(msg).slice(0, 300);
+};
+window.addEventListener('error', function (ev) { window.__bootFail(ev.message || 'Script error'); });
+window.addEventListener('unhandledrejection', function (ev) { window.__bootFail((ev.reason && ev.reason.message) || ev.reason); });
+setTimeout(function () { if (!window.__booted) window.__bootFail('Loading took too long.'); }, 20000);
+</script>
+</head>
+<body>
+<div id="game"></div>
+<div id="flash"></div>
+<div id="loading"><div class="sprout"></div><span>Growing the meadow…</span></div>
+<div id="err" onclick="location.reload()"><b>Oops, the meadow wilted</b><span id="errmsg"></span><em>Tap to reload</em></div>
+
+<div id="title" class="screen">
+  <div class="logo"><div class="l1"><i>B</i><i>l</i><i>o</i><i>o</i><i>m</i><i>h</i><i>o</i><i>p</i></div><span class="l2">Sunsprout Meadow</span></div>
+  <div class="ver" id="verLabel">v1.0</div>
+  <div class="tap" id="tapStart">Tap to Start</div>
+  <div class="tbtns">
+    <button class="pill big green" id="bPlay" data-nav>▶ Play</button>
+    <button class="pill blue" id="bStats" data-nav>Stats</button>
+    <button class="pill yellow" id="bSettings" data-nav>Settings</button>
+  </div>
+  <div class="howto"><span>Left pad · <b>move</b></span><span>Big button · <b>jump</b> (hold = higher)</span><span>Run button · <b>dash</b></span><span>🎮 A jump · X run · ⌨ ←→ Space Shift</span></div>
+  <div id="a2hs" class="a2hs"><span>Play full screen: tap <b>Share</b> <svg viewBox="0 0 24 24"><path d="M12 3l4 4h-3v7h-2V7H8zM5 10h3v2H6v8h12v-8h-2v-2h3v12H5z"/></svg> then <b>Add to Home Screen</b></span><button id="a2hsX" aria-label="Dismiss">✕</button></div>
+</div>
+
+<div id="hud">
+  <button class="pill round small" id="bPause" aria-label="Pause">❚❚</button>
+  <div class="coins"><span class="ci"></span><b id="hCoins">0</b></div>
+  <div class="score" id="hScore">0</div>
+  <div class="medals"><i id="md0"></i><i id="md1"></i><i id="md2"></i></div>
+  <div class="time" id="hTime">0:00</div>
+  <div id="wonderBar"><div id="wonderFill"></div><span>DAZZLE!</span></div>
+  <div id="banner"></div>
+</div>
+
+<div id="pad"><div id="padBase"><div id="padKnob"></div></div></div>
+<div id="btnRun" class="tbtn">RUN</div>
+<div id="btnJump" class="tbtn">▲</div>
+
+<div id="pause" class="screen modal"><div class="card">
+  <h2>Paused</h2>
+  <div class="sliders"></div>
+  <div class="btns"><button class="pill" id="pRestart" data-nav>Restart</button><button class="pill" id="pQuit" data-nav>Title</button><button class="pill green" id="pResume" data-nav>Resume</button></div>
+</div></div>
+
+<div id="settings" class="screen modal"><div class="card">
+  <h2>Settings</h2>
+  <div class="sliders"></div>
+  <label class="row"><span>Graphics quality</span><select id="optQuality" data-nav><option value="auto">Auto (adapts to keep it smooth)</option><option value="high">High</option><option value="low">Battery saver</option></select></label>
+  <label class="row"><span>Screen shake</span><input type="checkbox" id="optShake" data-nav></label>
+  <label class="row"><span>Show touch buttons</span><input type="checkbox" id="optTouch" data-nav></label>
+  <h3>Older versions</h3>
+  <div class="older"><a class="pill small" href="../bloomhop-v1.0/" data-nav>v1.0 · first level (this version)</a></div>
+  <p class="sub">Bloomhop v1.0 · one level: Sunsprout Meadow</p>
+  <div class="btns"><button class="pill green" id="sClose" data-nav>Done</button></div>
+</div></div>
+
+<div id="stats" class="screen modal"><div class="card wide">
+  <h2>Stats</h2>
+  <div id="statGrid"></div>
+  <div class="btns"><button class="pill green" id="stClose" data-nav>Done</button></div>
+</div></div>
+
+<div id="results" class="screen modal"><div class="card wide">
+  <h2 class="clear">Level Clear!</h2>
+  <div id="rRows"></div>
+  <div class="btns"><button class="pill" id="rTitleB" data-nav>Title</button><button class="pill green" id="rRetry" data-nav>Replay</button></div>
+</div></div>
+
+<div id="rotate"><div>↻</div>Turn your phone sideways</div>
+<div id="toasts"></div>
+<script type="module" src="game.js?v=202610242330"></script>
+</body>
+</html>
