@@ -1,8 +1,8 @@
 // HUE DASH: rendering, input, UI, progress. Physics lives in logic.js (deterministic, tested in Node).
 import * as THREE from './vendor/three/three.module.js';
-import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610240033';
-import { LEVELS, WORLDS } from './levels.js?v=202610240033';
-import { Audio } from './audio.js?v=202610240033';
+import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610240111';
+import { LEVELS, WORLDS } from './levels.js?v=202610240111';
+import { Audio } from './audio.js?v=202610240111';
 
 const $ = id => document.getElementById(id);
 const HEX = [0xd3dbe2, 0xf0367f, 0xf7b520, 0x26c6da];
@@ -73,6 +73,7 @@ function curTheme() { try { return theme; } catch (e) { return null; } }
 function applyBright() { const b = save.set.bright || 1, n = THEMES.indexOf(curTheme()) === 3; hemi.intensity = (n ? 1.3 : 1.15) * b; sun.intensity = (n ? 1.0 : 1.7) * b; document.documentElement.style.setProperty('--bright', b); } sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 12, bottom: -12, near: 1, far: 60 });
 sun.shadow.bias = -0.0006; sun.shadow.radius = 4; scene.add(sun); scene.add(sun.target);
+hemi.layers.enable(1); sun.layers.enable(1); sun.shadow.camera.layers.enable(1);   // v1.2: light + shadow the crisp player layer
 scene.fog = new THREE.FogExp2(0x9cb0c2, 0.0125);
 const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, glow: { value: new THREE.Color() }, gdir: { value: new THREE.Vector3(0.82, 0.12, -0.56).normalize() } },
@@ -103,9 +104,12 @@ void main(){
   vec3 c = mix(sh, bl, clamp(max(far*0.92, near), 0.0, 1.0));
   c += max(bl - vec3(0.58), vec3(0.0))*bloom;
   gl_FragColor = vec4(c, 1.0);
+  gl_FragDepth = texture2D(tD, vUv).r;
   #include <colorspace_fragment>
 }`, { tS: { value: null }, tB: { value: null }, tD: { value: null }, cn: { value: camera.near }, cf: { value: camera.far }, focus: { value: 16 }, bloom: { value: 0.7 } });
+pComp.m.depthTest = true; pComp.m.depthWrite = true; pComp.m.depthFunc = THREE.AlwaysDepth;
 let rtMain = null, rtA = null, rtB = null;
+const PLAYER_LAYER = 1;
 function sizePost() {
   const v = renderer.getDrawingBufferSize(new THREE.Vector2()), w = Math.max(4, v.x), h = Math.max(4, v.y);
   const usePost = Q.level >= 2;
@@ -119,8 +123,9 @@ function sizePost() {
   }
 }
 function renderFrame() {
-  if (!rtMain) { renderer.setRenderTarget(null); renderer.render(scene, camera); return; }
-  renderer.setRenderTarget(rtMain); renderer.render(scene, camera);
+  camera.layers.set(0);
+  if (!rtMain) { renderer.setRenderTarget(null); renderer.render(scene, camera); }
+  else { renderer.setRenderTarget(rtMain); renderer.render(scene, camera);
   pDown.m.uniforms.t.value = rtMain.texture; pDown.m.uniforms.px.value.set(1.5 / rtMain.width, 1.5 / rtMain.height);
   renderer.setRenderTarget(rtA); renderer.render(pDown.sc, fsCam);
   const iw = 1 / rtA.width, ih = 1 / rtA.height;
@@ -129,11 +134,16 @@ function renderFrame() {
     pBlur.m.uniforms.t.value = rtB.texture; pBlur.m.uniforms.dir.value.set(0, ih * k); renderer.setRenderTarget(rtA); renderer.render(pBlur.sc, fsCam);
   }
   const u = pComp.m.uniforms; u.tS.value = rtMain.texture; u.tB.value = rtA.texture; u.tD.value = rtMain.depthTexture; u.cn.value = camera.near; u.cf.value = camera.far;
-  renderer.setRenderTarget(null); renderer.render(pComp.sc, fsCam);
+  renderer.setRenderTarget(null); renderer.render(pComp.sc, fsCam); }
+  // v1.2: the runner is drawn last, straight to the antialiased canvas: no DOF blur, no bloom smear, no fog
+  const ac = renderer.autoClear, su = renderer.shadowMap.autoUpdate, bg = scene.background;
+  renderer.autoClear = false; renderer.shadowMap.autoUpdate = false; scene.background = null; camera.layers.set(PLAYER_LAYER);
+  renderer.render(scene, camera);
+  renderer.autoClear = ac; renderer.shadowMap.autoUpdate = su; scene.background = bg; camera.layers.enableAll();
 }
 function setQuality(l) {
   Q.level = Math.max(0, Math.min(3, l));
-  renderer.setPixelRatio(Math.min([1, 1.25, 1.5, 2][Q.level], devicePixelRatio || 1));
+  renderer.setPixelRatio(Math.min([1.5, 1.5, 1.75, 2][Q.level], devicePixelRatio || 1));   // v1.2: higher floor so the runner never goes soft
   renderer.shadowMap.enabled = Q.level >= 3; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
   if (reflGroup) reflGroup.visible = Q.level >= 2;
   resize(); sizePost(); window.__quality = Q.level;
@@ -238,9 +248,19 @@ function flash(col, a) { if (save.set.reduced) a *= 0.5; const f = $('flash'); f
 let ringT = 0;
 
 // ---------- runner ----------
+// v1.2 crisp runner: own materials (no fog, a touch of self-light), a thin dark outline, drawn in the player layer after post
+const rmat = (hex, o = {}) => mat(hex, { roughness: 0.6, emissive: hex, emissiveIntensity: 0.14, ...o, fog: false });
+const outlineMat = new THREE.MeshBasicMaterial({ color: 0x2b3442, side: THREE.BackSide, fog: false });
+function crispRunner() {
+  const r = runner; window.__runnerRef = r;
+  r.g.traverse(o => { if (o.isMesh && !o.userData.outline && !o.userData.hasOutline) {
+    const s = o.scale, t = 0.035, ol = new THREE.Mesh(box, outlineMat); ol.userData.outline = true;
+    ol.scale.set(1 + 2 * t / s.x, 1 + 2 * t / s.y, 1 + 2 * t / s.z); o.add(ol); o.userData.hasOutline = true; } });
+  r.g.traverse(o => o.layers.set(PLAYER_LAYER));
+}
 function makeRunner(ghost) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
-  const m = o => ghost ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false }) : mat(o);
+  const m = o => ghost ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false }) : rmat(o);
   const parts = {};
   const add = (name, w, h, d, x, y, z, color, parent = body) => { const ms = new THREE.Mesh(box, m(color)); ms.scale.set(w, h, d); ms.position.set(x, y, z); ms.castShadow = !ghost; parent.add(ms); parts[name] = ms; return ms; };
   add('board', 1.35, 0.12, 0.5, 0, 0.1, 0, 0xffffff); add('stripe', 1.0, 0.03, 0.52, 0, 0.17, 0, 0xd6246e);
@@ -264,15 +284,15 @@ function dressRunner(r) {
   else if (o === 'halo') { a.scale.set(0.5, 0.04, 0.5); a.position.y = 0.2; b.scale.set(0.04, 0.2, 0.04); b.position.y = 0.08; }
   r.hatParts = [a, b];
   const bd = BOARDS.find(x => x.id === save.look.board) || BOARDS[0];
-  if (!r.ghost) { r.parts.board.material = mat(bd.c); r.parts.stripe.material = mat(bd.s); }
+  if (!r.ghost) { r.parts.board.material = rmat(bd.c); r.parts.stripe.material = rmat(bd.s); if (r === window.__runnerRef) crispRunner(); }
 }
 function paintRunner(r, c) {
   if (r.ghost) return;
-  const m = mat(HEX[c], { roughness: 0.55 });
+  const m = rmat(HEX[c], { roughness: 0.55 });
   ['torso', 'armB', 'armF'].forEach(k => r.parts[k].material = m); r.hatParts.forEach(p => p.material = m);
   const bd = BOARDS.find(x => x.id === save.look.board); if (bd.id === 'snow' || bd.id === 'prism') r.parts.stripe.material = m;
 }
-const runner = makeRunner(false); scene.add(runner.g); dressRunner(runner); const RUN_S = 0.82; runner.g.scale.setScalar(RUN_S);
+const runner = makeRunner(false); scene.add(runner.g); dressRunner(runner); const RUN_S = 0.95; runner.g.scale.setScalar(RUN_S); crispRunner();
 const ghost = makeRunner(true); scene.add(ghost.g); dressRunner(ghost); ghost.g.visible = false; ghost.g.scale.setScalar(RUN_S);
 
 // ---------- level building ----------
