@@ -5,7 +5,7 @@
    - versioned files (?v=...) are only ever answered with that exact version, never another release's file;
    - the previous release's cache is kept one extra release, so a page that is still open during an update
      can finish loading its own files. */
-const VERSION = '202610242330';
+const VERSION = '202610250100';
 const CACHE = 'bloomhop-main-' + VERSION;   
 const ASSETS = [
   './', 'index.html', 'style.css?v=' + VERSION, 'level.js?v=' + VERSION, 'game.js?v=' + VERSION, 'audio.js?v=' + VERSION,

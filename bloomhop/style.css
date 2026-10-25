@@ -52,8 +52,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #7fd4ff; fon
 #banner { top: 30%; left: 0; right: 0; text-align: center; font-size: min(10vw, 64px); color: #fff; text-shadow: 3px 0 0 #2b3a67,-3px 0 0 #2b3a67,0 3px 0 #2b3a67,0 -3px 0 #2b3a67,2px 2px 0 #2b3a67,-2px 2px 0 #2b3a67,2px -2px 0 #2b3a67,-2px -2px 0 #2b3a67,0 6px 0 #2b3a67; opacity: 0; transform: scale(.6); transition: all .35s cubic-bezier(.3,1.6,.5,1); }
 #banner.on { opacity: 1; transform: scale(1); }
 #pad { position: fixed; left: 0; top: 0; bottom: 0; width: 45%; z-index: 6; display: none; touch-action: none; }
-#padBase { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.55); left: calc(env(safe-area-inset-left) + 40px); bottom: calc(env(safe-area-inset-bottom) + 30px); transition: opacity .2s; }
-#padKnob { position: absolute; width: 64px; height: 64px; border-radius: 50%; left: 38px; top: 38px; background: rgba(255,255,255,.55); box-shadow: 0 4px 10px rgba(0,0,0,.2); }
+#padBase { position: absolute; width: 116px; height: 116px; border-radius: 50%; background: rgba(255,255,255,.18); border: 3px solid rgba(255,255,255,.55); left: calc(env(safe-area-inset-left) + 12px); bottom: calc(env(safe-area-inset-bottom) + 22px); transition: opacity .2s; }
+#padKnob { position: absolute; width: 54px; height: 54px; border-radius: 50%; left: 28px; top: 28px; background: rgba(255,255,255,.55); box-shadow: 0 4px 10px rgba(0,0,0,.2); }
 #pad.act #padBase { background: rgba(255,255,255,.28); } #pad.act #padKnob { background: rgba(255,255,255,.8); }
 .tbtn { position: fixed; z-index: 6; display: none; border-radius: 50%; color: rgba(255,255,255,.95); font-weight: 700; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,.6); text-shadow: 0 2px 2px rgba(0,0,0,.25); touch-action: none; transition: transform .06s, background .06s; }
 #btnJump { width: 110px; height: 110px; right: calc(env(safe-area-inset-right) + 30px); bottom: calc(env(safe-area-inset-bottom) + 30px); background: rgba(63,196,90,.38); font-size: 40px; }
@@ -79,3 +79,17 @@ body.touchui.playing #pad { display: block; } body.touchui.playing .tbtn { displ
 #toasts { position: fixed; top: calc(env(safe-area-inset-top) + 64px); right: calc(env(safe-area-inset-right) + 14px); z-index: 30; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
 .toast { background: rgba(255,255,255,.95); padding: 8px 14px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,.2); animation: tin .3s; }
 @keyframes tin { from { transform: translateX(30px); opacity: 0; } }
+
+/* v1.1 world map + level intro */
+.mapcard { min-width: min(720px, 92vw); }
+#mapNodes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 8px 0; }
+.node { font: 700 14px 'Fredoka', sans-serif; border: none; border-radius: 18px; padding: 8px 4px 6px; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  box-shadow: inset 0 -5px 0 rgba(0,0,0,.16), 0 4px 10px rgba(30,60,90,.2); min-height: 92px; }
+.node .n { font-size: 26px; line-height: 1; } .node .nm { font-size: 12px; line-height: 1.1; text-align: center; } .node .st { font-size: 12px; letter-spacing: 1px; } .node .bt { font-size: 11px; opacity: .9; }
+.node.locked { background: #c7d0dc !important; color: #f4f7fb; cursor: default; } .node.cur { outline: 4px solid #ffd23f; }
+.node.focus, .node:focus-visible { outline: 4px solid #3a9cf0; }
+.introcard { text-align: center; min-width: 340px; } .inum { font-weight: 700; color: #3a9cf0; font-size: 18px; margin-top: 6px; }
+@media (max-height: 430px) { .node { min-height: 74px; padding: 5px 2px; } .node .n { font-size: 20px; } #mapNodes { gap: 6px; } }
+#bossBar { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 62px); display: none; flex-direction: column; align-items: center; gap: 3px; font-weight: 700; font-size: 14px; color: #fff; text-shadow: 0 2px 0 #2b3a67, 0 0 6px rgba(43,58,103,.6); }
+#bossBar.on { display: flex; } #bossBar div { width: 240px; height: 14px; border-radius: 99px; background: rgba(255,255,255,.7); overflow: hidden; border: 3px solid #fff; }
+#bossBar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #8a5cff, #3fa7ff); transition: width .3s; }
