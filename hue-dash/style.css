@@ -109,3 +109,13 @@ button:active, .lv:active { transform: scale(.93); transition: transform .05s; }
 #hint .hl, #hint .hr { color: #fff; text-shadow: 0 1px 8px rgba(40,55,80,.4); }
 .gpfocus { outline: 3px solid #fff !important; outline-offset: 3px; box-shadow: 0 0 0 6px rgba(240,54,127,.55) !important; }
 @media (pointer: coarse) { .howto .k.pad { display: none; } }
+/* v1.3 */
+#wipe { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+#wipe::before { content: ''; position: absolute; left: 50%; top: 50%; width: 0; height: 0; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 200vmax #9cb0c2; opacity: 0; }
+#wipe.go::before { animation: iris .38s cubic-bezier(.3,.7,.3,1) forwards; }
+@keyframes iris { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 260vmax; height: 260vmax; opacity: 1; } }
+#hGems { display: inline-block; }
+#hGems.bump { animation: gbump .35s cubic-bezier(.2,1.8,.4,1); }
+@keyframes gbump { 0% { transform: scale(1); } 40% { transform: scale(1.45); } 100% { transform: scale(1); } }
+body.fxbtn button:active { transform: scale(.92); transition: transform .06s; }
+body.fxbtn button { transition: transform .18s cubic-bezier(.2,1.8,.4,1); }

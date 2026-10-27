@@ -9,13 +9,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Hue Dash">
-<link rel="manifest" href="manifest.webmanifest?v=202610240111">
+<link rel="manifest" href="manifest.webmanifest?v=202610270942">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
-<link rel="stylesheet" href="style.css?v=202610240111">
+<link rel="stylesheet" href="style.css?v=202610270942">
 <script>
 // Boot guard: any error before the game is up shows a "Tap to reload" card instead of an endless spinner.
-window.__V = '202610240111';
+window.__V = '202610270942';
 window.__bootFail = function (msg) {
   if (window.__booted) return;
   var e = document.getElementById('err'); if (!e) return;
@@ -29,14 +29,14 @@ setTimeout(function () { if (!window.__booted) window.__bootFail('Loading took t
 </head>
 <body>
 <div id="game"></div>
-<div id="flash"></div><div id="fx"></div>
+<div id="flash"></div><div id="fx"></div><div id="wipe"></div>
 <div id="loading"><div class="spin"></div></div>
 <div id="err" onclick="location.reload()"><b>Something went wrong</b><span id="errmsg"></span><em>Tap to reload</em></div>
 
 <div id="title" class="screen">
   <h1 class="logo"><span class="l1">Hue</span> <span class="l2">Dash</span></h1>
   <div class="tag">run · match · fly</div>
-  <div class="ver" id="verLabel">v1.2</div>
+  <div class="ver" id="verLabel">v1.3</div>
   <div class="howto"><span class="k l">◐ tap left · change colour</span><span class="k r">⤒ tap right · jump</span><span class="k pad">🎮 A jump · X change colour</span></div>
   <div class="corner left">
     <button class="rb pink" id="bSettings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9 4.6v-2.2l-2.4-.5a7 7 0 0 0-.8-1.9l1.4-2-1.6-1.6-2 1.4a7 7 0 0 0-1.9-.8L13.2 3h-2.4l-.5 2.4a7 7 0 0 0-1.9.8l-2-1.4-1.6 1.6 1.4 2a7 7 0 0 0-.8 1.9L3 10.9v2.2l2.4.5c.2.7.4 1.3.8 1.9l-1.4 2 1.6 1.6 2-1.4c.6.4 1.2.6 1.9.8l.5 2.5h2.4l.5-2.5c.7-.2 1.3-.4 1.9-.8l2 1.4 1.6-1.6-1.4-2c.4-.6.6-1.2.8-1.9z"/></svg></button>
@@ -75,9 +75,15 @@ setTimeout(function () { if (!window.__booted) window.__bootFail('Loading took t
     <div class="audio"></div>
     <label class="row"><span>Reduced effects (smoother on older phones)</span><input type="checkbox" id="optReduced"></label>
     <label class="row"><span>Ghost of best run</span><input type="checkbox" id="optGhost2"></label>
+    <h3>Features</h3>
+    <label class="row"><span>Character animation (springy squash, run cycle, flips)</span><input type="checkbox" data-fx="anim"></label>
+    <label class="row"><span>Landing &amp; gem effects</span><input type="checkbox" data-fx="land"></label>
+    <label class="row"><span>Colour guide (matching beams glow)</span><input type="checkbox" data-fx="colour"></label>
+    <label class="row"><span>Chunky beam tops</span><input type="checkbox" data-fx="chunky"></label>
+    <label class="row"><span>Screen transitions &amp; bouncy buttons</span><input type="checkbox" data-fx="trans"></label>
     <h3>Older versions</h3>
-    <div class="older"><a class="pill" href="../hue-dash-v1.1/">v1.1 · misty look</a> <a class="pill" href="../hue-dash-v1.0/">v1.0 · original bright look</a></div>
-    <p class="sub">Version 1.2 · crisp, outlined runner in the misty 3D world</p>
+    <div class="older"><a class="pill" href="../hue-dash-v1.2/">v1.2 · crisp runner</a> <a class="pill" href="../hue-dash-v1.1/">v1.1 · misty look</a> <a class="pill" href="../hue-dash-v1.0/">v1.0 · original bright look</a></div>
+    <p class="sub">Version 1.3 · springy runner, colour guide, chunky beams, transitions</p>
     <div class="btns"><button class="pill primary" id="sClose">Done</button></div>
   </div>
 </div>
@@ -96,6 +102,6 @@ setTimeout(function () { if (!window.__booted) window.__bootFail('Loading took t
 
 <div id="rotate">Turn your phone sideways for the best view</div>
 <div id="toasts"></div>
-<script type="module" src="game.js?v=202610240111"></script>
+<script type="module" src="game.js?v=202610270942"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 // HUE DASH: rendering, input, UI, progress. Physics lives in logic.js (deterministic, tested in Node).
 import * as THREE from './vendor/three/three.module.js';
-import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610240111';
-import { LEVELS, WORLDS } from './levels.js?v=202610240111';
-import { Audio } from './audio.js?v=202610240111';
+import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610270942';
+import { LEVELS, WORLDS } from './levels.js?v=202610270942';
+import { Audio } from './audio.js?v=202610270942';
 
 const $ = id => document.getElementById(id);
 const HEX = [0xd3dbe2, 0xf0367f, 0xf7b520, 0x26c6da];
@@ -45,6 +45,9 @@ function loadSave() {
   save.levels = save.levels || {}; save.ach = save.ach || {};
   save.tot = Object.assign({ deaths: 0, jumps: 0, switches: 0, play: 0, runs: 0, finishes: 0 }, save.tot);
   save.set = Object.assign({ music: 0.7, sfx: 0.8, musicOn: true, sfxOn: true, reduced: false, ghost: true, bright: 1 }, save.set);
+// v1.3 feature toggles (Settings > Features); each off = v1.2 behaviour
+save.set.fx = Object.assign({ anim: true, land: true, colour: true, chunky: true, trans: true }, save.set.fx || {});
+  globalThis.FX = save.set.fx;
   save.look = Object.assign({ outfit: 'cap', board: 'snow' }, save.look);
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
@@ -161,9 +164,13 @@ window.__postReady = true;
 const matCache = {};
 const mat = (hex, o = {}) => { const k = hex + JSON.stringify(o); return matCache[k] || (matCache[k] = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, metalness: 0, flatShading: true, ...o })); };
 let platMats = [];
+let capMats = [];
 function setThemeMats(th) {
   // soft satin beams: emissive lift keeps them saturated through the fog, like the reference
   platMats = [mat(th.neutral, { roughness: 0.8, emissive: th.neutral, emissiveIntensity: 0.12 }), ...[1, 2, 3].map(i => mat(HEX[i], { roughness: 0.7, emissive: HEX[i], emissiveIntensity: th.night ? 0.4 : 0.16 }))];
+  platMats.forEach(m => m.userData.baseE = m.emissiveIntensity);
+  // v1.3 chunky: a lighter, slightly proud top slab on every beam reads as a clean walkable surface
+  capMats = [th.neutral, ...HEX.slice(1)].map((h, i) => { const c = new THREE.Color(h).lerp(new THREE.Color(0xffffff), i ? 0.3 : 0.45); return new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, flatShading: true, emissive: c, emissiveIntensity: i ? 0.22 : 0.15 }); });
 }
 const box = new THREE.BoxGeometry(1, 1, 1);
 
@@ -258,6 +265,34 @@ function crispRunner() {
     ol.scale.set(1 + 2 * t / s.x, 1 + 2 * t / s.y, 1 + 2 * t / s.z); o.add(ol); o.userData.hasOutline = true; } });
   r.g.traverse(o => o.layers.set(PLAYER_LAYER));
 }
+// v1.3 Nintendo-style character animation: spring squash/stretch, anticipation, run cycle with bob, legs and arm swing, flip on double jump
+const AN = { s: 1, v: 0, antic: 0, ph: 0, spin: 0 };
+function animRunner(dt, air, pop, sim) {
+  const p = runner.parts; dt = Math.min(dt, 0.05);
+  AN.v += (-170 * (AN.s - 1) - 13 * AN.v) * dt; AN.s += AN.v * dt; AN.s = Math.max(0.6, Math.min(1.45, AN.s));
+  let sy = AN.s; if (AN.antic > 0) { AN.antic -= dt; sy = Math.min(sy, 0.78); }
+  const sx = 1 / Math.sqrt(sy);
+  runner.body.scale.set(sx + pop, sy + pop, sx + pop);
+  const run = !air && mode !== MODE.dead; AN.ph += dt * (run ? 15 : 4);
+  const sw = Math.sin(AN.ph);
+  runner.body.position.y = run ? Math.abs(Math.cos(AN.ph)) * 0.07 : 0;
+  p.legB.rotation.z = THREE.MathUtils.lerp(p.legB.rotation.z, run ? sw * 0.35 : 0.45, Math.min(1, dt * 18));
+  p.legF.rotation.z = THREE.MathUtils.lerp(p.legF.rotation.z, run ? -sw * 0.35 : -0.25, Math.min(1, dt * 18));
+  p.armB.rotation.z = THREE.MathUtils.lerp(p.armB.rotation.z, air ? 2.3 : 0.55 + sw * 0.7, Math.min(1, dt * 16));
+  p.armF.rotation.z = THREE.MathUtils.lerp(p.armF.rotation.z, air ? -2.3 : -0.45 - sw * 0.7, Math.min(1, dt * 16));
+  p.head.rotation.z = THREE.MathUtils.lerp(p.head.rotation.z, air ? -sim.vy * sim.gs * 0.012 : Math.sin(AN.ph * 0.5) * 0.05, Math.min(1, dt * 10));
+  if (AN.spin > 0) { AN.spin = Math.max(0, AN.spin - dt * 3.2); runner.body.rotation.y = (1 - AN.spin) * Math.PI * 2 * (AN.spin > 0 ? 1 : 0); } else runner.body.rotation.y = 0;
+}
+// v1.3 landing / pickup ring that lies flat on the beam
+const lrMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false });
+const lrPool = [...Array(4)].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(0.7, 1, 40), lrMat.clone()); m.rotation.x = -Math.PI / 2; m.visible = false; m.userData.t = 9; scene.add(m); return m; });
+function landRing(x, y, k, col = 0xffffff) { const m = lrPool.find(r => !r.visible) || lrPool[0]; m.visible = true; m.userData = { t: 0, k }; m.position.set(x, y + 0.03, 0); m.material.color.setHex(col); }
+function updateRings(dt, gs) { for (const m of lrPool) if (m.visible) { const d = m.userData; d.t += dt; const e = 1 - Math.pow(1 - Math.min(1, d.t / 0.35), 3); m.scale.setScalar(0.3 + e * 1.6 * d.k); m.material.opacity = 0.85 * (1 - d.t / 0.35); m.rotation.x = gs < 0 ? Math.PI / 2 : -Math.PI / 2; if (d.t > 0.35) m.visible = false; } }
+// v1.3 colour guide: beams matching the runner's colour glow up, the others settle back
+const CG = [0, 0, 0, 0];
+function colourGuide(dt, col) { for (let i = 1; i < 4; i++) { const m = platMats[i]; if (!m) continue; const tgt = !FX.colour ? 0 : (i === col ? 1 : -1); CG[i] += (tgt - CG[i]) * Math.min(1, dt * 8); const b = m.userData.baseE ?? 0.16; m.emissiveIntensity = b + (CG[i] > 0 ? CG[i] * 0.15 : CG[i] * b * 0.5); } }
+function applyFx() { document.body.classList.toggle('fxbtn', FX.trans); if (lvlGroup) lvlGroup.traverse(o => { if (o.userData && o.userData.cap) o.userData.cap.visible = FX.chunky; }); }
+function iris() { if (!FX.trans || save.set.reduced) return; const w = $('wipe'); w.classList.remove('go'); void w.offsetWidth; w.classList.add('go'); }
 function makeRunner(ghost) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const m = o => ghost ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false }) : rmat(o);
@@ -353,6 +388,7 @@ function buildLevel(lvl) {
     if (e.t === 'p') {
       const ms = new THREE.Mesh(box, platMats[e.fp ? e.c : e.c]); ms.scale.set(e.w, e.h, BEAM_D); ms.position.set(e.x + e.w / 2, e.y - e.h / 2, 0);
       ms.receiveShadow = true; ms.castShadow = e.h < 3; lvlGroup.add(ms);
+      { const cap = new THREE.Mesh(box, capMats[e.c]), t = 0.16, o = 0.06; cap.scale.set(1 + 2 * o / e.w, t / e.h, 1 + 2 * o / BEAM_D); cap.position.y = 0.5 - t / e.h / 2 + 0.012 / e.h; cap.receiveShadow = true; cap.visible = FX.chunky; ms.add(cap); ms.userData.cap = cap; }
       if (e.pad) for (let k = 0; k < 2; k++) { const a = new THREE.Mesh(cone, mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 })); a.scale.set(0.8, 0.6, 0.8); a.position.set(e.x + e.w / 2, e.y + 0.35 + k * 0.45, 0); a.rotation.y = Math.PI / 4; lvlGroup.add(a); e._arrows = (e._arrows || []).concat(a); }
       if (e.ma || e.fp || e.fall || e.pad) dyn.push({ e, ms }); e._ms = ms;
     } else if (e.t === 'w') {
@@ -411,7 +447,7 @@ function restart(first) {
   ghost.g.visible = !!G; script = []; acc = 0; input = { held: input.held, jp: false, sw: 0 }; replayIdx = 0; replayHeld = false;
   mode = replayScript ? MODE.replay : MODE.play; smoke.clear(); lastCol = 1; paintRunner(runner, 1); runner.g.visible = true;
   gemMeshes.forEach(m => m && (m.visible = true)); boostMeshes.forEach(m => m && (m.visible = true));
-  camX = S.x; camY = 2; timeScale = 1; save.tot.runs++; setAccent(1); updateHud(true);
+  AN.s = 1; AN.v = 0; AN.spin = 0; iris(); camX = S.x; camY = 2; timeScale = 1; save.tot.runs++; setAccent(1); updateHud(true);
 }
 function setAccent(c) { document.documentElement.style.setProperty('--accent', CSS[c]); }
 function scriptInput(sc, st, sim) {
@@ -437,10 +473,11 @@ function simStep() {
   if (G && !G.s.dead && !G.s.fin) step(G.s, level, scriptInput(ghostScript, G.s, G));
   // events -> juice
   if (S.col !== pre.col) onSwitch(S.col);
-  if (S.jumpsN > pre.jn) { audio.sfxPlay('jump', pre.g ? 0 : 1); stretch = 1; if (!pre.g) puff(8, S.col); else dust(0.6); if (mode !== MODE.replay) save.tot.jumps++; }
-  if (S.grounded && !pre.g) { squash = 1; if (pre.vy && Math.abs(pre.vy) > 14) shake = Math.max(shake, 0.15); audio.sfxPlay('land'); cubes.burst(S.x - 0.3, S.y, 0xffffff, save.set.reduced ? 2 : 5, { v: 4, s: 0.06, life: 0.4, g: 20 }); dust(Math.min(1.6, 0.6 + Math.abs(pre.vy) / 22)); squash = Math.min(1.2, 0.5 + Math.abs(pre.vy) / 30); }
+  if (S.jumpsN > pre.jn) { AN.antic = 0.07; AN.v += 9; if (!pre.g) AN.spin = 1; audio.sfxPlay('jump', pre.g ? 0 : 1); stretch = 1; if (!pre.g) puff(8, S.col); else dust(0.6); if (mode !== MODE.replay) save.tot.jumps++; }
+  if (S.grounded && !pre.g) { AN.v -= 6 + Math.min(10, Math.abs(pre.vy || 0) * 0.45); if (FX.land) landRing(S.x, S.y, Math.min(1.5, 0.6 + Math.abs(pre.vy || 0) / 18)); squash = 1; if (pre.vy && Math.abs(pre.vy) > 14) shake = Math.max(shake, 0.15); audio.sfxPlay('land'); cubes.burst(S.x - 0.3, S.y, 0xffffff, save.set.reduced ? 2 : 5, { v: 4, s: 0.06, life: 0.4, g: 20 }); dust(Math.min(1.6, 0.6 + Math.abs(pre.vy) / 22)); squash = Math.min(1.2, 0.5 + Math.abs(pre.vy) / 30); }
   if (S.padT && !pre.pad) { audio.sfxPlay('pad'); puff(14, S.col); }
-  if (S.gems !== pre.gems) { const k = Math.log2(S.gems ^ pre.gems); const gm = gemMeshes[k]; if (gm) { gm.visible = false; cubes.burst(gm.position.x, gm.position.y - 0.5, 0x9fe8ff, 18, { v: 6, s: 0.1, g: 6, life: 0.9 }); } audio.sfxPlay('gem'); }
+  if (S.gems !== pre.gems) { const k = Math.log2(S.gems ^ pre.gems); const gm = gemMeshes[k]; if (gm) { gm.visible = false; cubes.burst(gm.position.x, gm.position.y - 0.5, 0x9fe8ff, 18, { v: 6, s: 0.1, g: 6, life: 0.9 }); if (FX.land) { cubes.burst(gm.position.x, gm.position.y - 0.5, 0xffffff, save.set.reduced ? 6 : 14, { v: 9, s: 0.07, g: 2, life: 0.6 }); landRing(gm.position.x, gm.position.y - 0.6, 1.2, 0x9fe8ff); } }
+    if (FX.land) { const h = $('hGems'); h.classList.remove('bump'); void h.offsetWidth; h.classList.add('bump'); } audio.sfxPlay('gem'); }
   if (S.boosts !== pre.boosts) { const k = Math.log2(S.boosts ^ pre.boosts); if (boostMeshes[k]) boostMeshes[k].visible = false; audio.sfxPlay('boost'); }
   if (S.saves > (pre.sv || 0) && mode === MODE.play) { banner('<small>close one!</small>'); audio.sfxPlay('star', 0); }
   if (S.gs !== pre.gs) { audio.sfxPlay('grav'); shake = 0.3; }
@@ -603,6 +640,7 @@ $('bPause').onclick = e => { e.stopPropagation(); audio.sfxPlay('click'); if (mo
 $('pResume').onclick = click(() => setPause(false));
 $('pRestart').onclick = click(() => { setPause(false); restart(); });
 $('pQuit').onclick = click(() => { setPause(false); runStats = null; openLevels(level.world); });
+applyFx(); document.querySelectorAll('[data-fx]').forEach(i => { i.checked = FX[i.dataset.fx]; i.onchange = () => { FX[i.dataset.fx] = i.checked; applyFx(); persist(); }; });
 $('optGhost').onchange = () => { save.set.ghost = $('optGhost').checked; persist(); };
 $('optGhost2').onchange = () => { save.set.ghost = $('optGhost2').checked; persist(); };
 $('optReduced').onchange = () => { save.set.reduced = $('optReduced').checked; applyQuality(); persist(); };
@@ -679,7 +717,7 @@ function updateVisuals(dt) {
   for (const d of dyn) {
     const e = d.e;
     if (e.ma || e.fall) d.ms.position.y = platY(e, t, sim) - e.h / 2;
-    if (e.fp) d.ms.material = platMats[colorAt(e, t)];
+    if (e.fp) { const ci = colorAt(e, t); d.ms.material = platMats[ci]; if (d.ms.userData.cap) d.ms.userData.cap.material = capMats[ci]; }
     if (e._rm) { e._rm.position.y = d.ms.position.y; e._rm.material = d.ms.material; }
     if (e._arrows) e._arrows.forEach((a, k) => { a.position.y = e.y + 0.35 + k * 0.45 + Math.sin(performance.now() / 200 + k) * 0.08; });
   }
@@ -694,8 +732,12 @@ function updateVisuals(dt) {
   const air = !sim.grounded && mode !== MODE.title;
   const lean = air ? Math.max(-0.4, Math.min(0.4, sim.vy * gs * 0.02)) : -0.12;
   runner.body.rotation.z = THREE.MathUtils.lerp(runner.body.rotation.z, lean, Math.min(1, dt * 10));
-  const pop = Math.sin(switchPop * Math.PI) * 0.28; runner.body.scale.set(1 + squash * 0.3 - stretch * 0.15 + pop, 1 - squash * 0.32 + stretch * 0.25 + pop, 1 + pop);
-  const ph = performance.now() / 120; runner.parts.armB.rotation.z = air ? 1.2 : Math.sin(ph) * 0.3 + 0.5; runner.parts.armF.rotation.z = air ? -1.2 : -Math.sin(ph) * 0.3 - 0.4;
+  const pop = Math.sin(switchPop * Math.PI) * 0.28;
+  if (!FX.anim) {
+    runner.body.scale.set(1 + squash * 0.3 - stretch * 0.15 + pop, 1 - squash * 0.32 + stretch * 0.25 + pop, 1 + pop); runner.body.position.y = 0; runner.body.rotation.y = 0;
+    ['legB', 'legF', 'head'].forEach(k => runner.parts[k].rotation.z = 0);
+    const ph = performance.now() / 120; runner.parts.armB.rotation.z = air ? 1.2 : Math.sin(ph) * 0.3 + 0.5; runner.parts.armF.rotation.z = air ? -1.2 : -Math.sin(ph) * 0.3 - 0.4;
+  } else animRunner(dt, air, pop, sim);
   // ghost
   if (G && ghost.g.visible) { ghost.g.position.set(G.s.x, G.s.y, -0.6); ghost.g.rotation.x = G.s.gs < 0 ? Math.PI : 0; ghost.g.visible = !G.s.fin && !G.s.dead; }
   // smoke trail
@@ -704,7 +746,7 @@ function updateVisuals(dt) {
     emitAcc += dt * (save.set.reduced ? 16 : 30) * (mode === MODE.title ? 0.8 : 1) * (sim.grounded || mode === MODE.title ? 1 : 0.55);
     while (emitAcc > 1) { emitAcc--; smoke.emit(sim.x - 0.5 + Math.random() * 0.2, sim.y + gs * (0.2 + Math.random() * 0.35), (Math.random() - .5) * 0.7, HEX[sim.col], { vx: -0.6 - Math.random() * 0.9, vy: gs * (0.4 + Math.random() * 0.9), s: 0.7 + Math.random() * 0.5, gs: 4.6 + Math.random() * 2.4, life: 1.1 + Math.random() * 0.7, a: 0.95, grey: theme.night ? 0xc9d2ea : 0xf6f8fb }); }
   }
-  smoke.update(dt); cubes.update(dt);
+  smoke.update(dt); cubes.update(dt); updateRings(dt, gs); colourGuide(dt, sim.col);
   if (ring.visible) { ringT += dt; const s = 0.5 + ringT * 9; ring.scale.setScalar(s); ring.position.set(sim.x, sim.y + gs * 0.8, 0.2); ringMat.opacity = Math.max(0, 0.8 - ringT * 2.2); if (ringT > 0.4) ring.visible = false; }
   if (ring2.visible) { ring2T += dt; const e = 1 - Math.pow(1 - Math.min(1, ring2T / 0.5), 3); ring2.scale.setScalar(0.6 + e * 7); ring2.position.set(sim.x, sim.y + gs * 0.8, 0.1); ring2Mat.opacity = Math.max(0, 0.65 * (1 - ring2T / 0.5)); if (ring2T > 0.5) ring2.visible = false; }
   if (skyBase.ok) { skyPulse = Math.max(0, skyPulse - dt * 1.6); tint.setHex(HEX[sim.col] || 0xffffff); const k = theme.night ? 0.16 : 0.1 + skyPulse * 0.08;
