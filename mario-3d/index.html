@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#5cc8ff">
+<title>Mario 3D – Colin's fan model</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#7fd4ff;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#load{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(#ff5a4a,#b3120c);z-index:50;font-weight:900;font-size:22px;letter-spacing:.5px;text-shadow:0 3px 0 #0005;transition:opacity .6s}
+#load .m{width:84px;height:84px;border-radius:50%;background:#fff;color:#e3201b;font-size:62px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 6px 0 #0004;animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-12px)}}
+#top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 10px 6px;display:flex;gap:8px;align-items:center;z-index:5;pointer-events:none}
+#top .title{font-weight:900;font-size:18px;text-shadow:0 2px 0 #0006;flex:1}
+.pill{pointer-events:auto;background:#0007;border:0;color:#fff;border-radius:18px;padding:7px 11px;font-weight:800;font-size:13px;backdrop-filter:blur(6px)}
+#hud{position:fixed;top:calc(env(safe-area-inset-top) + 46px);left:10px;z-index:5;display:none;gap:8px;font-weight:900;font-size:20px;text-shadow:0 2px 0 #000a}
+#hud span{background:#0006;border-radius:14px;padding:4px 10px}
+#bubble{position:fixed;left:50%;top:22%;transform:translate(-50%,0) scale(0);background:#fff;color:#c4140f;font-weight:900;font-size:26px;padding:8px 16px;border-radius:20px;border:3px solid #c4140f;z-index:6;transition:transform .25s cubic-bezier(.3,1.6,.5,1);pointer-events:none;white-space:nowrap}
+#bubble.on{transform:translate(-50%,0) scale(1)}
+#tabs{position:fixed;left:0;right:0;bottom:0;padding:0 6px calc(env(safe-area-inset-bottom) + 6px);display:flex;gap:4px;z-index:5;background:linear-gradient(#0000,#0008)}
+#tabs button{flex:1;border:0;border-radius:12px;padding:9px 0 7px;background:#ffffff26;color:#fff;font-weight:900;font-size:12px;backdrop-filter:blur(6px)}
+#tabs button b{display:block;font-size:19px}
+#tabs button.on{background:#e3201b;box-shadow:0 3px 0 #8a0d09}
+#panel{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 62px);z-index:5;padding:6px 8px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+#panel::-webkit-scrollbar{display:none}
+#panel button{flex:0 0 auto;border:0;border-radius:14px;padding:10px 13px;font-weight:900;font-size:14px;color:#fff;background:#0009;box-shadow:0 3px 0 #0006;backdrop-filter:blur(6px)}
+#panel button.on{background:#f8c51c;color:#4a2c00}
+#posebox{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 118px);z-index:5;background:#000a;border-radius:16px;padding:10px 12px;display:none;backdrop-filter:blur(6px)}
+#posebox label{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;margin:4px 0}
+#posebox input{flex:1}
+#posebox select{font-size:15px;font-weight:800;border-radius:8px;padding:4px;width:100%}
+#joy{position:fixed;left:22px;bottom:calc(env(safe-area-inset-bottom) + 84px);width:130px;height:130px;border-radius:50%;background:#ffffff2a;border:3px solid #fff7;z-index:6;display:none;touch-action:none}
+#knob{position:absolute;left:37px;top:37px;width:50px;height:50px;border-radius:50%;background:#fff;box-shadow:0 3px 0 #0005}
+#jumpb,#poundb{position:fixed;right:22px;bottom:calc(env(safe-area-inset-bottom) + 100px);width:92px;height:92px;border-radius:50%;border:0;background:#e3201b;color:#fff;font-weight:900;font-size:17px;box-shadow:0 5px 0 #8a0d09;z-index:6;display:none}
+#poundb{right:124px;bottom:calc(env(safe-area-inset-bottom) + 84px);width:64px;height:64px;font-size:12px;background:#2a5bd7;box-shadow:0 4px 0 #142e70}
+#hint{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 44px);z-index:5;background:#0007;padding:6px 12px;border-radius:14px;font-size:13px;font-weight:700;transition:opacity 1s;pointer-events:none;text-align:center;max-width:92%}
+body.photo #panel,body.photo #tabs,body.photo #top,body.photo #hint,body.photo #posebox{display:none!important}
+#shutter{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);width:76px;height:76px;border-radius:50%;border:6px solid #fff;background:#fff6;z-index:7;display:none}
+#exitphoto{position:fixed;right:14px;top:calc(env(safe-area-inset-top) + 12px);z-index:7;display:none}
+body.photo #shutter,body.photo #exitphoto{display:block}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9;transition:opacity .4s}
+#win{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:8;font-size:40px;font-weight:900;text-shadow:0 4px 0 #b3120c,0 0 30px #ffde3b;flex-direction:column}
+</style></head><body>
+<div id="load"><div class="m">M</div><div id="lt">Loading Mario…</div></div>
+<canvas id="c"></canvas>
+<div id="top"><div class="title">Mario 3D</div><button class="pill" id="snd">🔊</button><button class="pill" id="spinb">↻ Turntable</button><button class="pill" id="qb">HQ</button></div>
+<div id="hud"><span id="coinc">🪙 0</span><span id="starc">⭐ 0/3</span></div>
+<div id="hint">Tap his hat, nose, belly, eyes or moustache! Drag to spin, pinch to zoom.</div>
+<div id="bubble"></div>
+<div id="panel"></div>
+<div id="posebox"><select id="jsel"></select>
+<label>Tilt<input type="range" id="sx" min="-3.14" max="3.14" step="0.01"></label>
+<label>Turn<input type="range" id="sy" min="-3.14" max="3.14" step="0.01"></label>
+<label>Swing<input type="range" id="sz" min="-3.14" max="3.14" step="0.01"></label></div>
+<div id="joy"><div id="knob"></div></div><button id="jumpb">JUMP</button><button id="poundb">POUND</button>
+<div id="tabs">
+<button data-t="act" class="on"><b>🏃</b>Moves</button><button data-t="face"><b>😄</b>Face</button><button data-t="outfit"><b>🧢</b>Outfits</button><button data-t="pose"><b>🤸</b>Pose</button><button data-t="play"><b>🍄</b>Play</button><button data-t="photo"><b>📸</b>Photo</button></div>
+<button id="shutter"></button><button class="pill" id="exitphoto">✕ Done</button>
+<div id="flash"></div><div id="win">⭐ YOU GOT ALL 3! ⭐<div style="font-size:20px">Wahoo!</div></div>
+<script>
+(function(){var srcs=["https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js","https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js","https://unpkg.com/three@0.134.0/build/three.min.js","three.min.js"],i=0;
+function next(){if(window.THREE){var s=document.createElement('script');s.src='app.js?v=1';document.body.appendChild(s);return}if(i>=srcs.length){document.getElementById('lt').textContent='Could not load 3D engine';return}var s=document.createElement('script');s.src=srcs[i++];s.onload=next;s.onerror=next;document.head.appendChild(s)}next()})();
+</script></body></html>
