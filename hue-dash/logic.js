@@ -6,6 +6,13 @@ export const PW = 0.3, PH = 1.4;
 // v1.1: coyote time on (every level route re-verified by the solver), longer buffer, apex hang, step-up ledges
 export const COYOTE = 0.09, BUFFER = 0.14, GRACE = 0.08, APEX_V = 4, APEX_G = 0.62, STEP_UP = 0.42, RAMP_T = 0.7;
 export const COLORS = [null, 'magenta', 'gold', 'cyan'];
+// v1.4 "tight" physics (Settings > Features): snappier jump, faster fall, wall-slide + one wall-jump per air time.
+// Off = exact v1.3 physics. Levels are solved under both (tools/resolve.mjs).
+export const PHYS = { tight: false };
+export function setPhysics(on) { PHYS.tight = !!on; }
+export const TIGHT = { JUMP: 19.2, DJUMP: 16.8, FALL_G: 1.3, SLIDE_V: 3.5, WALL_T: 2.5 };
+// v1.4 boss chase: colour cycles on a beat; while you match it the boss falls back, otherwise it gains
+export function bossCol(lvl, t) { return 1 + (Math.floor(t / lvl.boss.cp) % lvl.ncol); }
 
 export function nextColor(c, n) { return (c % n) + 1; }
 
@@ -38,7 +45,7 @@ export function prepare(lvl) {
 
 export function newState(lvl) {
   return { t: 0, step: 0, x: lvl.start || 2, y: 0, vy: 0, gs: 1, col: 1, jumps: 1, grounded: true, holdT: 0, holding: false,
-    dead: false, cause: '', fin: false, gems: 0, boosts: 0, boostT: 0, switches: 0, jumpsN: 0, fallT: {}, grav: 0, padT: 0, events: null, airT: 0, bufT: 0, graceT: 0, coy: true, saves: 0 };
+    dead: false, cause: '', fin: false, onWall: false, wallPrev: false, wj: 1, wallT: 0, walls: 0, key: 0, bonus: 0, bx: lvl.boss ? (lvl.start || 2) - lvl.boss.gap : 0, gems: 0, boosts: 0, boostT: 0, switches: 0, jumpsN: 0, fallT: {}, grav: 0, padT: 0, events: null, airT: 0, bufT: 0, graceT: 0, coy: true, saves: 0 };
 }
 export function clone(s) { const c = { ...s }; c.fallT = { ...s.fallT }; return c; }
 // smooth acceleration: eases up from 55% speed over the first RAMP_T seconds; boosts fade in and out
@@ -58,27 +65,30 @@ export function step(s, lvl, inp) {
   if (inp.jp) s.bufT = BUFFER;
   if (s.bufT > 0) {
     const coyote = !s.grounded && s.coy && s.airT < COYOTE && s.vy * s.gs <= 0;
-    if (s.grounded || coyote) { s.vy = JUMP * s.gs; s.grounded = false; s.coy = false; s.holdT = 0; s.holding = !!inp.jh; s.jumpsN++; s.bufT = 0; }
-    else if (inp.jp && s.jumps > 0) { s.jumps--; s.vy = DJUMP * s.gs; s.holdT = 0; s.holding = true; s.jumpsN++; s.bufT = 0; }
+    if (s.grounded || coyote) { s.vy = (PHYS.tight ? TIGHT.JUMP : JUMP) * s.gs; s.grounded = false; s.coy = false; s.holdT = 0; s.holding = !!inp.jh; s.jumpsN++; s.bufT = 0; }
+    else if (inp.jp && PHYS.tight && s.wallPrev && s.wj > 0) { s.wj = 0; s.vy = TIGHT.JUMP * s.gs; s.holdT = 0; s.holding = true; s.jumpsN++; s.walls++; s.bufT = 0; }
+    else if (inp.jp && s.jumps > 0) { s.jumps--; s.vy = (PHYS.tight ? TIGHT.DJUMP : DJUMP) * s.gs; s.holdT = 0; s.holding = true; s.jumpsN++; s.bufT = 0; }
     else s.bufT -= DT;
   }
   if (!inp.jh) s.holding = false;
   let g = G;
   if (s.holding && s.vy * s.gs > 0 && s.holdT < HOLD_T) { g *= HOLD_G; s.holdT += DT; }
   else if (Math.abs(s.vy) < APEX_V) g *= APEX_G;   // a little hang time at the top of every arc
+  else if (PHYS.tight && s.vy * s.gs < 0) g *= TIGHT.FALL_G;   // v1.4: faster fall
   s.vy -= g * s.gs * DT;
   const t = s.t;
   const px = s.x, py = s.y;
   s.x += speedAt(lvl, s) * DT;
   s.y += s.vy * DT;
   if (s.boostT > 0) s.boostT -= DT;
-  const wasG = s.grounded; s._mis = false;
+  const wasG = s.grounded; s._mis = false; s.wallPrev = s.onWall; s.onWall = false;
   s.grounded = false;
   const bk = lvl._b[Math.floor(s.x / 4)] || [];
   let support = null;
   const gs = s.gs;
   for (const p of bk) {
     if (p.t !== 'p') continue;
+    if (p.bon && !s.key) continue;   // v1.4 bonus route beams only exist once you hold the key
     const top = platY(p, t, s), bot = top - p.h;
     const xmin = s.x - PW, xmax = s.x + PW;
     const ymin = gs > 0 ? s.y : s.y - PH, ymax = gs > 0 ? s.y + PH : s.y;
@@ -88,17 +98,20 @@ export function step(s, lvl, inp) {
       if (s.vy <= 0 && py >= top - eps) { s.y = top; s.vy = 0; s.grounded = true; if (!support || (s.x >= p.x && s.x <= p.x + p.w)) support = p; }
       else if (s.vy > 0 && py + PH <= bot + eps) { s.y = bot - PH; s.vy = 0; touch(s, p, t); }
       else if (top - s.y <= STEP_UP) { s.y = top; s.vy = 0; s.grounded = true; s.stepUps = (s.stepUps || 0) + 1; if (!support) support = p; }   // forgiving edge: clipped a lip, pop up onto it
+      else if (PHYS.tight && px + PW <= p.x + 0.08) { s.x = p.x - PW - 0.001; s.onWall = true; }   // v1.4 wall contact instead of a crash
       else { die(s, 'crash'); return s; }
     } else {
       if (s.vy >= 0 && py <= bot + eps) { s.y = bot; s.vy = 0; s.grounded = true; if (!support || (s.x >= p.x && s.x <= p.x + p.w)) support = p; }
       else if (s.vy < 0 && py - PH >= top - eps) { s.y = top + PH; s.vy = 0; touch(s, p, t); }
       else if (s.y - bot <= STEP_UP) { s.y = bot; s.vy = 0; s.grounded = true; s.stepUps = (s.stepUps || 0) + 1; if (!support) support = p; }
+      else if (PHYS.tight && px + PW <= p.x + 0.08) { s.x = p.x - PW - 0.001; s.onWall = true; }
       else { die(s, 'crash'); return s; }
     }
     if (s.dead) return s;
   }
+  if (s.onWall) { if (!s.grounded && !support && s.vy * gs < -TIGHT.SLIDE_V) s.vy = -TIGHT.SLIDE_V * gs; s.wallT += DT; if (s.wallT > TIGHT.WALL_T) { die(s, 'crash'); return s; } } else s.wallT = 0;
   if (support) {
-    s.jumps = 1; s.coy = true; s.airT = 0;
+    s.jumps = 1; s.coy = true; s.airT = 0; s.wj = 1;
     touch(s, support, t);
     if (s.dead) return s;
     if (support.fall && s.fallT[support.i] === undefined) s.fallT[support.i] = t;
@@ -122,6 +135,10 @@ export function step(s, lvl, inp) {
     } else if (e.t === 'b') {
       const bit = 1 << e.k;
       if (!(s.boosts & bit) && Math.abs(s.x - e.x) < 0.7 && e.y > ymin - 0.7 && e.y < ymax + 0.7) { s.boosts |= bit; s.boostT = 1.4; }
+    } else if (e.t === 'K') {
+      if (!s.key && s.col === e.c && Math.abs(s.x - e.x) < 0.8 && e.y > ymin - 0.6 && e.y < ymax + 0.6) s.key = 1;
+    } else if (e.t === 'B') {
+      if (s.key && !s.bonus && Math.abs(s.x - e.x) < 0.8 && e.y > ymin - 0.6 && e.y < ymax + 0.6) s.bonus = 1;
     } else if (e.t === 'G') {
       const bit = 1 << e.k;
       if (!(s.grav & bit) && s.x >= e.x) { s.grav |= bit; s.gs = -s.gs; s.grounded = false; s.jumps = 1; s.y += s.gs < 0 ? PH : -PH; s.vy = 0; }
@@ -129,6 +146,7 @@ export function step(s, lvl, inp) {
   }
   if (mis) { s.graceT += DT; if (s.graceT > GRACE) { die(s, 'color'); return s; } } else if (s.graceT > 0) { s.saves++; s.graceT = 0; }
   if (s.y < (lvl.minY ?? -14) || s.y > (lvl.maxY ?? 30)) { die(s, 'fall'); return s; }
+  if (lvl.boss) { const sp = speedAt(lvl, s) * (s.col === bossCol(lvl, s.t) ? lvl.boss.slow : lvl.boss.fast); s.bx += sp * DT; if (s.bx > s.x - 0.8) { die(s, 'caught'); return s; } }
   s.t += DT; s.step++;
   if (s.x >= lvl.end) s.fin = true;
   return s;

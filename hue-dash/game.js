@@ -1,8 +1,8 @@
 // HUE DASH: rendering, input, UI, progress. Physics lives in logic.js (deterministic, tested in Node).
 import * as THREE from './vendor/three/three.module.js';
-import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt } from './logic.js?v=202610270942';
-import { LEVELS, WORLDS } from './levels.js?v=202610270942';
-import { Audio } from './audio.js?v=202610270942';
+import { DT, prepare, newState, step, clone, colorAt, platY, starsFor, speedAt, setPhysics, bossCol } from './logic.js?v=202610271655';
+import { LEVELS, WORLDS, BOSSES } from './levels.js?v=202610271655';
+import { Audio } from './audio.js?v=202610271655';
 
 const $ = id => document.getElementById(id);
 const HEX = [0xd3dbe2, 0xf0367f, 0xf7b520, 0x26c6da];
@@ -14,6 +14,18 @@ const THEMES = [
   { top: 0x65678a, hor: 0xc6bccb, fog: 0xaaa4b9, neutral: 0xdcd8e4, back: [0x8a86a3, 0x9893ad, 0x7a7896], sun: 0xffe9d6, glow: 0xffefe0, water: 0x726f8f, hemiG: 0x77738f },
   { top: 0x34436a, hor: 0x7a8db0, fog: 0x62749a, neutral: 0xb9c3d6, back: [0x4b5b82, 0x55678f, 0x435276], sun: 0xd9e2ff, glow: 0xe6ecff, water: 0x3f4f74, hemiG: 0x3c4a6c, night: true },
 ];
+// v1.4 four worlds (Settings > Features > worlds): distinct looks, lighter haze
+const THEMES4 = [
+  { kind: 'lake', name: 'Misty Lake', top: 0x4f7396, hor: 0xa9c4d6, fog: 0x93b2c6, neutral: 0xdde6ec, back: [0x7c9db3, 0x8eaebf, 0x6a8ca3], sun: 0xfff3e0, glow: 0xfff7ea, water: 0x5f8aa6, hemiG: 0x6d8496 },
+  { kind: 'city', name: 'Neon City', top: 0x1d1838, hor: 0x5a3f7a, fog: 0x3c2c5c, neutral: 0xb7b4d6, back: [0x2e2950, 0x3a3361, 0x252145], sun: 0xd9c6ff, glow: 0xff7ab0, water: 0x231d40, hemiG: 0x3a2f5c, night: true },
+  { kind: 'desert', name: 'Sunset Desert', top: 0x6a5a9a, hor: 0xffb98a, fog: 0xe8a885, neutral: 0xf2e2cc, back: [0xd99a6c, 0xe6ae7c, 0xc4835c], sun: 0xffd9a8, glow: 0xffe1b0, water: 0xc98f6a, hemiG: 0xa86f58 },
+  { kind: 'sky', name: 'Starry Sky', top: 0x0b1030, hor: 0x2c3a78, fog: 0x1e2a5a, neutral: 0xc6cff0, back: [0x2a3670, 0x34418a, 0x222c60], sun: 0xc8d6ff, glow: 0xb8c8ff, water: 0x141c48, hemiG: 0x2a3462, night: true },
+];
+const themeFor = w => FX.worlds ? THEMES4[w] : THEMES[w];
+const worldName = w => FX.worlds ? THEMES4[w].name : WORLDS[w].name;
+// v1.4 gem-unlocked scarves and trail colours
+const SCARVES = [{ id: 'none', name: 'None', gems: 0 }, { id: 'red', name: 'Cherry', c: 0xe2424f, gems: 6 }, { id: 'sky', name: 'Sky', c: 0x5ab8f0, gems: 15 }, { id: 'sun', name: 'Sunny', c: 0xf7c23c, gems: 30 }, { id: 'mint', name: 'Mint', c: 0x45d3a5, gems: 45 }, { id: 'night', name: 'Midnight', c: 0x3a3f7a, gems: 65 }];
+const TRAILS = [{ id: 'hue', name: 'Your colour', gems: 0 }, { id: 'snow', name: 'Snow', c: 0xffffff, gems: 10 }, { id: 'rose', name: 'Rose', c: 0xff8fc0, gems: 24 }, { id: 'lime', name: 'Lime', c: 0xb8f060, gems: 40 }, { id: 'violet', name: 'Violet', c: 0xa58cff, gems: 55 }, { id: 'rainbow', name: 'Rainbow', gems: 80 }];
 const OUTFITS = [
   { id: 'cap', name: 'Cap', stars: 0 }, { id: 'beanie', name: 'Beanie', stars: 6 }, { id: 'phones', name: 'Headphones', stars: 15 },
   { id: 'crown', name: 'Crown', stars: 30 }, { id: 'helmet', name: 'Helmet', stars: 45 }, { id: 'halo', name: 'Halo', stars: 70 },
@@ -47,14 +59,20 @@ function loadSave() {
   save.set = Object.assign({ music: 0.7, sfx: 0.8, musicOn: true, sfxOn: true, reduced: false, ghost: true, bright: 1 }, save.set);
 // v1.3 feature toggles (Settings > Features); each off = v1.2 behaviour
 save.set.fx = Object.assign({ anim: true, land: true, colour: true, chunky: true, trans: true }, save.set.fx || {});
+  // v1.4 features (all on by default except Assist); off = v1.3 behaviour
+  save.set.fx = Object.assign({ worlds: true, tight: true, combo: true, race: true, keys: true, boss: true, daily: true, outfits: true, photo: true, checkpoints: true, assist: false }, save.set.fx);
+  save.daily = Object.assign({ last: '', streak: 0, best: {} }, save.daily);
   globalThis.FX = save.set.fx;
-  save.look = Object.assign({ outfit: 'cap', board: 'snow' }, save.look);
+  save.look = Object.assign({ outfit: 'cap', board: 'snow', scarf: 'none', trail: 'hue' }, save.look);
+  setPhysics(save.set.fx.tight);
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
 const lvSave = id => save.levels[id] || (save.levels[id] = { done: false, stars: [false, false, false], gems: 0 });
 const starCount = id => { const l = save.levels[id]; return l ? l.stars.filter(Boolean).length : 0; };
 const totalStars = () => LEVELS.reduce((a, l) => a + starCount(l.id), 0);
 const totalGems = () => LEVELS.reduce((a, l) => a + popc((save.levels[l.id] || {}).gems || 0), 0);
+const bonusGems = () => Object.values(save.levels).filter(l => l.bonus).length;
+const allGems = () => totalGems() + bonusGems();
 const popc = v => (v & 1) + ((v >> 1) & 1) + ((v >> 2) & 1);
 const unlocked = id => id === 0 || !!(save.levels[id - 1] && save.levels[id - 1].done);
 
@@ -73,11 +91,11 @@ const camera = new THREE.PerspectiveCamera(44, 1, 0.5, 320);
 const hemi = new THREE.HemisphereLight(0xffffff, 0xd8cfc8, 1.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.9);
 function curTheme() { try { return theme; } catch (e) { return null; } }
-function applyBright() { const b = save.set.bright || 1, n = THEMES.indexOf(curTheme()) === 3; hemi.intensity = (n ? 1.3 : 1.15) * b; sun.intensity = (n ? 1.0 : 1.7) * b; document.documentElement.style.setProperty('--bright', b); } sun.castShadow = true;
+function applyBright() { const b = save.set.bright || 1, n = !!(curTheme() && curTheme().night); hemi.intensity = (n ? 1.3 : 1.15) * b; sun.intensity = (n ? 1.0 : 1.7) * b; document.documentElement.style.setProperty('--bright', b); } sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 12, bottom: -12, near: 1, far: 60 });
 sun.shadow.bias = -0.0006; sun.shadow.radius = 4; scene.add(sun); scene.add(sun.target);
 hemi.layers.enable(1); sun.layers.enable(1); sun.shadow.camera.layers.enable(1);   // v1.2: light + shadow the crisp player layer
-scene.fog = new THREE.FogExp2(0x9cb0c2, 0.0125);
+scene.fog = new THREE.FogExp2(0x9cb0c2, 0.0078);   // v1.4: haze dialled back (was 0.0125)
 const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, glow: { value: new THREE.Color() }, gdir: { value: new THREE.Vector3(0.82, 0.12, -0.56).normalize() } },
   vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -103,7 +121,7 @@ varying vec2 vUv;
 float lin(float d){ float z = d*2.0 - 1.0; return 2.0*cn*cf/(cf + cn - z*(cf - cn)); }
 void main(){
   vec3 sh = texture2D(tS, vUv).rgb; vec3 bl = texture2D(tB, vUv).rgb; float z = lin(texture2D(tD, vUv).r);
-  float far = smoothstep(focus + 6.0, focus + 48.0, z), near = 1.0 - smoothstep(focus*0.55, focus*0.85, z);
+  float far = smoothstep(focus + 12.0, focus + 75.0, z)*0.8, near = 1.0 - smoothstep(focus*0.55, focus*0.85, z);
   vec3 c = mix(sh, bl, clamp(max(far*0.92, near), 0.0, 1.0));
   c += max(bl - vec3(0.58), vec3(0.0))*bloom;
   gl_FragColor = vec4(c, 1.0);
@@ -256,13 +274,25 @@ let ringT = 0;
 
 // ---------- runner ----------
 // v1.2 crisp runner: own materials (no fog, a touch of self-light), a thin dark outline, drawn in the player layer after post
-const rmat = (hex, o = {}) => mat(hex, { roughness: 0.6, emissive: hex, emissiveIntensity: 0.14, ...o, fog: false });
+const rmat = (hex, o = {}) => mat(hex, { roughness: 0.55, emissive: hex, emissiveIntensity: 0.12, ...o, fog: false, flatShading: false });   // v1.4: smooth (soft-shaded) runner
+// v1.4 rounded runner: rounded boxes with true smooth normals (each vertex pushed onto an inner box + radius)
+const RGEO = {};
+function roundBox(w, h, d, r, seg = 4) {
+  const k = [w, h, d, r].map(v => v.toFixed(3)).join(); if (RGEO[k]) return RGEO[k];
+  r = Math.min(r, w / 2, h / 2, d / 2) * 0.999; const g = new THREE.BoxGeometry(w, h, d, seg * 2, seg * 2, seg * 2), P = g.attributes.position, N = g.attributes.normal, v = new THREE.Vector3(), c = new THREE.Vector3();
+  const hw = w / 2 - r, hh = h / 2 - r, hd = d / 2 - r;
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); c.set(Math.max(-hw, Math.min(hw, v.x)), Math.max(-hh, Math.min(hh, v.y)), Math.max(-hd, Math.min(hd, v.z))); const n = v.sub(c).normalize(); N.setXYZ(i, n.x, n.y, n.z); P.setXYZ(i, c.x + n.x * r, c.y + n.y * r, c.z + n.z * r); }
+  g.computeBoundingBox(); g.computeBoundingSphere(); return RGEO[k] = g;
+}
+const capsule = (r, len) => RGEO['c' + r + len] || (RGEO['c' + r + len] = new THREE.CapsuleGeometry(r, len, 6, 16));
 const outlineMat = new THREE.MeshBasicMaterial({ color: 0x2b3442, side: THREE.BackSide, fog: false });
 function crispRunner() {
   const r = runner; window.__runnerRef = r;
   r.g.traverse(o => { if (o.isMesh && !o.userData.outline && !o.userData.hasOutline) {
-    const s = o.scale, t = 0.035, ol = new THREE.Mesh(box, outlineMat); ol.userData.outline = true;
-    ol.scale.set(1 + 2 * t / s.x, 1 + 2 * t / s.y, 1 + 2 * t / s.z); o.add(ol); o.userData.hasOutline = true; } });
+    // v1.4: hull uses the part's own (rounded) geometry, grown by a constant world-space thickness
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox.getSize(new THREE.Vector3());
+    const s = o.scale, t = 0.032, ol = new THREE.Mesh(o.geometry, outlineMat); ol.userData.outline = true;
+    ol.scale.set(1 + 2 * t / Math.max(0.02, bb.x * s.x), 1 + 2 * t / Math.max(0.02, bb.y * s.y), 1 + 2 * t / Math.max(0.02, bb.z * s.z)); o.add(ol); o.userData.hasOutline = true; } });
   r.g.traverse(o => o.layers.set(PLAYER_LAYER));
 }
 // v1.3 Nintendo-style character animation: spring squash/stretch, anticipation, run cycle with bob, legs and arm swing, flip on double jump
@@ -291,33 +321,40 @@ function updateRings(dt, gs) { for (const m of lrPool) if (m.visible) { const d 
 // v1.3 colour guide: beams matching the runner's colour glow up, the others settle back
 const CG = [0, 0, 0, 0];
 function colourGuide(dt, col) { for (let i = 1; i < 4; i++) { const m = platMats[i]; if (!m) continue; const tgt = !FX.colour ? 0 : (i === col ? 1 : -1); CG[i] += (tgt - CG[i]) * Math.min(1, dt * 8); const b = m.userData.baseE ?? 0.16; m.emissiveIntensity = b + (CG[i] > 0 ? CG[i] * 0.15 : CG[i] * b * 0.5); } }
-function applyFx() { document.body.classList.toggle('fxbtn', FX.trans); if (lvlGroup) lvlGroup.traverse(o => { if (o.userData && o.userData.cap) o.userData.cap.visible = FX.chunky; }); }
+function applyFx() { document.body.classList.toggle('fxbtn', FX.trans); setPhysics(FX.tight); ['daily', 'photo', 'outfits'].forEach(k => document.body.classList.toggle('fx' + k, !!FX[k])); if (typeof updateDailyInfo === 'function') updateDailyInfo(); if (lvlGroup) lvlGroup.traverse(o => { if (o.userData && o.userData.cap) o.userData.cap.visible = FX.chunky; }); }
 function iris() { if (!FX.trans || save.set.reduced) return; const w = $('wipe'); w.classList.remove('go'); void w.offsetWidth; w.classList.add('go'); }
 function makeRunner(ghost) {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const m = o => ghost ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false }) : rmat(o);
   const parts = {};
-  const add = (name, w, h, d, x, y, z, color, parent = body) => { const ms = new THREE.Mesh(box, m(color)); ms.scale.set(w, h, d); ms.position.set(x, y, z); ms.castShadow = !ghost; parent.add(ms); parts[name] = ms; return ms; };
-  add('board', 1.35, 0.12, 0.5, 0, 0.1, 0, 0xffffff); add('stripe', 1.0, 0.03, 0.52, 0, 0.17, 0, 0xd6246e);
-  add('legB', 0.2, 0.55, 0.2, -0.2, 0.45, 0, 0xcfc9cc); add('legF', 0.2, 0.55, 0.2, 0.22, 0.45, 0, 0xcfc9cc);
-  add('torso', 0.5, 0.55, 0.38, 0, 0.98, 0, 0xd6246e);
-  add('armB', 0.14, 0.45, 0.14, -0.3, 0.98, -0.12, 0xd6246e); add('armF', 0.14, 0.45, 0.14, 0.32, 0.98, 0.12, 0xd6246e);
-  add('head', 0.42, 0.4, 0.4, 0.04, 1.48, 0, 0xf4f1f0);
+  // v1.4: rounded, soft-shaded parts (capsule limbs, pill torso, near-sphere head, rounded board)
+  const add = (name, geo, x, y, z, color, parent = body) => { const ms = new THREE.Mesh(geo, m(color)); ms.position.set(x, y, z); ms.castShadow = !ghost; parent.add(ms); parts[name] = ms; return ms; };
+  add('board', roundBox(1.35, 0.13, 0.5, 0.065), 0, 0.1, 0, 0xffffff); add('stripe', roundBox(1.0, 0.04, 0.52, 0.02), 0, 0.17, 0, 0xd6246e);
+  add('legB', capsule(0.1, 0.36), -0.2, 0.45, 0, 0xcfc9cc); add('legF', capsule(0.1, 0.36), 0.22, 0.45, 0, 0xcfc9cc);
+  add('torso', roundBox(0.5, 0.58, 0.4, 0.19), 0, 0.98, 0, 0xd6246e);
+  add('armB', capsule(0.075, 0.3), -0.3, 0.98, -0.12, 0xd6246e); add('armF', capsule(0.075, 0.3), 0.32, 0.98, 0.12, 0xd6246e);
+  add('head', roundBox(0.44, 0.42, 0.42, 0.19), 0.04, 1.49, 0, 0xf4f1f0);
+  if (!ghost) { const em = new THREE.MeshBasicMaterial({ color: 0x2b3442, fog: false }); for (const z of [-0.08, 0.08]) { const e = new THREE.Mesh(capsule(0.03, 0.06), em); e.position.set(0.21, 0.03, z); e.userData.outline = true; parts.head.add(e); } }   // little eyes
+  const scarf = new THREE.Group(); scarf.position.set(0, 1.27, 0); body.add(scarf); parts.scarf = scarf;
   const hat = new THREE.Group(); hat.position.set(0.04, 1.7, 0); body.add(hat); parts.hat = hat;
   return { g, body, parts, ghost, m };
 }
 function dressRunner(r) {
   const hat = r.parts.hat; while (hat.children.length) hat.remove(hat.children[0]);
-  const hm = id => { const ms = new THREE.Mesh(box, r.m(0xd6246e)); ms.castShadow = !r.ghost; hat.add(ms); return ms; };
-  const o = save.look.outfit;
-  const a = hm(), b = hm();
-  if (o === 'cap') { a.scale.set(0.46, 0.14, 0.44); b.scale.set(0.24, 0.05, 0.36); b.position.set(0.3, -0.05, 0); }
-  else if (o === 'beanie') { a.scale.set(0.46, 0.24, 0.44); a.position.y = 0.04; b.scale.set(0.14, 0.14, 0.14); b.position.y = 0.24; }
-  else if (o === 'phones') { a.scale.set(0.5, 0.08, 0.12); a.position.y = 0.0; b.scale.set(0.14, 0.24, 0.5); b.position.y = -0.18; }
-  else if (o === 'crown') { a.scale.set(0.44, 0.16, 0.42); a.position.y = 0.02; b.scale.set(0.1, 0.3, 0.1); b.position.y = 0.14; }
-  else if (o === 'helmet') { a.scale.set(0.52, 0.3, 0.5); a.position.y = -0.04; b.scale.set(0.1, 0.18, 0.44); b.position.set(0.26, -0.12, 0); }
-  else if (o === 'halo') { a.scale.set(0.5, 0.04, 0.5); a.position.y = 0.2; b.scale.set(0.04, 0.2, 0.04); b.position.y = 0.08; }
+  const hm = (w, h, d, rr = Math.min(w, h, d) * 0.45) => { const ms = new THREE.Mesh(roundBox(w, h, d, rr), r.m(0xd6246e)); ms.castShadow = !r.ghost; hat.add(ms); return ms; };
+  const o = save.look.outfit; let a, b;
+  if (o === 'cap') { a = hm(0.47, 0.16, 0.45, 0.075); b = hm(0.26, 0.05, 0.36, 0.024); b.position.set(0.3, -0.05, 0); }
+  else if (o === 'beanie') { a = hm(0.47, 0.25, 0.45, 0.12); a.position.y = 0.04; b = hm(0.15, 0.15, 0.15, 0.074); b.position.y = 0.24; }
+  else if (o === 'phones') { a = hm(0.5, 0.08, 0.12, 0.04); b = hm(0.14, 0.24, 0.5, 0.07); b.position.y = -0.18; }
+  else if (o === 'crown') { a = hm(0.45, 0.17, 0.43, 0.06); a.position.y = 0.02; b = hm(0.11, 0.3, 0.11, 0.05); b.position.y = 0.14; }
+  else if (o === 'helmet') { a = hm(0.53, 0.31, 0.51, 0.15); a.position.y = -0.04; b = hm(0.1, 0.18, 0.44, 0.05); b.position.set(0.26, -0.12, 0); }
+  else { a = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 10, 32), r.m(0xd6246e)); a.rotation.x = Math.PI / 2; a.position.y = 0.2; hat.add(a); b = hm(0.05, 0.2, 0.05, 0.024); b.position.y = 0.08; }
   r.hatParts = [a, b];
+  // v1.4 scarf (gem unlock): a soft ring round the neck with a tail that flutters
+  const sg = r.parts.scarf; while (sg.children.length) sg.remove(sg.children[0]); r.scarfTail = null;
+  const sc = FX.outfits && SCARVES.find(x => x.id === save.look.scarf);
+  if (sc && sc.c !== undefined) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.065, 10, 28), r.m(sc.c)); ring.rotation.x = Math.PI / 2; ring.scale.set(1.1, 1, 1); sg.add(ring);
+    const tail = new THREE.Mesh(roundBox(0.34, 0.09, 0.14, 0.04), r.m(sc.c)); tail.geometry = tail.geometry.clone(); tail.geometry.translate(-0.17, 0, 0); tail.position.set(-0.18, 0, 0.12); sg.add(tail); r.scarfTail = tail; }
   const bd = BOARDS.find(x => x.id === save.look.board) || BOARDS[0];
   if (!r.ghost) { r.parts.board.material = rmat(bd.c); r.parts.stripe.material = rmat(bd.s); if (r === window.__runnerRef) crispRunner(); }
 }
@@ -331,10 +368,11 @@ const runner = makeRunner(false); scene.add(runner.g); dressRunner(runner); cons
 const ghost = makeRunner(true); scene.add(ghost.g); dressRunner(ghost); ghost.g.visible = false; ghost.g.scale.setScalar(RUN_S);
 
 // ---------- level building ----------
+let keyMesh = null, bonusMesh = null, bonMeshes = [], cpMesh = null, bossMesh = null;
 let level = null, lvlGroup = null, dyn = [], gemMeshes = [], boostMeshes = [], backGroup = null, theme = THEMES[0], finishMesh = null;
 const gemGeo = new THREE.OctahedronGeometry(0.42, 0), torus = new THREE.TorusGeometry(0.7, 0.12, 8, 24), cone = new THREE.ConeGeometry(0.4, 0.6, 4);
 function applyTheme(wi) {
-  theme = THEMES[wi]; setThemeMats(theme);
+  theme = themeFor(wi); setThemeMats(theme);
   skyMat.uniforms.top.value.setHex(theme.top); skyMat.uniforms.hor.value.setHex(theme.hor); skyMat.uniforms.glow.value.setHex(theme.glow); scene.fog.color.setHex(theme.fog);
   hemi.color.setHex(theme.night ? 0xb8c4ee : 0xf2f6ff); hemi.groundColor.setHex(theme.hemiG); hemi.intensity = theme.night ? 1.7 : 1.6;
   if (water) water.material.uniforms.col.value.setHex(theme.water), water.material.uniforms.sky.value.setHex(theme.hor), water.material.uniforms.glow.value.setHex(theme.glow);
@@ -351,7 +389,7 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
     float fres = pow(1.0 - clamp(v.y, 0.0, 1.0), 3.0);
     vec3 c = mix(col, sky, clamp(fres*0.9 + r*0.07, 0.0, 1.0));
     c += glow * smoothstep(0.55, 1.0, r) * 0.12 * (1.0 - fres);
-    float fogk = 1.0 - exp(-d*d*0.00012);
+    float fogk = 1.0 - exp(-d*d*0.00006);
     c = mix(c, sky, fogk);
     gl_FragColor = vec4(c, mix(0.74, 0.97, fogk));
     #include <colorspace_fragment>
@@ -359,11 +397,15 @@ const waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false
 function buildBackdrop(wi, len, lowY) {
   if (backGroup) scene.remove(backGroup);
   backGroup = new THREE.Group(); scene.add(backGroup);
-  const th = THEMES[wi]; let seed = wi * 99 + 1; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const th = themeFor(wi); let seed = wi * 99 + 1; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   // instanced blocky structures: stacked slabs and towers far behind, a few out-of-focus blocks in the foreground
   const blocks = [];
   for (let x = -80; x < len + 160; x += 5 + R() * 8) {
-    const z = -30 - R() * 95, w = 4 + R() * 12, h = 3 + R() * (wi === 1 ? 26 : 16), d = 4 + R() * 10, base = lowY - 6 + R() * 8;
+    const kd = FX.worlds ? th.kind : '';
+    let z = -30 - R() * 95, w = 4 + R() * 12, h = 3 + R() * (wi === 1 ? 26 : 16), d = 4 + R() * 10, base = lowY - 6 + R() * 8;
+    if (kd === 'city') { w = 3 + R() * 6; h = 14 + R() * 38; d = 3 + R() * 6; }   // tall towers
+    else if (kd === 'desert') { w = 14 + R() * 26; h = 1.5 + R() * 5; d = 10 + R() * 16; base = lowY - 4 + R() * 3; }   // long low dunes / mesas
+    else if (kd === 'sky') { base = lowY - 4 + R() * 30; h = 1 + R() * 3; }   // floating islands
     blocks.push([x, base + h / 2, z, w, h, d, th.back[Math.floor(R() * 3)]]);
     if (R() < 0.55) { const w2 = w * (0.4 + R() * 0.5), h2 = 1.5 + R() * 5; blocks.push([x + (R() - .5) * w * 0.5, base + h + h2 / 2, z + (R() - .5) * 2, w2, h2, d * (0.5 + R() * 0.5), th.back[Math.floor(R() * 3)]]); }
     if (R() < 0.3) blocks.push([x + R() * 6, lowY + 10 + R() * 18, z - 10, 6 + R() * 10, 1.5 + R() * 2.5, 4 + R() * 6, th.back[Math.floor(R() * 3)]]);   // floating slab
@@ -375,14 +417,20 @@ function buildBackdrop(wi, len, lowY) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color();
   blocks.forEach((b, i) => { m4.compose(new THREE.Vector3(b[0], b[1], b[2]), q, new THREE.Vector3(b[3], b[4], b[5])); im.setMatrixAt(i, m4); im.setColorAt(i, c.setHex(b[6])); });
   backGroup.add(im);
-  if (th.night) for (let k = 0; k < 40; k++) { const g = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: [0xff7ab0, 0xffd27a, 0x8ee8ff][k % 3], fog: true })); g.scale.set(1.5 + R() * 3, 0.25, 0.1); g.position.set(-40 + R() * (len + 120), lowY + R() * 20, -25 - R() * 60); backGroup.add(g); }
+  if (FX.worlds && th.kind === 'sky') {   // v1.4 starry sky: a field of stars
+    const n = 700, pos = new Float32Array(n * 3); for (let k = 0; k < n; k++) { const a = R() * Math.PI, b = R() * 0.9 + 0.05; pos[k * 3] = len / 2 + Math.cos(a) * 170; pos[k * 3 + 1] = lowY + Math.sin(b * Math.PI / 2) * 150; pos[k * 3 + 2] = -Math.sin(a) * 150 - 20; }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    backGroup.add(new THREE.Points(gg, new THREE.PointsMaterial({ color: 0xffffff, size: 1.3, sizeAttenuation: true, fog: false, transparent: true, opacity: 0.9 })));
+  }
+  if (FX.worlds && th.kind === 'desert') { const sunM = new THREE.Mesh(new THREE.CircleGeometry(16, 48), new THREE.MeshBasicMaterial({ color: 0xffd08a, fog: false })); sunM.position.set(len * 0.7, lowY + 14, -150); backGroup.add(sunM); }
+  if (th.night && !(FX.worlds && th.kind === 'sky')) for (let k = 0; k < (FX.worlds && th.kind === 'city' ? 120 : 40); k++) { const g = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: [0xff7ab0, 0xffd27a, 0x8ee8ff][k % 3], fog: true })); g.scale.set(1.5 + R() * 3, 0.25, 0.1); g.position.set(-40 + R() * (len + 120), lowY + R() * 20, -25 - R() * 60); backGroup.add(g); }
   water = new THREE.Mesh(new THREE.PlaneGeometry(len + 600, 500), waterMat); water.rotation.x = -Math.PI / 2; water.position.set(len / 2, lowY - 5, -60); water.renderOrder = -1;   // drawn before the smoke, which doesn't write depth
   waterMat.uniforms.col.value.setHex(th.water); waterMat.uniforms.sky.value.setHex(th.hor); waterMat.uniforms.glow.value.setHex(th.glow);
   backGroup.add(water);
 }
 function buildLevel(lvl) {
   if (lvlGroup) scene.remove(lvlGroup);
-  lvlGroup = new THREE.Group(); scene.add(lvlGroup); dyn = []; gemMeshes = []; boostMeshes = [];
+  lvlGroup = new THREE.Group(); scene.add(lvlGroup); dyn = []; gemMeshes = []; boostMeshes = []; keyMesh = bonusMesh = cpMesh = null; bonMeshes = [];
   applyTheme(lvl.world);
   for (const e of lvl.els) {
     if (e.t === 'p') {
@@ -391,6 +439,7 @@ function buildLevel(lvl) {
       { const cap = new THREE.Mesh(box, capMats[e.c]), t = 0.16, o = 0.06; cap.scale.set(1 + 2 * o / e.w, t / e.h, 1 + 2 * o / BEAM_D); cap.position.y = 0.5 - t / e.h / 2 + 0.012 / e.h; cap.receiveShadow = true; cap.visible = FX.chunky; ms.add(cap); ms.userData.cap = cap; }
       if (e.pad) for (let k = 0; k < 2; k++) { const a = new THREE.Mesh(cone, mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 })); a.scale.set(0.8, 0.6, 0.8); a.position.set(e.x + e.w / 2, e.y + 0.35 + k * 0.45, 0); a.rotation.y = Math.PI / 4; lvlGroup.add(a); e._arrows = (e._arrows || []).concat(a); }
       if (e.ma || e.fp || e.fall || e.pad) dyn.push({ e, ms }); e._ms = ms;
+      if (e.bon) { ms.material = new THREE.MeshStandardMaterial({ color: HEX[e.c], emissive: HEX[e.c], emissiveIntensity: 0.3, transparent: true, opacity: 0.22, depthWrite: false }); ms.castShadow = false; ms.userData.cap.visible = false; bonMeshes.push(ms); }
     } else if (e.t === 'w') {
       const ms = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ color: HEX[e.c], transparent: true, opacity: 0.62, emissive: HEX[e.c], emissiveIntensity: 0.4, depthWrite: false }));
       ms.scale.set(0.18, e.h, BEAM_D + 0.15); ms.position.set(e.x, e.y + e.h / 2, 0); lvlGroup.add(ms);
@@ -403,6 +452,14 @@ function buildLevel(lvl) {
       ms.position.set(e.x, e.y, 0); ms.castShadow = true; lvlGroup.add(ms); gemMeshes[e.k] = ms;
     } else if (e.t === 'b') {
       const ms = new THREE.Mesh(torus, new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffc94a, emissiveIntensity: 0.7 })); ms.position.set(e.x, e.y, 0); ms.rotation.y = Math.PI / 2; lvlGroup.add(ms); boostMeshes[e.k] = ms;
+    } else if (e.t === 'K') {   // v1.4 hidden key: grab it in its colour
+      const kg = new THREE.Group(), km = new THREE.MeshStandardMaterial({ color: HEX[e.c], emissive: HEX[e.c], emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.4 });
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.07, 10, 24), km); bow.position.y = 0.25; kg.add(bow);
+      const sh = new THREE.Mesh(roundBox(0.1, 0.5, 0.1, 0.04), km); sh.position.y = -0.12; kg.add(sh); const tooth = new THREE.Mesh(roundBox(0.18, 0.08, 0.08, 0.03), km); tooth.position.set(0.1, -0.3, 0); kg.add(tooth);
+      kg.position.set(e.x, e.y, 0); lvlGroup.add(kg); keyMesh = kg;
+    } else if (e.t === 'B') {
+      const ms = new THREE.Mesh(gemGeo, new THREE.MeshStandardMaterial({ color: 0xfff1b0, emissive: 0xffc23c, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.4, flatShading: true }));
+      ms.scale.setScalar(1.35); ms.position.set(e.x, e.y, 0); lvlGroup.add(ms); bonusMesh = ms;
     } else if (e.t === 'G') {
       const ms = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ color: 0xb48cff, emissive: 0x8a5cff, emissiveIntensity: 0.8, transparent: true, opacity: 0.45, depthWrite: false }));
       ms.scale.set(0.3, 12, BEAM_D + 0.3); ms.position.set(e.x, e.y + 3.5, 0); lvlGroup.add(ms);
@@ -414,6 +471,19 @@ function buildLevel(lvl) {
   for (const z of [-1.2, 1.2]) { const p = new THREE.Mesh(box, mat(0xffffff)); p.scale.set(0.3, 5, 0.3); p.position.set(0, 2.5, z); p.castShadow = true; f.add(p); }
   for (let k = 0; k < 8; k++) { const t = new THREE.Mesh(box, mat(HEX[1 + (k % lvl.ncol)])); t.scale.set(0.35, 0.6, 2.8 / 8); t.position.set(0, 4.8, -1.2 + 0.175 + k * 0.35); f.add(t); }
   f.position.set(lvl.end, fy, 0); lvlGroup.add(f); finishMesh = f;
+  // v1.4 checkpoint flag
+  if (lvl.cp) { const fl = new THREE.Group(), pole = new THREE.Mesh(capsule(0.05, 2.6), mat(0xffffff)); pole.position.y = 1.4; fl.add(pole);
+    const cloth = new THREE.Mesh(roundBox(0.8, 0.5, 0.05, 0.02), new THREE.MeshStandardMaterial({ color: 0xbfc6d0, emissive: 0xffffff, emissiveIntensity: 0.1 })); cloth.position.set(0.42, 2.4, 0); fl.add(cloth);
+    fl.position.set(lvl.cp.x, lvl.cp.y, -0.6); lvlGroup.add(fl); cpMesh = cloth; }
+  // v1.4 boss: a giant colour-shifting blob creature
+  bossMesh = null;
+  if (lvl.boss) { const bg = new THREE.Group(), bm = new THREE.MeshStandardMaterial({ color: HEX[1], emissive: HEX[1], emissiveIntensity: 0.35, roughness: 0.35 });
+    const bodyB = new THREE.Mesh(new THREE.SphereGeometry(2.6, 32, 20), bm); bodyB.scale.set(1.2, 1, 0.9); bg.add(bodyB);
+    const white = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), dark = new THREE.MeshBasicMaterial({ color: 0x1b1e2a });
+    for (const z of [-0.9, 0.9]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 14), white); e.position.set(2.2, 0.9, z); bg.add(e); const pu = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 10), dark); pu.position.set(2.7, 0.9, z); bg.add(pu); }
+    const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.16, 8, 24, Math.PI), dark); mouth.position.set(2.7, -0.4, 0); mouth.rotation.set(0, Math.PI / 2, Math.PI); bg.add(mouth);
+    for (let k = 0; k < 5; k++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 12), bm); sp.position.set(-1.6 + k * 0.9, 2.4 - Math.abs(k - 2) * 0.2, 0); sp.rotation.z = 0.3 - k * 0.15; bg.add(sp); }
+    bg.userData.mat = bm; lvlGroup.add(bg); bossMesh = bg; }
   const lowY = Math.min(...lvl.els.filter(e => e.t === 'p').map(e => e.y)) - 3;
   buildBackdrop(lvl.world, lvl.end, lowY);
   buildReflection(lowY - 5);
@@ -431,23 +501,52 @@ const MODE = { title: 0, play: 1, dead: 2, finish: 3, replay: 4 };
 let mode = MODE.title, S = null, G = null, ghostScript = null, input = { held: false, jp: false, sw: 0 }, script = [], acc = 0, deadT = 0, finT = 0, lastCol = 1, paused = false, timeScale = 1, attract = null, runStats = null;
 let switchPop = 0, stretch = 0, camVY = 0, camLX = 0, shake = 0, camY = 2, camX = 0, lastGrounded = true, squash = 0, emitAcc = 0, replayScript = null, replayIdx = 0, replayHeld = false;
 
+// v1.4: level source (main 0-27, bosses 28-31, daily 100); keys stripped and checkpoints added per toggles
+let dailyLvl = null;
+function levelData(id) {
+  const src = id === 100 ? dailyLvl : id >= 28 ? BOSSES[id - 28] : LEVELS[id];
+  const l = JSON.parse(JSON.stringify(src)); delete l._b;
+  if (!FX.keys) l.els = l.els.filter(e => !e.bon && e.t !== 'K' && e.t !== 'B');
+  if (FX.checkpoints && l.end > 250) {
+    const ps = l.els.filter(e => e.t === 'p' && !e.c && !e.ma && !e.fp && !e.fall && !e.pad && !e.bon && e.w >= 4 && e.x > l.end * 0.38 && e.x < l.end * 0.66);
+    const firstG = Math.min(...l.els.filter(e => e.t === 'G').map(e => e.x), Infinity);
+    const p = ps.filter(e => e.x + e.w < firstG || e.x > firstG + 30).sort((a, b) => Math.abs(a.x - l.end / 2) - Math.abs(b.x - l.end / 2))[0];
+    if (p) l.cp = { x: p.x + Math.min(2, p.w / 2), y: p.y };
+  }
+  return l;
+}
+const bestKey = () => FX.tight ? 'bestT' : 'best', bestTimeKey = () => FX.tight ? 'bestTT' : 'bestTC';
+let cpState = null, usedCp = false, combo = 0, runCombo = 0, lastBossCol = 0, assistK = 1, assistUsed = false, raceShown = false;
 function startLevel(id, opts = {}) {
-  level = prepare(LEVELS[id]); buildLevel(level);
-  const ls = save.levels[id]; ghostScript = ls && ls.best ? ls.best : null;
+  level = prepare(levelData(id)); level.id = id; buildLevel(level);
+  const ls = save.levels[id]; if (ls && ls.best && ls.bestTC === undefined) ls.bestTC = ls.bestTime;
+  ghostScript = ls && ls[bestKey()] ? ls[bestKey()] : null;
   replayScript = opts.replay ? (ghostScript || null) : null;
   showScreen(null); $('hud').classList.add('on'); $('replayTag').classList.toggle('on', !!replayScript);
   restart(true);
-  banner(`${level.name}<small>${WORLDS[level.world].name} · ${level.id % 7 + 1} / 7</small>`);
-  audio.start(level.world); audio.world = level.world;
+  banner(`${level.name}<small>${level.boss ? 'Boss chase · match its colour to outrun it' : id === 100 ? 'Daily Dash · ' + level.daily : worldName(level.world) + ' · ' + (level.id % 7 + 1) + ' / 7'}</small>`);
+  audio.start(level.world, FX.worlds); audio.alt = FX.worlds; audio.world = level.world;
   if (id === 0 && !save.tot.runs) { $('hint').classList.add('on'); setTimeout(() => $('hint').classList.remove('on'), 5000); }
 }
 function restart(first) {
   if (window.__deathAt) { window.__restartMs = performance.now() - window.__deathAt; window.__deathAt = 0; }
   S = newState(level); G = ghostScript && save.set.ghost && !replayScript ? { s: newState(level), i: 0, held: false } : null;
+  cpState = null; usedCp = false; combo = 0; runCombo = 0; assistK = 1; assistUsed = false; lastBossCol = 0; $('hCombo').classList.remove('on');
+  if (keyMesh) keyMesh.visible = true; if (bonusMesh) bonusMesh.visible = true; bonMeshes.forEach(m => { m.material.opacity = 0.22; m.material.depthWrite = false; });
+  if (cpMesh) cpMesh.material.color.setHex(0xbfc6d0);
+  $('hRace').classList.toggle('on', !!(G && FX.race)); $('hBoss').classList.toggle('on', !!level.boss); $('hAssist').classList.toggle('on', !!FX.assist); $('hKey').textContent = '';
   ghost.g.visible = !!G; script = []; acc = 0; input = { held: input.held, jp: false, sw: 0 }; replayIdx = 0; replayHeld = false;
   mode = replayScript ? MODE.replay : MODE.play; smoke.clear(); lastCol = 1; paintRunner(runner, 1); runner.g.visible = true;
   gemMeshes.forEach(m => m && (m.visible = true)); boostMeshes.forEach(m => m && (m.visible = true));
   AN.s = 1; AN.v = 0; AN.spin = 0; iris(); camX = S.x; camY = 2; timeScale = 1; save.tot.runs++; setAccent(1); updateHud(true);
+}
+// v1.4 checkpoint respawn: restore the snapshot taken at the flag (no time star, no ghost save)
+function respawn() {
+  if (!cpState || (replayScript && !replayScript.__test) || !FX.checkpoints) { restart(); return; }
+  S = clone(cpState); usedCp = true; G = null; ghost.g.visible = false; $('hRace').classList.remove('on');
+  mode = MODE.play; acc = 0; input = { held: false, jp: false, sw: 0 }; smoke.clear(); lastCol = S.col; paintRunner(runner, S.col); setAccent(S.col); runner.g.visible = true;
+  gemMeshes.forEach((m, k) => m && (m.visible = !(S.gems & (1 << k)))); boostMeshes.forEach((m, k) => m && (m.visible = !(S.boosts & (1 << k))));
+  if (keyMesh) keyMesh.visible = !S.key; combo = 0; AN.s = 1; AN.v = 0; AN.spin = 0; camX = S.x; camY = S.y + 1; iris(); updateHud(true);
 }
 function setAccent(c) { document.documentElement.style.setProperty('--accent', CSS[c]); }
 function scriptInput(sc, st, sim) {
@@ -468,7 +567,7 @@ function simStep() {
     if (input.jp && !input.held) { script.push([S.step + 1, 'u']); input.wasHeld = false; } else input.wasHeld = jh;
     input.jp = false; input.sw = 0;
   }
-  const pre = { g: S.grounded, gems: S.gems, boosts: S.boosts, gs: S.gs, jn: S.jumpsN, col: S.col, pad: S.padT, sv: S.saves, vy: S.vy };
+  const pre = { g: S.grounded, gems: S.gems, boosts: S.boosts, gs: S.gs, jn: S.jumpsN, col: S.col, pad: S.padT, sv: S.saves, vy: S.vy, key: S.key, bonus: S.bonus, wall: S.onWall };
   step(S, level, inp);
   if (G && !G.s.dead && !G.s.fin) step(G.s, level, scriptInput(ghostScript, G.s, G));
   // events -> juice
@@ -482,10 +581,20 @@ function simStep() {
   if (S.saves > (pre.sv || 0) && mode === MODE.play) { banner('<small>close one!</small>'); audio.sfxPlay('star', 0); }
   if (S.gs !== pre.gs) { audio.sfxPlay('grav'); shake = 0.3; }
   if (S.padT > 0) S.padT -= DT;
+  // v1.4 events
+  if (S.grounded && !pre.g) { combo = 0; $('hCombo').classList.remove('on'); }
+  if (S.onWall && !pre.wall) { dust(0.5); audio.sfxPlay('land'); }
+  if (S.key && !pre.key) { if (keyMesh) { keyMesh.visible = false; cubes.burst(keyMesh.position.x, keyMesh.position.y, HEX[S.col], 20, { v: 7, s: 0.1, g: 6, life: 0.9 }); } bonMeshes.forEach(m => { m.material.opacity = 0.95; m.material.depthWrite = true; }); audio.sfxPlay('key'); banner('🗝<small>Key found! A <b>bonus route</b> opened above</small>'); $('hKey').textContent = '🗝'; }
+  if (S.bonus && !pre.bonus) { if (bonusMesh) { bonusMesh.visible = false; cubes.burst(bonusMesh.position.x, bonusMesh.position.y, 0xffc23c, 26, { v: 8, s: 0.12, g: 5, life: 1 }); } audio.sfxPlay('gem'); audio.sfxPlay('star', 2); $('hKey').textContent = '💎'; }
+  if (level.cp && !cpState && S.grounded && S.x >= level.cp.x && !S.dead && (mode === MODE.play || (replayScript && replayScript.__test))) { cpState = clone(S); if (cpMesh) cpMesh.material.color.setHex(HEX[S.col]); audio.sfxPlay('flag'); banner('<small>Checkpoint!</small>'); }
+  if (level.boss) { const bc = bossCol(level, S.t); if (bc !== lastBossCol) { if (lastBossCol) audio.sfxPlay('boss'); lastBossCol = bc; } }
   if (S.dead) onDeath(); else if (S.fin) onFinish();
 }
 function onSwitch(c) {
   switchPop = 1;
+  // v1.4 mid-air colour-swap combo
+  if (FX.combo && !S.grounded && mode !== MODE.title) { combo++; runCombo = Math.max(runCombo, combo);
+    if (combo >= 2) { const h = $('hCombo'); h.textContent = '×' + combo; h.classList.add('on'); h.classList.remove('pop'); void h.offsetWidth; h.classList.add('pop'); setTimeout(() => h.classList.remove('pop'), 140); audio.sfxPlay('combo', combo); } }
   audio.sfxPlay('switch', c); setAccent(c); paintRunner(runner, c); puff(save.set.reduced ? 6 : 14, c);
   ring.visible = true; ringT = 0; ringMat.color.setHex(HEX[c]); if (mode !== MODE.replay) save.tot.switches++;
   ring2.visible = true; ring2T = 0; ring2Mat.color.setHex(HEX[c]); flash(CSS[c], 0.16); skyPulse = 1; shake = Math.max(shake, 0.12);
@@ -501,7 +610,7 @@ function onDeath() {
   window.__deaths = (window.__deaths || []).concat([[level.id, S.cause, +S.x.toFixed(1), +S.y.toFixed(1), S.step]]);
   window.__deathAt = performance.now();
   mode = MODE.dead; deadT = 0; runner.g.visible = false; audio.sfxPlay('shatter'); shake = 0.6; hitStop = 0.06; flash('#ffffff', 0.35);
-  const why = { color: 'Match the colour, <b>tap left</b> before you touch it', spike: 'Spikes! <b>Jump</b> over them', crash: '<b>Jump</b> sooner to clear that ledge', fall: 'Hold <b>jump</b> longer, or double-jump' }[S.cause];
+  const why = { caught: 'Caught! <b>Match its colour</b> to pull away', color: 'Match the colour, <b>tap left</b> before you touch it', spike: 'Spikes! <b>Jump</b> over them', crash: '<b>Jump</b> sooner to clear that ledge', fall: 'Hold <b>jump</b> longer, or double-jump' }[S.cause];
   deathStreak = (deathStreak.id === level.id ? deathStreak : { id: level.id, n: 0 }); deathStreak.n++;
   if (why && !replayScript && (deathStreak.n <= 2 || deathStreak.n % 4 === 0)) setTimeout(() => mode === MODE.play && banner('<small>' + why + '</small>'), 280);
   cubes.burst(S.x, S.y - (S.gs < 0 ? 1.4 : 0), HEX[S.col], save.set.reduced ? 26 : 50); cubes.burst(S.x, S.y, 0xffffff, 12);
@@ -511,31 +620,48 @@ function onFinish() {
   mode = MODE.finish; finT = 0; audio.sfxPlay('finish');
   for (let k = 0; k < 4; k++) cubes.burst(level.end, S.y + 3, HEX[1 + (k % level.ncol)], 16, { v: 10, s: 0.15, g: 10, life: 2 });
   if (replayScript && !replayScript.__test) return;
-  const r = { gems: S.gems, switches: S.switches, time: S.t }, st = starsFor(level, r), ls = lvSave(level.id);
+  const r = { gems: S.gems, switches: S.switches, time: S.t }, st = starsFor(level, r);
+  if (usedCp) st[2] = false;
+  let race = null; const gt = G ? ((save.levels[level.id] || {})[bestTimeKey()]) : undefined; if (FX.race && gt !== undefined && !usedCp) race = r.time - gt;
+  if (level.id === 100) {   // v1.4 Daily Dash: streak + today's best
+    const d = save.daily, today = level.daily, y = dayStr(-1);
+    if (d.last !== today) { d.streak = d.last === y ? d.streak + 1 : 1; d.last = today; }
+    const first = d.best[today] === undefined; if (first || r.time < d.best[today]) d.best[today] = r.time;
+    Object.keys(d.best).sort().slice(0, -14).forEach(k => delete d.best[k]); persist();
+    runStats = { r, st, first, daily: true, combo: runCombo, race: null }; return;
+  }
+  const ls = lvSave(level.id);
+  if (S.bonus) { if (!ls.bonus) toast('💎 <b>Bonus gem!</b> · secret route found'); ls.bonus = true; }
+  if (!usedCp) { const bk = bestKey(), tk = bestTimeKey(); if (ls[tk] === undefined || r.time < ls[tk]) { ls[tk] = r.time; ls[bk] = (replayScript && replayScript.__test ? replayScript : script).slice(); } }
   const first = !ls.done; ls.done = true; ls.gems |= S.gems; ls.stars = ls.stars.map((v, i) => v || st[i]);
-  if (ls.bestTime === undefined || r.time < ls.bestTime) { ls.bestTime = r.time; ls.best = (replayScript && replayScript.__test ? replayScript : script).slice(); }
+  if (!usedCp && (ls.bestTime === undefined || r.time < ls.bestTime)) ls.bestTime = r.time;
   if (ls.fewestSw === undefined || r.switches < ls.fewestSw) ls.fewestSw = r.switches;
   save.tot.finishes++;
   ach('first'); if (totalGems() >= 10) ach('gems10'); if (st.every(Boolean)) ach('perfect'); if (save.tot.switches >= 500) ach('switch500');
   for (let w = 0; w < 4; w++) if (LEVELS.filter(l => l.world === w).every(l => lvSave(l.id).done)) ach('w' + (w + 1));
   if (totalStars() === 84) ach('all3');
   persist();
-  runStats = { r, st, first };
+  runStats = { r, st, first, combo: runCombo, race, cp: usedCp, assist: assistUsed };
 }
 function ach(id) { if (save.ach[id]) return; save.ach[id] = Date.now(); const a = ACH.find(x => x.id === id); toast(`${a.i} <b>${a.n}</b> · ${a.d}`); persist(); }
 function toast(html) { const d = document.createElement('div'); d.className = 'toast'; d.innerHTML = html; $('toasts').appendChild(d); setTimeout(() => d.remove(), 3100); }
 function banner(html) { const b = $('banner'); b.innerHTML = html; b.classList.add('on'); clearTimeout(banner.t); banner.t = setTimeout(() => b.classList.remove('on'), 1800); }
 
 function showResults() {
-  const { r, st } = runStats, ls = lvSave(level.id);
-  $('rTitle').textContent = level.name + ' clear!';
+  const { r, st } = runStats, ls = level.id === 100 ? { bestTime: save.daily.best[level.daily] } : lvSave(level.id);
+  $('rTitle').textContent = (level.id === 100 ? 'Daily Dash' : level.name) + ' clear!';
   $('rStars').innerHTML = st.map((v, i) => v ? `<i style="animation-delay:${0.15 + i * 0.2}s">★</i>` : '★').join('');
   st.forEach((v, i) => v && setTimeout(() => audio.sfxPlay('star', i), 150 + i * 200));
   const g = (ok, label, val) => `<div class="goal ${ok ? 'ok' : ''}"><span>${label}</span><b>${val}</b></div>`;
   $('rGoals').innerHTML = g(st[0], 'Collect all 3 gems', '◆'.repeat(popc(r.gems)) + '◇'.repeat(3 - popc(r.gems))) +
     g(st[1], `Switch colour ${level.par} times or fewer`, r.switches) + g(st[2], `Finish under ${level.target.toFixed(1)}s`, r.time.toFixed(2) + 's') +
-    `<div class="goal"><span>Best time</span><b style="color:var(--ink)">${ls.bestTime.toFixed(2)}s</b></div>`;
-  $('rNext').style.display = level.id < 27 ? '' : 'none';
+    `<div class="goal"><span>Best time</span><b style="color:var(--ink)">${ls.bestTime !== undefined ? ls.bestTime.toFixed(2) + 's' : '—'}</b></div>` +
+    (runStats.combo >= 2 ? `<div class="goal ok"><span>Best mid-air combo</span><b>×${runStats.combo}</b></div>` : '') +
+    (runStats.race !== null && runStats.race !== undefined ? `<div class="goal ${runStats.race < 0 ? 'ok' : ''}"><span>${runStats.race < 0 ? 'You beat your ghost!' : 'Ghost wins this time'}</span><b>${runStats.race < 0 ? '−' : '+'}${Math.abs(runStats.race).toFixed(2)}s</b></div>` : '') +
+    (S.bonus ? '<div class="goal ok"><span>Secret bonus gem</span><b>💎</b></div>' : '') +
+    (runStats.daily ? `<div class="goal ok"><span>Daily streak</span><b>🔥 ${save.daily.streak} day${save.daily.streak === 1 ? '' : 's'}</b></div>` : '') +
+    (runStats.cp ? '<div class="goal"><span>Checkpoint used (no time star)</span><b>⚑</b></div>' : '') + (runStats.assist ? '<div class="goal"><span>Assist mode</span><b>✓</b></div>' : '');
+  $('rNext').style.display = nextId() !== null ? '' : 'none'; $('rWatch').style.display = level.id === 100 ? 'none' : '';
   showScreen('results');
 }
 
@@ -627,10 +753,12 @@ let curWorld = 0;
 function openLevels(w = curWorld) {
   mode = MODE.title; $('hud').classList.remove('on'); paused = false; curWorld = Math.max(0, Math.min(3, w)); attractWorld(curWorld);
   const lv = LEVELS.filter(l => l.world === curWorld), ws = lv.reduce((a, l) => a + starCount(l.id), 0);
-  $('wName').textContent = `${curWorld + 1}. ${WORLDS[curWorld].name}`; $('wStars').textContent = `★ ${ws} / 21`;
+  $('wName').textContent = `${curWorld + 1}. ${worldName(curWorld)}`; $('wStars').textContent = `★ ${ws} / 21`;
   $('lgrid').innerHTML = lv.map(l => { const s = save.levels[l.id], ul = unlocked(l.id);
-    return `<button class="lv ${ul ? '' : 'locked'}" data-id="${l.id}"><div class="n">${ul ? l.id % 7 + 1 : '🔒'}</div><div class="nm">${l.name}</div><div class="st">${[0, 1, 2].map(i => s && s.stars[i] ? '<i>★</i>' : '★').join('')}</div><div class="bt">${s && s.bestTime ? s.bestTime.toFixed(2) + 's' : '&nbsp;'}</div></button>`; }).join('');
-  $('lgrid').querySelectorAll('.lv').forEach(b => b.onclick = click(() => { const id = +b.dataset.id; if (unlocked(id)) startLevel(id); else toast('Finish the level before it to unlock'); }));
+    return `<button class="lv ${ul ? '' : 'locked'}" data-id="${l.id}"><div class="n">${ul ? l.id % 7 + 1 : '🔒'}</div><div class="nm">${l.name}</div><div class="st">${[0, 1, 2].map(i => s && s.stars[i] ? '<i>★</i>' : '★').join('')}</div><div class="bt">${s && s.bestTime ? s.bestTime.toFixed(2) + 's' : '&nbsp;'}${FX.keys && l.els.some(e => e.t === 'K') ? ` <span class="key">${s && s.bonus ? '💎' : '🗝'}</span>` : ''}</div></button>`; }).join('') +
+    (FX.boss ? (() => { const b = BOSSES[curWorld], s = save.levels[b.id], ul = lv.every(l => lvSave(l.id).done) || !!(s && s.done);
+      return `<button class="lv boss ${ul ? '' : 'locked'}" data-id="${b.id}"><div class="n">${ul ? '👾' : '🔒'}</div><div class="nm">${b.name}</div><div class="st">${[0, 1, 2].map(i => s && s.stars[i] ? '<i>★</i>' : '★').join('')}</div><div class="bt">${s && s.bestTime ? s.bestTime.toFixed(2) + 's' : 'Boss'}</div></button>`; })() : '');
+  $('lgrid').querySelectorAll('.lv').forEach(b => b.onclick = click(() => { const id = +b.dataset.id; if (id >= 28 ? !b.classList.contains('locked') : unlocked(id)) startLevel(id); else toast(id >= 28 ? 'Finish all 7 levels to face the boss' : 'Finish the level before it to unlock'); }));
   showScreen('levels');
 }
 $('bPlay').onclick = click(() => { const next = LEVELS.find(l => !lvSave(l.id).done && unlocked(l.id)); openLevels(next ? next.world : 0); });
@@ -640,7 +768,7 @@ $('bPause').onclick = e => { e.stopPropagation(); audio.sfxPlay('click'); if (mo
 $('pResume').onclick = click(() => setPause(false));
 $('pRestart').onclick = click(() => { setPause(false); restart(); });
 $('pQuit').onclick = click(() => { setPause(false); runStats = null; openLevels(level.world); });
-applyFx(); document.querySelectorAll('[data-fx]').forEach(i => { i.checked = FX[i.dataset.fx]; i.onchange = () => { FX[i.dataset.fx] = i.checked; applyFx(); persist(); }; });
+applyFx(); document.querySelectorAll('[data-fx]').forEach(i => { i.checked = FX[i.dataset.fx]; i.onchange = () => { FX[i.dataset.fx] = i.checked; applyFx(); persist(); if (i.dataset.fx === 'outfits') { dressRunner(runner); dressRunner(ghost); paintRunner(runner, lastCol); } if (i.dataset.fx === 'worlds' && mode === MODE.title) { level = null; attractWorld(0); } }; });
 $('optGhost').onchange = () => { save.set.ghost = $('optGhost').checked; persist(); };
 $('optGhost2').onchange = () => { save.set.ghost = $('optGhost2').checked; persist(); };
 $('optReduced').onchange = () => { save.set.reduced = $('optReduced').checked; applyQuality(); persist(); };
@@ -648,13 +776,14 @@ $('bSettings').onclick = click(() => { $('optReduced').checked = save.set.reduce
 $('sClose').onclick = click(() => goTitle());
 $('rRetry').onclick = click(() => { runStats = null; startLevel(level.id); });
 $('rWatch').onclick = click(() => startLevel(level.id, { replay: true }));
-$('rLevels').onclick = click(() => { runStats = null; openLevels(level.world); });
-$('rNext').onclick = click(() => { runStats = null; startLevel(level.id + 1); });
+$('rLevels').onclick = click(() => { runStats = null; if (level.id === 100) goTitle(); else openLevels(level.world); });
+function nextId() { const id = level.id; if (id === 100) return null; if (id >= 28) return id - 28 < 3 ? (id - 27) * 7 : null; if (FX.boss && id % 7 === 6) return 28 + Math.floor(id / 7); return id < 27 ? id + 1 : null; }
+$('rNext').onclick = click(() => { runStats = null; startLevel(nextId()); });
 $('bStats').onclick = click(() => { renderStats(); showScreen('stats'); });
 $('stClose').onclick = click(() => goTitle());
 $('bWardrobe').onclick = click(() => { renderWardrobe(); showScreen('wardrobe'); });
 $('wClose').onclick = click(() => goTitle());
-function goTitle() { persist(); mode = MODE.title; $('hud').classList.remove('on'); showScreen('title'); $('starTotal').textContent = `★ ${totalStars()} / 84`; attractWorld(0); audio.stop(); }
+function goTitle() { if (typeof updateDailyInfo === 'function') updateDailyInfo(); persist(); mode = MODE.title; $('hud').classList.remove('on'); showScreen('title'); $('starTotal').textContent = `★ ${totalStars()} / 84`; attractWorld(0); audio.stop(); }
 function renderStats() {
   const t = save.tot, done = LEVELS.filter(l => lvSave(l.id).done).length;
   const fmt = s => s > 3600 ? (s / 3600).toFixed(1) + 'h' : Math.round(s / 60) + 'm';
@@ -669,8 +798,12 @@ function renderWardrobe() {
   const hx = n => '#' + n.toString(16).padStart(6, '0');
   $('wOutfit').innerHTML = OUTFITS.map(o => item(o, 'outfit', 'linear-gradient(90deg,#d6246e,#e2a21d)')).join('');
   $('wBoard').innerHTML = BOARDS.map(b => item(b, 'board', `linear-gradient(90deg,${hx(b.c)} 60%,${hx(b.s)} 60%)`)).join('');
+  const gs = allGems(), gi = (it, kind, sw) => `<button class="wi ${save.look[kind] === it.id ? 'sel' : ''} ${gs < it.gems ? 'locked' : ''}" data-k="${kind}" data-id="${it.id}" data-g="${it.gems}"><div class="sw" style="background:${sw}"></div>${it.name}<small>${gs < it.gems ? '◆ ' + it.gems : 'unlocked'}</small></button>`;
+  $('wScarf').innerHTML = SCARVES.map(o => gi(o, 'scarf', o.c === undefined ? '#e6e9ee' : hx(o.c))).join('');
+  $('wTrail').innerHTML = TRAILS.map(o => gi(o, 'trail', o.id === 'rainbow' ? 'linear-gradient(90deg,#f0367f,#f7b520,#26c6da)' : o.c === undefined ? 'linear-gradient(90deg,#f0367f,#26c6da)' : hx(o.c))).join('');
   document.querySelectorAll('.wi').forEach(b => b.onclick = click(() => {
-    if (ts < +b.dataset.s) { toast(`Collect ${b.dataset.s} stars to unlock`); return; }
+    if (b.dataset.g !== undefined && gs < +b.dataset.g) { toast(`Collect ${b.dataset.g} gems to unlock`); return; }
+    if (b.dataset.s !== undefined && ts < +b.dataset.s) { toast(`Collect ${b.dataset.s} stars to unlock`); return; }
     save.look[b.dataset.k] = b.dataset.id; persist(); dressRunner(runner); dressRunner(ghost); paintRunner(runner, lastCol); renderWardrobe();
   }));
 }
@@ -685,6 +818,52 @@ function attractWorld(w) {
   S = newState(level); S.col = 1; attract = { t: 0, sw: 3 }; paintRunner(runner, 1); runner.g.visible = true; ghost.g.visible = false; G = null;
 }
 
+// v1.4 Assist: slight slow-mo when a gap, spike or wrong-colour gate is just ahead
+function assistTricky() {
+  const x0 = S.x + 1, x1 = S.x + 5;
+  for (const e of level.els) { const ex1 = e.x + (e.w || 0.3); if (ex1 < x0 || e.x > x1) continue;
+    if (e.t === 's' || e.t === 'G' || (e.t === 'w' && e.c !== S.col)) return true; }
+  const gx = S.x + 3; return !level.els.some(e => e.t === 'p' && !e.bon && e.x <= gx && e.x + e.w >= gx);
+}
+// v1.4 Photo mode: pause, orbit the camera round the runner, save a crisp PNG
+let photo = null;
+function enterPhoto() { photo = { yaw: -0.5, pitch: 0.18, dist: 8, drag: null, pts: new Map() }; showScreen(null); document.body.classList.add('photo'); $('photoUI').classList.add('on'); }
+function exitPhoto() { photo = null; document.body.classList.remove('photo'); $('photoUI').classList.remove('on'); setPause(true); }
+cv.addEventListener('pointerdown', e => { if (!photo) return; photo.pts.set(e.pointerId, [e.clientX, e.clientY]); });
+cv.addEventListener('pointermove', e => { if (!photo || !photo.pts.has(e.pointerId)) return; const pr = photo.pts.get(e.pointerId);
+  if (photo.pts.size === 1) { photo.yaw -= (e.clientX - pr[0]) * 0.008; photo.pitch = Math.max(-0.5, Math.min(1.3, photo.pitch + (e.clientY - pr[1]) * 0.006)); }
+  else { const o = [...photo.pts.entries()].find(([k]) => k !== e.pointerId)[1], d0 = Math.hypot(pr[0] - o[0], pr[1] - o[1]), d1 = Math.hypot(e.clientX - o[0], e.clientY - o[1]); photo.dist = Math.max(3, Math.min(22, photo.dist * d0 / Math.max(1, d1))); }
+  photo.pts.set(e.pointerId, [e.clientX, e.clientY]); });
+const phUp = e => photo && photo.pts.delete(e.pointerId); cv.addEventListener('pointerup', phUp); cv.addEventListener('pointercancel', phUp);
+cv.addEventListener('wheel', e => { if (!photo) return; e.preventDefault(); photo.dist = Math.max(3, Math.min(22, photo.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
+function savePhoto() {
+  const pr = renderer.getPixelRatio(), q = Q.level; renderer.setPixelRatio(Math.max(2, Math.min(3, devicePixelRatio || 1))); if (q < 2) { Q.level = 3; renderer.shadowMap.enabled = true; } resize(); sizePost();
+  updateVisuals(0); renderFrame(); const url = renderer.domElement.toDataURL('image/png');
+  Q.level = q; renderer.shadowMap.enabled = q >= 3; renderer.setPixelRatio(pr); resize(); sizePost();
+  audio.sfxPlay('shutter'); flash('#ffffff', 0.6); window.__lastPhoto = url;
+  const name = 'hue-dash-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.png';
+  fetch(url).then(r => r.blob()).then(b => { const f = new File([b], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] }) && /iPhone|iPad|Android/.test(navigator.userAgent)) navigator.share({ files: [f], title: 'Hue Dash' }).catch(() => {});
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+    toast('📷 <b>Photo saved</b>'); });
+}
+$('pPhoto').onclick = click(enterPhoto); $('phClose').onclick = click(exitPhoto); $('phSave').onclick = click(savePhoto);
+// v1.4 Daily Dash: one generated level per day (validated by the same solver the levels use), with a streak
+function dayStr(off = 0) { const d = new Date(); d.setDate(d.getDate() + off); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function updateDailyInfo() { const d = save.daily, live = d.last === dayStr() || d.last === dayStr(-1); $('dailyInfo').textContent = (d.best[dayStr()] !== undefined ? 'best ' + d.best[dayStr()].toFixed(2) + 's · ' : 'new today · ') + '🔥 ' + (live ? d.streak : 0); }
+async function genDaily(day = dayStr()) {
+  if (dailyLvl && dailyLvl.daily === day && dailyLvl.tight === FX.tight) return dailyLvl;
+  const [{ build, SPECS }, { solve }] = await Promise.all([import('./gen.js?v=202610271655'), import('./solver.js?v=202610271655')]);
+  const n = +day.replace(/-/g, ''); let h = n; for (let k = 0; k < 4; k++) h = (h * 1103515245 + 12345) % 2147483647;
+  for (let a = 0; a < 8; a++) {
+    const si = 3 + ((h + a * 7) % 25), spec = SPECS[si], w = Math.floor(si / 7);
+    const l = build(w, ['Daily Dash', spec[1], Math.min(0.7, spec[2] + 0.05)], (h + a * 9973) % 1000000);
+    const sol = solve(JSON.parse(JSON.stringify(l)));
+    if (sol && sol.gems === 7) { l.par = sol.switches + 2; l.target = Math.ceil((sol.time + 0.8) * 10) / 10; l.daily = day; l.tight = FX.tight; l.id = 100; l.name = 'Daily Dash'; return dailyLvl = l; }
+  }
+  throw new Error('no daily level');
+}
+$('bDaily').onclick = click(async () => { toast('☀ <b>Building today\'s Dash…</b>'); try { await genDaily(); runStats = null; startLevel(100); } catch (e) { toast('Daily Dash unavailable today'); } });
 // ---------- frame ----------
 let last = performance.now(), fpsT = 0, frames = 0;
 window.__fps = 0;
@@ -700,14 +879,15 @@ function frame(now) {
     attract.sw -= ft; if (attract.sw < 0) { attract.sw = 3 + Math.random() * 2; S.col = S.col === 1 ? 2 : 1; paintRunner(runner, S.col); setAccent(S.col); puff(10, S.col); ring.visible = true; ringT = 0; ringMat.color.setHex(HEX[S.col]); }
     if (S.x > level.end + 60) S.x = -20;
   } else if (mode === MODE.play || mode === MODE.replay) {
-    if (hitStop > 0) hitStop -= dt; else if (!paused) { acc += dt * timeScale; let n = 0; while (acc >= DT && n < 12 && (mode === MODE.play || mode === MODE.replay)) { simStep(); acc -= DT; n++; } if (mode === MODE.play) save.tot.play += dt; }
+    if (FX.assist && mode === MODE.play && !paused) { const tk = assistTricky() ? 0.7 : 1; assistK += (tk - assistK) * Math.min(1, dt * 6); if (tk < 1) assistUsed = true; } else assistK = 1;
+    if (hitStop > 0) hitStop -= dt; else if (!paused) { acc += dt * timeScale * assistK; let n = 0; while (acc >= DT && n < 12 && (mode === MODE.play || mode === MODE.replay)) { simStep(); acc -= DT; n++; } if (mode === MODE.play) save.tot.play += dt; }
   } else if (mode === MODE.dead) {
-    deadT += dt; if (performance.now() - window.__deathAt > 300 || deadT > 0.3) { if (replayScript) { stopReplay(); } else restart(); }
+    deadT += dt; if (performance.now() - window.__deathAt > 300 || deadT > 0.3) { if (replayScript) { stopReplay(); } else respawn(); }
   } else if (mode === MODE.finish) {
     finT += dt; S.x += speedAt(level, S) * dt * Math.max(0.12, 1 - finT * 2);
     if (finT > 1.6) { mode = MODE.title; if (replayScript && !replayScript.__test) { stopReplay(); } else { $('hud').classList.remove('on'); showResults(); } }
   }
-  updateVisuals(dt);
+  updateVisuals(photo ? 0 : dt);
   if ((mode === MODE.play || mode === MODE.replay) && !paused) autoQuality(rawDt);
   renderFrame();
 }
@@ -744,8 +924,17 @@ function updateVisuals(dt) {
   if (runner.g.visible && (mode !== MODE.dead)) {
     // big cartoony cloud trail: puffs start in the runner's colour and billow out into soft white
     emitAcc += dt * (save.set.reduced ? 16 : 30) * (mode === MODE.title ? 0.8 : 1) * (sim.grounded || mode === MODE.title ? 1 : 0.55);
-    while (emitAcc > 1) { emitAcc--; smoke.emit(sim.x - 0.5 + Math.random() * 0.2, sim.y + gs * (0.2 + Math.random() * 0.35), (Math.random() - .5) * 0.7, HEX[sim.col], { vx: -0.6 - Math.random() * 0.9, vy: gs * (0.4 + Math.random() * 0.9), s: 0.7 + Math.random() * 0.5, gs: 4.6 + Math.random() * 2.4, life: 1.1 + Math.random() * 0.7, a: 0.95, grey: theme.night ? 0xc9d2ea : 0xf6f8fb }); }
+    const tr = FX.outfits && TRAILS.find(x => x.id === save.look.trail), tc = !tr || tr.id === 'hue' ? HEX[sim.col] : tr.id === 'rainbow' ? HEX[1 + (Math.floor(performance.now() / 150) % 3)] : tr.c;
+    while (emitAcc > 1) { emitAcc--; smoke.emit(sim.x - 0.5 + Math.random() * 0.2, sim.y + gs * (0.2 + Math.random() * 0.35), (Math.random() - .5) * 0.7, tc, { vx: -0.6 - Math.random() * 0.9, vy: gs * (0.4 + Math.random() * 0.9), s: 0.7 + Math.random() * 0.5, gs: 4.6 + Math.random() * 2.4, life: 1.1 + Math.random() * 0.7, a: 0.95, grey: theme.night ? 0xc9d2ea : 0xf6f8fb }); }
   }
+  // v1.4 combo glow trail: bright sparks streaming behind (world layer, so never drawn over the runner)
+  if (FX.combo && combo >= 2 && mode === MODE.play && dt > 0) { const n = Math.min(4, combo - 1); for (let k = 0; k < n; k++) cubes.burst(sim.x - 0.9 - Math.random() * 0.6, sim.y + gs * (0.3 + Math.random() * 0.8) - 0.6, Math.random() < 0.5 ? 0xffffff : HEX[sim.col], 1, { v: 1.5, s: 0.05 + combo * 0.012, g: 0, life: 0.45 }); }
+  if (runner.scarfTail) runner.scarfTail.rotation.z = 0.25 + Math.sin(performance.now() / 90) * 0.25 + (sim.grounded ? 0 : 0.3);
+  // v1.4 boss creature
+  if (bossMesh && level.boss) { const bc = bossCol(level, sim.t), m = bossMesh.userData.mat; tint.setHex(HEX[bc]); m.color.lerp(tint, Math.min(1, dt * 8)); m.emissive.copy(m.color);
+    const gp = Math.max(0, sim.x - sim.bx); bossMesh.position.set(sim.x - 3.8 - Math.min(gp, 14) * 0.32, THREE.MathUtils.lerp(bossMesh.position.y, sim.y + 1.6 * gs, Math.min(1, dt * 3)), 0); const wob = performance.now() / 180; bossMesh.scale.set(1 + Math.sin(wob) * 0.05, 1 + Math.cos(wob) * 0.05, 1); bossMesh.rotation.x = gs < 0 ? Math.PI : 0;
+    const gap = sim.x - sim.bx; $('hBoss').firstChild.style.width = Math.max(0, Math.min(100, gap / (level.boss.gap * 1.6) * 100)) + '%'; $('hBoss').firstChild.style.background = CSS[bc]; }
+  if (keyMesh && keyMesh.visible) keyMesh.rotation.y += dt * 2.5; if (bonusMesh && bonusMesh.visible) bonusMesh.rotation.y += dt * 1.5;
   smoke.update(dt); cubes.update(dt); updateRings(dt, gs); colourGuide(dt, sim.col);
   if (ring.visible) { ringT += dt; const s = 0.5 + ringT * 9; ring.scale.setScalar(s); ring.position.set(sim.x, sim.y + gs * 0.8, 0.2); ringMat.opacity = Math.max(0, 0.8 - ringT * 2.2); if (ringT > 0.4) ring.visible = false; }
   if (ring2.visible) { ring2T += dt; const e = 1 - Math.pow(1 - Math.min(1, ring2T / 0.5), 3); ring2.scale.setScalar(0.6 + e * 7); ring2.position.set(sim.x, sim.y + gs * 0.8, 0.1); ring2Mat.opacity = Math.max(0, 0.65 * (1 - ring2T / 0.5)); if (ring2T > 0.5) ring2.visible = false; }
@@ -763,6 +952,7 @@ function updateVisuals(dt) {
   if (Math.abs(camera.fov - fovT) > 0.05) { camera.fov += (fovT - camera.fov) * k; camera.updateProjectionMatrix(); }
   shake = Math.max(0, shake - dt * 1.5); const sx = (Math.random() - .5) * shake * 0.6, sy = (Math.random() - .5) * shake * 0.6;
   camera.position.set(camX - back + sx, camY + up * (gs < 0 ? -0.6 : 1) + sy, side); camera.lookAt(camX + 10 * wide, camY + (gs < 0 ? -0.8 : 0.2), -2.5);
+  if (photo) { const c = runner.g.position, cp = Math.cos(photo.pitch); camera.position.set(c.x + Math.sin(photo.yaw) * cp * photo.dist, c.y + 1 + Math.sin(photo.pitch) * photo.dist, c.z + Math.cos(photo.yaw) * cp * photo.dist); camera.lookAt(c.x, c.y + 0.9, c.z); }
   pComp.m.uniforms.focus.value = camera.position.distanceTo(runner.g.position);
   waterMat.uniforms.time.value = performance.now() / 1000; waterMat.uniforms.cam.value.copy(camera.position);
   sky.position.copy(camera.position);
@@ -774,6 +964,7 @@ function updateHud(force) {
   const s = `${S.t.toFixed(2)}|${S.gems}|${S.switches}`; if (s === hudLast && !force) return; hudLast = s;
   const tt = S.t, ss = Math.floor(tt), hs = Math.floor((tt - ss) * 100); $('hTime').textContent = String(ss).padStart(2, '0') + '.' + String(hs).padStart(2, '0'); $('hGems').textContent = [0, 1, 2].map(k => S.gems & (1 << k) ? '◆' : '◇').join('');
   $('hSw').textContent = `⇄ ${S.switches}/${level.par}`;
+  if (G && FX.race && !usedCp) { const d = (S.x - G.s.x) / Math.max(4, speedAt(level, S)), h = $('hRace'); h.textContent = (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d).toFixed(2) + 's'; h.className = 'on ' + (d >= 0 ? 'ahead' : 'behind'); }
 }
 
 // ---------- boot ----------
@@ -787,5 +978,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:' && !/[?&]nosw/
 window.HD = {
   get state() { return S && { x: S.x, y: S.y, col: S.col, dead: S.dead, fin: S.fin, t: S.t, gems: S.gems, jumpsN: S.jumpsN, switches: S.switches, grounded: S.grounded }; },
   get mode() { return Object.keys(MODE).find(k => MODE[k] === mode); }, save: () => save, levels: LEVELS, startLevel, audio, setTimeScale: v => timeScale = v, openLevels,
+  get ext() { return S && { key: S.key, bonus: S.bonus, bx: S.bx, onWall: S.onWall, walls: S.walls, combo, runCombo, cp: !!cpState, usedCp, level: level && { id: level.id, cp: level.cp, boss: !!level.boss, keys: level.els.filter(e => e.t === 'K').length } }; },
+  fx: () => FX, setFx(k, v) { FX[k] = v; applyFx(); persist(); }, genDaily, enterPhoto, exitPhoto, savePhoto, respawn, bosses: BOSSES, setPause,
   playScript(id, sc) { startLevel(id); replayScript = sc; mode = MODE.replay; restart(); $('replayTag').classList.remove('on'); replayScript.__test = true; },
 };

@@ -5,10 +5,10 @@
    - versioned files (?v=...) are only ever answered with that exact version, never another release's file;
    - the previous release's cache is kept one extra release, so a page that is still open during an update
      can finish loading its own files. */
-const VERSION = '202610270942';
+const VERSION = '202610271655';
 const CACHE = 'huedash-main-' + VERSION;   // v1.1+: own prefix; frozen copies (hue-dash-v1.0/ etc.) use huedash-vX.Y- and never touch these
 const ASSETS = [
-  './', 'index.html', 'style.css?v=' + VERSION, 'logic.js?v=' + VERSION, 'levels.js?v=' + VERSION, 'game.js?v=' + VERSION, 'audio.js?v=' + VERSION,
+  './', 'index.html', 'style.css?v=' + VERSION, 'logic.js?v=' + VERSION, 'levels.js?v=' + VERSION, 'game.js?v=' + VERSION, 'audio.js?v=' + VERSION, 'gen.js?v=' + VERSION, 'solver.js?v=' + VERSION,
   'manifest.webmanifest?v=' + VERSION, 'fredoka.ttf', 'vendor/three/three.module.js',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/favicon-32.png',
 ];

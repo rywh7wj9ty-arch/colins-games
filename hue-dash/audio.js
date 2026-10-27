@@ -6,6 +6,13 @@ const W = [
   { bpm: 120, key: 60, prog: [[0, 4, 7], [-5, -1, 2], [-3, 0, 4], [5, 9, 12]], scale: [0, 2, 4, 7, 9], lead: 'square' },
   { bpm: 126, key: 55, prog: [[0, 3, 7], [-2, 2, 5], [-4, 0, 3], [-5, -1, 2]], scale: [0, 3, 5, 7, 10], lead: 'sawtooth' },
 ];
+// v1.4 world music (Settings > Features > Four worlds): Misty Lake, Neon City, Sunset Desert, Starry Sky
+const W2 = [
+  { bpm: 96, key: 60, prog: [[0, 4, 7, 11], [-3, 0, 4, 7], [-7, -3, 0, 4], [-5, -1, 2, 5]], scale: [0, 2, 4, 7, 9], lead: 'sine', drums: 0.5, arp: 1 },
+  { bpm: 128, key: 57, prog: [[0, 3, 7], [-4, 0, 3], [-2, 2, 5], [-5, -2, 2]], scale: [0, 3, 5, 7, 10], lead: 'square', drums: 1.3, arp: 2 },
+  { bpm: 108, key: 62, prog: [[0, 4, 7], [1, 5, 8], [0, 4, 7], [-2, 1, 5]], scale: [0, 1, 4, 5, 7, 8, 10], lead: 'triangle', drums: 0.9, arp: 0 },
+  { bpm: 88, key: 64, prog: [[0, 4, 7, 14], [-4, 0, 3, 10], [-7, -3, 0, 7], [-5, -1, 2, 9]], scale: [0, 2, 4, 7, 9, 11], lead: 'sine', drums: 0.35, arp: 3 },
+];
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 export class Audio {
   constructor() { this.ctx = null; this.music = 0.7; this.sfx = 0.8; this.musicOn = true; this.sfxOn = true; this.world = 0; this.playing = false; }
@@ -32,11 +39,11 @@ export class Audio {
   gains() { return { music: this.musicOn ? this.music : 0, sfx: this.sfxOn ? this.sfx : 0 }; }
   apply() { if (!this.ctx) return; const g = this.gains(), t = this.ctx.currentTime; this.musicBus.gain.cancelScheduledValues(t); this.sfxBus.gain.cancelScheduledValues(t); this.musicBus.gain.setValueAtTime(g.music * 0.55, t); this.sfxBus.gain.setValueAtTime(g.sfx, t); }
   // --- music ---
-  start(world) { this.init(); if (!this.ctx) return; this.world = world; if (this.playing) return; this.playing = true; this.beat = 0; this.nextT = this.ctx.currentTime + 0.1; this.timer = setInterval(() => this.tick(), 50); }
+  start(world, alt) { this.init(); if (!this.ctx) return; this.world = world; if (alt !== undefined) this.alt = !!alt; if (this.playing) return; this.playing = true; this.beat = 0; this.nextT = this.ctx.currentTime + 0.1; this.timer = setInterval(() => this.tick(), 50); }
   stop() { this.playing = false; clearInterval(this.timer); }
   tick() {
     const c = this.ctx; if (!c || !this.playing) return;
-    const w = W[this.world % 4], sp = 60 / w.bpm / 2; // eighth notes
+    const w = (this.alt ? W2 : W)[this.world % 4], sp = 60 / w.bpm / 2; // eighth notes
     while (this.nextT < c.currentTime + 0.25) { this.eighth(w, this.beat, this.nextT, sp); this.nextT += sp; this.beat++; }
   }
   eighth(w, b, t, sp) {
@@ -50,7 +57,11 @@ export class Audio {
       const deg = (seed + bar * 2 + (e > 4 ? 2 : 0)) % w.scale.length, oct = seed % 3 === 0 ? 12 : 0;
       this.tone(mtof(k + 12 + w.scale[deg] + oct), t, sp * (e === 6 ? 2 : 1.1), w.lead, w.lead === 'sawtooth' || w.lead === 'square' ? 0.025 : 0.06, this.musicBus, 0.5);
     }
-    if (e === 0 || e === 4) this.kick(t); if (e === 2 || e === 6) this.hat(t, 0.05, this.musicBus); if (e === 4) this.hat(t, 0.08, this.musicBus, 1800);
+    const dr = w.drums ?? 1;
+    if (w.arp === 2 && e % 2) this.tone(mtof(k + ch[(e >> 1) % ch.length]), t, sp * 0.5, 'sawtooth', 0.018, this.musicBus, 0.2);   // neon city: pulsing synth
+    if (w.arp === 3) this.tone(mtof(k + 24 + ch[e % ch.length]), t, sp * 2.5, 'sine', 0.022, this.musicBus, 0.9);   // starry sky: twinkling bells
+    if (w.arp === 1 && e % 4 === 1) this.tone(mtof(k + 12 + ch[(e >> 2) % ch.length]), t, sp * 3, 'sine', 0.03, this.musicBus, 0.8);   // misty lake: drips
+    if (dr >= 0.5 && (e === 0 || e === 4)) this.kick(t); if (dr > 1.1 && (e === 3 || e === 7)) this.kick(t); if (e === 2 || e === 6) this.hat(t, 0.05 * dr, this.musicBus); if (e === 4 && dr > 0.4) this.hat(t, 0.08 * dr, this.musicBus, 1800);
   }
   tone(f, t, dur, type, vol, bus, rev = 0, slide) {
     const c = this.ctx, o = c.createOscillator(), g = c.createGain();
@@ -74,6 +85,11 @@ export class Audio {
     else if (name === 'shatter') { this.hat(t, 0.4, B, 3000, 0.35); this.tone(180, t, 0.3, 'square', 0.08, B, 0.2, 50); }
     else if (name === 'finish') [0, 4, 7, 12, 16, 19, 24].forEach((n, i) => this.tone(mtof(72 + n), t + i * 0.07, 0.6, 'triangle', 0.1, B, 0.6));
     else if (name === 'click') this.tone(700, t, 0.06, 'sine', 0.08, B);
+    else if (name === 'combo') { const n = Math.min(12, p); this.tone(mtof(72 + n * 2), t, 0.22, 'triangle', 0.12, B, 0.5, mtof(79 + n * 2)); this.tone(mtof(84 + n * 2), t + 0.05, 0.2, 'sine', 0.06, B, 0.6); }
+    else if (name === 'key') [0, 7, 12, 19].forEach((n, i) => this.tone(mtof(79 + n), t + i * 0.06, 0.35, 'triangle', 0.1, B, 0.7));
+    else if (name === 'boss') { this.tone(70, t, 0.6, 'sawtooth', 0.1, B, 0.4, 45); this.hat(t, 0.2, B, 400, 0.5); }
+    else if (name === 'flag') [0, 5, 9].forEach((n, i) => this.tone(mtof(76 + n), t + i * 0.07, 0.3, 'sine', 0.1, B, 0.5));
+    else if (name === 'shutter') { this.hat(t, 0.25, B, 4000, 0.04); this.hat(t + 0.07, 0.2, B, 2500, 0.06); }
     else if (name === 'star') this.tone(mtof(88 + p * 3), t, 0.4, 'sine', 0.12, B, 0.6);
   }
 }
