@@ -4,7 +4,7 @@ def get(u):
   return json.load(urllib.request.urlopen(urllib.request.Request(u,headers=UA),timeout=30))
 out={'updated':int(time.time()),'ranges':{}}
 for rng,iv in [('1d','5m'),('5d','30m'),('1mo','1d'),('6mo','1d'),('1y','1d'),('5y','1wk')]:
-  r=get(f'https://query2.finance.yahoo.com/v8/finance/chart/TSLA?range={rng}&interval={iv}')['chart']['result'][0]
+  r=get(f'https://query2.finance.yahoo.com/v8/finance/chart/TSLA?range={rng}&interval={iv}&includePrePost={"true" if rng=="1d" else "false"}')['chart']['result'][0]
   q=r['indicators']['quote'][0]['close']
   pts=[[t,round(c,2)] for t,c in zip(r.get('timestamp',[]),q) if c is not None]
   out['ranges'][rng]=pts

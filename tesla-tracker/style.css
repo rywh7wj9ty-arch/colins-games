@@ -54,3 +54,5 @@ input[type=range]{padding:0;accent-color:var(--ac);border:none;background:none}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;transition:.3s;z-index:30;max-width:90vw}
 .toast.show{transform:translateX(-50%)}
 body.hideamt .amt{filter:blur(7px)}
+
+.icon.spin{animation:sp 0.8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}

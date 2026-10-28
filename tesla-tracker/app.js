@@ -44,25 +44,40 @@ function calc(px=curPx(),fx=curFx()){
 /* ---------- prices ---------- */
 async function jget(u,ms=9000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(u,{signal:c.signal,cache:'no-store'});if(!r.ok)throw r.status;return await r.json()}finally{clearTimeout(t)}}
 function fromYahoo(j){const r=j.chart.result[0];return{px:r.meta.regularMarketPrice,prev:r.meta.chartPreviousClose??r.meta.previousClose,time:r.meta.regularMarketTime,pts:(r.timestamp||[]).map((t,i)=>[t,r.indicators.quote[0].close[i]]).filter(p=>p[1]!=null)}}
-async function loadPrices(){
- let ok=false;
- try{const d=await jget('data/tsla.json?'+Date.now());live.ranges=d.ranges||{};live.fxHist=d.fxHist||[];live.px=d.price;live.prev=d.prevClose;live.time=d.marketTime;live.src='Yahoo (auto-updated)';live.cacheUpd=d.updated;if(d.usdgbp){live.fx=d.usdgbp;live.fxSrc='Yahoo GBP=X'}ok=true}catch(e){}
- const Y='https://query1.finance.yahoo.com/v8/finance/chart/TSLA?range=1d&interval=5m';
- const stale=!live.cacheUpd||(Date.now()/1000-live.cacheUpd>1800);
- for(const u of (stale?['https://api.allorigins.win/raw?url='+encodeURIComponent(Y)]:[])){
-  try{const y=fromYahoo(await jget(u,7000));if(!live.time||y.time>=live.time){live.px=y.px;live.prev=y.prev;live.time=y.time;live.ranges['1d']=y.pts;live.src=u.includes('allorigins')?'Yahoo via proxy':'Yahoo live'}ok=true;break}catch(e){}}
- try{const f=await jget('https://open.er-api.com/v6/latest/USD');if(f.rates&&f.rates.GBP){live.fx=f.rates.GBP;live.fxSrc='ExchangeRate-API'}}catch(e){}
- if(!live.fx){live.fxSrc='Document rate'}
- if(!ok&&!live.px){live.src='Document price (offline)'}
+function nySession(d=new Date()){const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(d).map(x=>[x.type,x.value]));
+ if(p.weekday==='Sat'||p.weekday==='Sun')return'closed';const m=(+p.hour%24)*60+ +p.minute;return m<240?'closed':m<570?'pre':m<960?'regular':m<1200?'post':'closed'}
+async function tvQuote(){const r=await fetch('https://scanner.tradingview.com/america/scan',{method:'POST',headers:{'Content-Type':'text/plain'},cache:'no-store',body:JSON.stringify({symbols:{tickers:['NASDAQ:TSLA']},columns:['close','change','premarket_close','postmarket_close','update_time']})});
+ if(!r.ok)throw r.status;const d=(await r.json()).data[0].d;const[close,chg,pre,post,ut]=d;if(!close)throw'no';const ses=nySession();
+ const prevReg=close/(1+(chg||0)/100);let px=close,prev=prevReg,ext=null;
+ if(ses==='pre'&&pre){px=pre;prev=close;ext='Pre-market'}else if((ses==='post'||ses==='closed')&&post){px=post;ext='After-hours'}else if(ses==='closed'&&pre&&!post){px=pre;prev=close;ext='Pre-market'}
+ return{px,prev,close,ext,time:Date.now()/1000,src:'TradingView',ses}}
+async function cnbcQuote(){const q=(await jget('https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=TSLA&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1',8000)).FormattedQuoteResult.FormattedQuote[0];
+ const n=v=>parseFloat(String(v).replace(/[^0-9.\-]/g,''));const close=n(q.last),prev=n(q.previous_day_closing);const e=q.ExtendedMktQuote;
+ if(e&&e.last&&n(e.last)){const pre=e.type==='PRE_MKT';return{px:n(e.last),prev:pre?close:prev,close,ext:pre?'Pre-market':'After-hours',time:Date.parse(e.last_time)/1000||Date.now()/1000,src:'CNBC'}}
+ return{px:close,prev,close,ext:null,time:Date.parse(q.last_time)/1000||Date.now()/1000,src:'CNBC'}}
+async function tvFx(){const r=await fetch('https://scanner.tradingview.com/forex/scan',{method:'POST',headers:{'Content-Type':'text/plain'},cache:'no-store',body:JSON.stringify({symbols:{tickers:['FX_IDC:USDGBP']},columns:['close']})});const v=(await r.json()).data[0].d[0];if(!v)throw'no';return v}
+let loading=false;
+async function loadPrices(manual){if(loading)return;loading=true;const btn=$('#refreshBtn');btn.classList.add('spin');const before=live.px,beforeT=live.time;
+ try{
+ try{const d=await jget('data/tsla.json?t='+Date.now());live.ranges=d.ranges||{};live.fxHist=d.fxHist||[];live.cacheUpd=d.updated;
+  if(!live.time||d.marketTime>live.time){live.px=d.price;live.prev=d.prevClose;live.time=d.marketTime;live.src='Yahoo feed';live.ext=null}if(d.usdgbp&&!live.fx){live.fx=d.usdgbp;live.fxSrc='Yahoo GBP=X'}}catch(e){}
+ let q=null;for(const f of [cnbcQuote,tvQuote]){try{q=await f();break}catch(e){}}
+ if(q){live.px=q.px;live.prev=q.prev;live.close=q.close;live.ext=q.ext;live.time=q.time;live.src=q.src;live.liveOk=true;
+  const r1=live.ranges['1d'];if(r1&&r1.length&&q.time>r1.at(-1)[0])r1.push([q.time,q.px])}else live.liveOk=false;
+ try{live.fx=await tvFx();live.fxSrc='TradingView'}catch(e){try{const f=await jget('https://open.er-api.com/v6/latest/USD');if(f.rates&&f.rates.GBP){live.fx=f.rates.GBP;live.fxSrc='ExchangeRate-API'}}catch(e){}}
+ if(!live.fx)live.fxSrc='Document rate';if(!live.px)live.src='Document price (offline)';
  render();checkAlerts();snapshot();
-}
-
+ if(manual){const ses=nySession();const t=live.time?new Date(live.time*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}):'';
+  if(!live.liveOk)toast('Couldn\u2019t reach a live source – showing the last saved price');
+  else if(before!=null&&live.px!==before)toast(`Updated: ${usd(live.px)}${live.ext?' ('+live.ext.toLowerCase()+')':''} – ${sgn(live.px-before)}${usd(Math.abs(live.px-before))}`);
+  else toast(ses==='closed'?`No newer price – US market closed. Last ${usd(live.px)} at ${t} UK`:`Price checked: ${usd(live.px)} at ${t} UK (no change yet)`)}
+ }finally{loading=false;btn.classList.remove('spin')}}
 /* ---------- render ---------- */
 function render(){if(!S)return;const R=calc();
  const px=R.px,manual=S.manPx!=='';const ch=live.prev&&!manual?px-live.prev:null;
  $('#pUsd').textContent=usd(px);$('#pChg').className='chg '+(ch==null?'':cls(ch));$('#pChg').textContent=ch==null?'':`${sgn(ch)}${Math.abs(ch).toFixed(2)} (${pct(ch/live.prev)})`;
- $('#srcTag').textContent=manual?'MANUAL':(live.src.includes('live')||live.src.includes('proxy')?'LIVE':live.src?'DELAYED':'…');
- $('#pMeta').textContent=`£${(px*R.fx).toFixed(2)} · $1 = £${R.fx.toFixed(4)}`+(live.time&&!manual?' · '+new Date(live.time*1000).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'}):'');
+ const ses=nySession();$('#srcTag').textContent=manual?'MANUAL':!live.liveOk?(live.src?'SAVED':'…'):live.ext?(live.ext==='Pre-market'?'PRE-MARKET':'AFTER-HOURS'):ses==='regular'?'LIVE':'CLOSED';
+ $('#pMeta').textContent=`£${(px*R.fx).toFixed(2)} · $1 = £${R.fx.toFixed(4)}`+(live.time&&!manual?` · Price as of ${new Date(live.time*1000).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'})} UK (${live.src})`:'')+(live.ext&&live.close&&!manual?` · Close ${usd(live.close)}`:'');
  // overview
  $('#ovTotal').innerHTML=`<span class="amt">${gbp(R.g.I)}</span>`;
  $('#ovProfit').className='chg '+cls(R.g.J);$('#ovProfit').innerHTML=`<span class="amt">${sgn(R.g.J)}${gbp(Math.abs(R.g.J))}</span> ${pct(R.g.K)} all time · cost <span class="amt">${gbp(R.g.H)}</span>`;
@@ -169,7 +184,7 @@ function snapshot(){if(!live.px||S.manPx!=='')return;const R=calc();const k=new 
 
 /* ---------- more ---------- */
 function renderMore(R){if(document.activeElement!==$('#manPx'))$('#manPx').value=S.manPx;if(document.activeElement!==$('#manFx'))$('#manFx').value=S.manFx;$('#manPx').placeholder=live.px?'live: '+live.px:'';$('#manFx').placeholder=live.fx?'live: '+live.fx.toFixed(4):'';
- $('#srcInfo').innerHTML=`Price: ${esc(S.manPx!==''?'manual':live.src||'loading…')}${live.cacheUpd?` · auto feed updated ${new Date(live.cacheUpd*1000).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`:''}<br>Currency: ${esc(S.manFx!==''?'manual':live.fxSrc||'—')}. Your Numbers sheet uses CURRENCY("USD","GBP") – the live rate – so both your cost and value in £ move with the exchange rate, exactly as in the document.`;
+ $('#srcInfo').innerHTML=`Price: ${esc(S.manPx!==''?'manual':(live.src||'loading…')+(live.ext?' – '+live.ext:''))} (refresh checks CNBC, then TradingView, live)${live.cacheUpd?` · auto feed updated ${new Date(live.cacheUpd*1000).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`:''}<br>Currency: ${esc(S.manFx!==''?'manual':live.fxSrc||'—')}. Your Numbers sheet uses CURRENCY("USD","GBP") – the live rate – so both your cost and value in £ move with the exchange rate, exactly as in the document.`;
  const types=R.people.flatMap(x=>x.rows.map(r=>`<li>${esc(x.p.name)} – ${esc(r.a.platform)}: <b>${esc(r.a.type||'—')}</b>${r.a.type==='?'?' <span class="muted">(marked “?” in your document – tap it on the Sheet tab to set it)</span>':''}</li>`));
  $('#notes').innerHTML=`<ul style="padding-left:18px;margin:0">${types.join('')}</ul><p class="muted">These are the account types recorded in your document. The app doesn't calculate tax.</p>
  <p class="muted">The Total rows' "Average buy price $" is a typed value (253) in your document rather than a formula, so it's kept as an editable cell. The weighted averages from your accounts are shown on the What-if tab.</p>`}
@@ -206,7 +221,7 @@ window.__setTheme=t=>{prefs.theme=t;document.body.dataset.theme=t;render()};
 /* ---------- tabs & start ---------- */
 $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#tabs button').forEach(x=>x.classList.toggle('on',x===b));$$('.tab').forEach(x=>x.classList.toggle('on',x.id==='t-'+b.dataset.t));if(b.dataset.t==='charts')renderCharts();scrollTo(0,0)};
 window.__tab=t=>$(`#tabs [data-t=${t}]`).click();
-$('#refreshBtn').onclick=()=>{toast('Refreshing price…');loadPrices()};
+$('#refreshBtn').onclick=()=>loadPrices(true);
 let started=false;function start(){if(started)return;started=true;$('#lock').hidden=true;$('#app').hidden=false;render();loadPrices();setInterval(loadPrices,60000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadPrices()});addEventListener('resize',()=>{if($('#t-charts').classList.contains('on'))renderCharts()});window.__ready=true}
 (function boot(){const st=store();if(st){S=fill(JSON.parse(st.getItem(KEY)));useLocal=st===localStorage;seed=JSON.parse(localStorage.getItem(KEY+'.seed')||'null');start()}})();
