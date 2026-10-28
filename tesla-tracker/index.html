@@ -1,7 +1,7 @@
 <!doctype html><html lang="en-GB"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#000">
-<title>Tesla Shares Tracker</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=3">
+<title>Tesla Shares Tracker</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=4">
 </head><body data-theme="midnight">
 <div id="lock" class="lock"><form class="lockbox" onsubmit="return false">
  <div class="logo">T</div><h1>Tesla Shares</h1><p class="muted">Private tracker &middot; enter passcode</p>
@@ -72,11 +72,12 @@
  <button class="btn" id="exJson">Backup (JSON)</button><label class="btn file">Restore<input type="file" id="imJson" accept=".json,application/json" hidden></label></div>
  <p class="muted small">The .xlsx keeps your sheet's layout and real formulas, so it opens in Numbers or Excel with your current figures.</p></div>
  <div class="card"><h3>Account notes</h3><div id="notes" class="small"></div></div>
+ <div class="card"><h3>Versions</h3><div id="versions" class="small"></div></div>
  <div class="card"><h3>Privacy</h3><p class="small muted">Your figures are encrypted on the public site and only unlock with your passcode. After that they stay on this device only.</p>
  <div class="rowbtns"><button class="btn" id="lockNow">Lock now</button><button class="btn" id="hideToggle">Hide amounts</button><button class="btn danger" id="resetDoc">Reset to document</button></div></div>
 </section>
 </main></div>
 <div id="themeSheet" class="sheet" hidden><div class="sheetbox"><h3>Colour scheme</h3><div id="themeGrid" class="themegrid"></div><button class="btn" id="themeClose">Done</button></div></div>
 <div id="toast" class="toast"></div>
-<script src="data/vault.js?v=3"></script><script src="app.js?v=3"></script>
+<script src="data/vault.js?v=4"></script><script src="app.js?v=4"></script>
 </body></html>

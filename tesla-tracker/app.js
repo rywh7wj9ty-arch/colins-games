@@ -1,14 +1,15 @@
 (function(){'use strict';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const KEY='tslaTracker.v1',PREF='tslaTracker.prefs';
-const DOC_FX=0.75254;
+const DOC_FX=0.75254;const SCHEMA=1;let readOnly=false;
 let S=null,seed=null,live={px:null,prev:null,time:null,src:'',fx:null,fxSrc:'',ranges:{},fxHist:[]};
 const prefs=Object.assign({theme:'midnight',hide:false},JSON.parse(localStorage.getItem(PREF)||'{}'));
 const savePrefs=()=>localStorage.setItem(PREF,JSON.stringify(prefs));
 document.body.dataset.theme=prefs.theme;document.body.classList.toggle('hideamt',prefs.hide);
 const store=()=>localStorage.getItem(KEY)?localStorage:(sessionStorage.getItem(KEY)?sessionStorage:null);
 let useLocal=true;
-function save(){(useLocal?localStorage:sessionStorage).setItem(KEY,JSON.stringify(S))}
+function save(){const st=useLocal?localStorage:sessionStorage;try{const cur=JSON.parse(st.getItem(KEY)||'null');if(cur&&(cur.schema||1)>SCHEMA){readOnly=true}}catch(e){}
+ if(readOnly){if(!save._w){save._w=1;toast('Your data was saved by a newer version – open the latest version to make changes')}return}S.schema=Math.max(S.schema||1,SCHEMA);st.setItem(KEY,JSON.stringify(S))}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600)}
 const gbp=(v,d=0)=>v==null||isNaN(v)?'—':(v<0?'−':'')+'£'+Math.abs(v).toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
 const usd=(v,d=2)=>v==null||isNaN(v)?'—':(v<0?'−':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -25,7 +26,7 @@ async function decrypt(pass){const V=window.TSLA_VAULT;const km=await crypto.sub
 async function unlock(){const p=$('#pass').value;$('#lockErr').textContent='';$('#unlockBtn').textContent='Unlocking…';
  try{seed=await decrypt(p);useLocal=$('#remember').checked;S=JSON.parse(JSON.stringify(seed));fill(S);save();localStorage.setItem(KEY+'.seed',JSON.stringify(seed));start()}
  catch(e){$('#lockErr').textContent='Wrong passcode';}$('#unlockBtn').textContent='Unlock'}
-function fill(s){s.alerts=s.alerts||[];s.milestones=s.milestones||[150000,200000,250000,500000,1000000];s.snaps=s.snaps||{};s.shareGoals=s.shareGoals||{};s.manPx=s.manPx??'';s.manFx=s.manFx??'';return s}
+function fill(s){s.schema=s.schema||1;if(s.schema>SCHEMA)readOnly=true;s.alerts=s.alerts||[];s.milestones=s.milestones||[150000,200000,250000,500000,1000000];s.snaps=s.snaps||{};s.shareGoals=s.shareGoals||{};s.manPx=s.manPx??'';s.manFx=s.manFx??'';return s}
 $('#unlockBtn').onclick=unlock;$('#pass').onkeydown=e=>{if(e.key==='Enter')unlock()};
 
 
@@ -64,7 +65,7 @@ async function webullQuote(){const q=(await jget('https://quotes-gw.webullfintec
  const ft=pt(q.faTradeTime);if(q.pPrice&&nn(q.pPrice)&&ft>t){const pre=nySession()==='pre';r={px:nn(q.pPrice),prev:pre?close:prev,close,ext:pre?'Pre-market':'After-hours',time:ft,src:'Webull'}}
  if(!close)throw'no';return r}
 async function tvFx(){const r=await fetch('https://scanner.tradingview.com/forex/scan',{method:'POST',headers:{'Content-Type':'text/plain'},cache:'no-store',body:JSON.stringify({symbols:{tickers:['FX_IDC:USDGBP']},columns:['close']})});const v=(await r.json()).data[0].d[0];if(!v)throw'no';return v}
-let loading=false;const BUILD='3';
+let loading=false;const BUILD='4';
 async function checkBuild(){try{const v=await jget('version.json?t='+Date.now(),5000);if(v.build&&v.build!==BUILD&&!sessionStorage.getItem('tt.reloaded.'+v.build)){sessionStorage.setItem('tt.reloaded.'+v.build,1);location.replace(location.pathname+'?b='+v.build+'&t='+Date.now())}}catch(e){}}
 async function loadPrices(manual){if(loading)return;checkBuild();loading=true;const btn=$('#refreshBtn');btn.classList.add('spin');const before=live.px,beforeT=live.time;
  try{
@@ -221,6 +222,8 @@ $('#lockNow').onclick=()=>{if(!confirm('Lock and remove your data from this devi
 $('#hideToggle').onclick=()=>{prefs.hide=!prefs.hide;savePrefs();document.body.classList.toggle('hideamt',prefs.hide);render()};
 $('#resetDoc').onclick=()=>{if(seed&&confirm('Reset all shares and prices to your original document? Alerts and goals are kept.')){const k={alerts:S.alerts,milestones:S.milestones,snaps:S.snaps,shareGoals:S.shareGoals};S=fill(Object.assign(JSON.parse(JSON.stringify(seed)),k));save();render();toast('Reset to document')}};
 
+const VERSIONS=[['4','28 Oct 2026','Versions list, safe shared data across versions, each build kept at its own link.'],['3','28 Oct 2026','Fixed refresh stuck on the frozen pre-market price during US hours; Safari-safe times; shows build number; self-update check.'],['2','28 Oct 2026','Live refresh from CNBC/TradingView, spinner and messages, pre-market/after-hours prices, feed every 10 min. Known issue: shows the frozen pre-market price during US hours.'],['1','28 Oct 2026','First version: sheet, charts, what-if, goals, themes, exports. Known issue: price only updates from the saved feed.']];
+function renderVersions(){const base=location.pathname.replace(/v\d+\/?(index\.html)?$/,'').replace(/index\.html$/,'');$('#versions').innerHTML='<ul class="list">'+VERSIONS.map(v=>`<li style="display:block"><a style="color:var(--ac);font-weight:700" href="${base}v${v[0]}/">Build ${v[0]}</a>${v[0]===BUILD?' <span class="tag">this one</span>':''}${v[0]===VERSIONS[0][0]?' <span class="tag">latest</span>':''} <span class="muted">· ${v[1]}</span><br><span class="muted">${v[2]}</span></li>`).join('')+`</ul><a class="btn" href="${base}">Open latest (main link)</a><p class="muted">All versions share the data saved on this device. Older builds can view it but won't overwrite data saved in a newer format.</p>`}
 /* ---------- themes ---------- */
 const THEMES=[['midnight','Midnight Black (OLED)','#000','#0b0b0d','#3e6ae1','#bf5af2'],['redblack','Tesla Red on Black','#000','#0e0606','#e31937','#f5f5f5'],['light','Daylight','#f4f5f7','#fff','#1257d6','#c2410c'],['ocean','Ocean Teal','#04141c','#082430','#14c8c8','#5b9dff'],['graphite','Graphite Gold','#16181c','#1f2228','#f5b942','#7aa2ff']];
 function themeGrid(){$('#themeGrid').innerHTML=THEMES.map(t=>`<div class="tp ${prefs.theme===t[0]?'on':''}" data-th="${t[0]}" style="background:${t[2]};color:${t[0]==='light'?'#15171c':'#fff'};border-color:${prefs.theme===t[0]?t[4]:'#8884'}">${t[1]}<div class="sw"><i style="background:${t[4]}"></i><i style="background:${t[5]}"></i><i style="background:${t[3]};border:1px solid #8886"></i></div><div class="mini" style="background:${t[3]};border:1px solid #8883;display:flex;align-items:center;padding:0 6px;font-size:11px">£•••<span style="color:${t[4]};margin-left:auto">▲ 1.2%</span></div></div>`).join('')}
@@ -233,6 +236,6 @@ $('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('#tabs
 window.__tab=t=>$(`#tabs [data-t=${t}]`).click();
 $('#refreshBtn').onclick=()=>loadPrices(true);
 let started=false;function start(){if(started)return;started=true;$('#lock').hidden=true;$('#app').hidden=false;render();loadPrices();setInterval(loadPrices,60000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadPrices()});addEventListener('resize',()=>{if($('#t-charts').classList.contains('on'))renderCharts()});window.__ready=true}
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadPrices()});addEventListener('resize',()=>{if($('#t-charts').classList.contains('on'))renderCharts()});renderVersions();window.__ready=true}
 (function boot(){const st=store();if(st){S=fill(JSON.parse(st.getItem(KEY)));useLocal=st===localStorage;seed=JSON.parse(localStorage.getItem(KEY+'.seed')||'null');start()}})();
 })();
