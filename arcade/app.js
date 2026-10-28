@@ -1,6 +1,6 @@
 // Add new games here.
 var GAMES=[
-  {id:'mario-3d',name:'Mario 3D',tagline:'Poke, pose, dress up & run around with a fully interactive 3D Mario',url:'https://rywh7wj9ty-arch.github.io/colins-games/mario-3d/',accent:'#e52521'},{id:'grp-substation-v3',name:'GRP Substation v3',tagline:'Interactive 3D 11 kV substation: power flow, thermal, guided tour.',url:'https://rywh7wj9ty-arch.github.io/colins-games/grp-substation-v3/',accent:'#ffbf47'},
+  {id:'tesla-tracker',name:'Tesla Shares Tracker',tagline:'Private TSLA tracker for Colin & Caroline: live price, what-if, goals.',url:'https://rywh7wj9ty-arch.github.io/colins-games/tesla-tracker/',accent:'#e31937'},{id:'mario-3d',name:'Mario 3D',tagline:'Poke, pose, dress up & run around with a fully interactive 3D Mario',url:'https://rywh7wj9ty-arch.github.io/colins-games/mario-3d/',accent:'#e52521'},{id:'grp-substation-v3',name:'GRP Substation v3',tagline:'Interactive 3D 11 kV substation: power flow, thermal, guided tour.',url:'https://rywh7wj9ty-arch.github.io/colins-games/grp-substation-v3/',accent:'#ffbf47'},
  {id:'starfall',name:'Starfall',tagline:'Minesweeper on a glowing hex planet.',url:'https://rywh7wj9ty-arch.github.io/colins-games/starfall/',accent:'#6ee2ff'},
  {id:'lumen',name:'Lumen',tagline:'Glass Tetris with music that plays along.',url:'https://rywh7wj9ty-arch.github.io/colins-games/lumen/',accent:'#c49bff'},
  {id:'pocket-weather',name:'Pocket Weather',tagline:'Be the weather. Guide the wanderer.',url:'https://rywh7wj9ty-arch.github.io/colins-games/pocket-weather/',accent:'#ffd36b'},
