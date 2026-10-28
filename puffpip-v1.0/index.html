@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Puffpip</title>
+<meta name="theme-color" content="#8fd8ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Puffpip">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css?v=202610281830">
+</head><body>
+<canvas id="cv"></canvas>
+<div id="hud">
+  <button class="btn round" id="bPause" aria-label="Pause">❚❚</button>
+  <div class="pill" id="hBerry">🫐 0/0</div>
+  <div class="pill" id="hStar">☆☆☆</div>
+  <div class="pill" id="hTime">0:00</div>
+  <div id="tip"></div>
+</div>
+<div id="touch">
+  <div id="tL" class="tb">◀</div><div id="tR" class="tb">▶</div>
+  <div id="tP" class="tb puff">PUFF</div>
+</div>
+<div id="title" class="screen on">
+  <div class="logo">Puffpip</div>
+  <div class="sub2">Breathe in to float. Breathe out to squeeze.</div>
+  <div class="ver">v1.0</div>
+  <div class="tbtns">
+    <button class="btn big green" id="bPlay">▶ Play</button>
+    <button class="btn blue" id="bStats">Stats</button>
+    <button class="btn yellow" id="bSettings">Settings</button>
+  </div>
+  <div class="howto">Hold <b>PUFF</b> to grow &amp; float up · let go to shrink, drop &amp; dash · ◀ ▶ to steer<br>🎮 stick/D-pad + A (or RT) · ⌨ ←/→ or A/D + Space/↑</div>
+  <div id="a2hs">Play full screen: tap <b>Share</b> then <b>Add to Home Screen</b> <button id="a2hsX">✕</button></div>
+</div>
+<div id="pause" class="screen modal"><div class="card">
+  <h2>Paused</h2><div class="sliders"></div>
+  <div class="btns"><button class="btn" id="pRestart">Restart</button><button class="btn" id="pQuit">Title</button><button class="btn green" id="pResume">Resume</button></div>
+</div></div>
+<div id="settings" class="screen modal"><div class="card">
+  <h2>Settings</h2><div class="sliders"></div>
+  <label class="row"><span>Screen shake</span><input type="checkbox" id="optShake" checked></label>
+  <h3>Older versions</h3>
+  <div class="older"><a class="btn small" href="../puffpip-v1.0/">v1.0 · first level (this version)</a></div>
+  <div class="btns"><button class="btn green" id="sClose">Done</button></div>
+</div></div>
+<div id="stats" class="screen modal"><div class="card"><h2>Stats</h2><div id="statGrid"></div>
+  <div class="btns"><button class="btn" id="stReset">Reset</button><button class="btn green" id="stClose">Done</button></div></div></div>
+<div id="results" class="screen modal"><div class="card"><h2>Bluffs cleared!</h2><div id="resGrid"></div>
+  <div class="btns"><button class="btn" id="rTitle">Title</button><button class="btn green" id="rAgain">Play again</button></div></div></div>
+<script src="game.js?v=202610281830"></script>
+</body></html>

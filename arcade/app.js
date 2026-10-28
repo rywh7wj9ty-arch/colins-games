@@ -16,7 +16,8 @@ var GAMES=[
  {id:'bobbin',name:"Bobbin's Button Box",tagline:'A handmade physics romp. Push, pull, swing and boing.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bobbin/',accent:'#4aa8ff'},
  {id:'thistledown',name:'Thistledown',tagline:'A glowing forest spirit. Leap, bash and glide home.',url:'https://rywh7wj9ty-arch.github.io/colins-games/thistledown/',accent:'#7fe0c8'},
  {id:'stitchling',name:'Stitchling',tagline:'A little burlap hero. Run, pop bubbles and grab the prizes.',url:'https://rywh7wj9ty-arch.github.io/colins-games/stitchling/',accent:'#e8a24a'},
- {id:'bloomhop',name:'Bloomhop',tagline:'Hop a toy meadow. Grab the Dazzle Bloom.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bloomhop/',accent:'#5fe06a'}
+ {id:'bloomhop',name:'Bloomhop',tagline:'Hop a toy meadow. Grab the Dazzle Bloom.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bloomhop/',accent:'#5fe06a'},
+ {id:'puffpip',name:'Puffpip',tagline:'Breathe in to float, breathe out to squeeze.',url:'https://rywh7wj9ty-arch.github.io/colins-games/puffpip/',accent:'#ffd84a'}
 ];
 (function(){
  var root=document.getElementById('games');

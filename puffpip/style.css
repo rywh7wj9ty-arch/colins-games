@@ -1,0 +1,41 @@
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#8fd8ff;font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;color:#24406b;touch-action:none;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);z-index:20}
+.screen.on{display:flex}
+#title{background:linear-gradient(#bfeaff99,#fff6d699)}
+.logo{font-size:min(17vw,96px);font-weight:900;color:#fff;letter-spacing:2px;text-shadow:0 5px 0 #4aa0e6,0 10px 18px #2b6fb455}
+.sub2{font-weight:800;font-size:18px;margin-top:2px}
+.ver{font-weight:800;opacity:.7;margin:4px 0 10px}
+.tbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.howto{margin-top:12px;text-align:center;font-size:13px;font-weight:700;opacity:.85;max-width:620px}
+#a2hs{display:none;margin-top:10px;background:#fff;border-radius:14px;padding:6px 12px;font-size:13px;font-weight:700;box-shadow:0 3px 0 #0002}
+#a2hs button{border:0;background:none;font-size:14px}
+.btn{font:inherit;font-weight:900;font-size:17px;border:0;border-radius:18px;padding:10px 20px;background:#fff;color:#24406b;box-shadow:0 5px 0 #b9cde3;cursor:pointer;text-decoration:none;display:inline-block}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #b9cde3}
+.btn.big{font-size:24px;padding:14px 34px}.btn.small{font-size:14px;padding:7px 14px}
+.btn.green{background:#5fd68a;color:#fff;box-shadow:0 5px 0 #34a862}.btn.blue{background:#5bb8ff;color:#fff;box-shadow:0 5px 0 #2f86d1}.btn.yellow{background:#ffd25a;box-shadow:0 5px 0 #e0a92a}
+.btn.focus,.btn:focus-visible{outline:4px solid #ffb020;outline-offset:3px}
+input.focus{outline:4px solid #ffb020}
+.btn.round{width:46px;height:46px;padding:0;border-radius:50%;font-size:16px}
+.modal{background:#2a4e7a55}
+.card{background:#fffdf6;border-radius:24px;padding:16px 22px;min-width:300px;max-width:92vw;max-height:92vh;overflow:auto;box-shadow:0 8px 0 #0002}
+.card h2{margin:0 0 8px;text-align:center}.card h3{margin:10px 0 6px;font-size:15px}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.row{display:flex;justify-content:space-between;align-items:center;gap:14px;font-weight:700;margin:6px 0}
+.row input[type=range]{width:180px;accent-color:#4aa0e6}
+#statGrid,#resGrid{display:grid;grid-template-columns:auto auto;gap:4px 22px;font-weight:700}
+#statGrid b,#resGrid b{text-align:right}
+#hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:10}
+#hud.on{display:block}
+#bPause{position:absolute;top:calc(env(safe-area-inset-top) + 8px);left:calc(env(safe-area-inset-left) + 10px);pointer-events:auto}
+.pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);background:#fffc;border-radius:14px;padding:5px 12px;font-weight:900;font-size:16px}
+#hBerry{left:calc(env(safe-area-inset-left) + 66px)}#hStar{left:calc(env(safe-area-inset-left) + 166px);color:#e0a000}#hTime{right:calc(env(safe-area-inset-right) + 12px)}
+#tip{position:absolute;top:calc(env(safe-area-inset-top) + 58px);left:0;right:0;text-align:center;font-weight:900;font-size:19px;color:#fff;text-shadow:0 2px 0 #2f86d1,0 0 10px #2f86d1;opacity:0;transition:opacity .4s}
+#tip.on{opacity:1}
+#touch{position:fixed;inset:0;display:none;z-index:9;pointer-events:none}
+#touch.on{display:block}
+.tb{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 16px);width:78px;height:78px;border-radius:50%;background:#ffffff66;border:3px solid #ffffffaa;color:#fff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px #0004;pointer-events:none}
+.tb.on{background:#ffffffaa}
+#tL{left:calc(env(safe-area-inset-left) + 14px)}#tR{left:calc(env(safe-area-inset-left) + 104px)}
+.tb.puff{right:calc(env(safe-area-inset-right) + 22px);width:112px;height:112px;font-size:20px}
