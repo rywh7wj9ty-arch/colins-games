@@ -1,7 +1,7 @@
 <!doctype html><html lang="en-GB"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#000">
-<title>Tesla Shares Tracker</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TSLA Shares"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=6">
+<title>Tesla Shares Tracker</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TSLA Shares"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=7">
 </head><body data-theme="midnight">
 <div id="lock" class="lock"><form class="lockbox" onsubmit="return false">
  <div class="logo">T</div><h1>Tesla Shares</h1><p class="muted" id="lockMsg">Private tracker &middot; enter passcode</p><button type="button" class="btn primary" id="faceBtn" hidden>Unlock with Face ID</button>
@@ -15,7 +15,7 @@
  <div class="muted small" id="pMeta"></div></div>
  <div class="topbtns"><button class="icon" id="refreshBtn" title="Refresh">⟳</button><button class="icon" id="themeBtn" title="Themes">◐</button></div></header>
 <nav class="tabs" id="tabs">
- <button data-t="overview" class="on">Overview</button><button data-t="glance">Glance</button><button data-t="sheet">Sheet</button><button data-t="isa">ISA</button><button data-t="news">News</button><button data-t="charts">Charts</button><button data-t="whatif">What-if</button><button data-t="goals">Goals</button><button data-t="more">More</button></nav>
+ <button data-t="overview" class="on">Overview</button><button data-t="glance">Glance</button><button data-t="sheet">Sheet</button><button data-t="charts">Charts</button><button data-t="whatif">What-if</button><button data-t="goals">Goals</button><button data-t="more">More</button></nav>
 <main>
 <section id="t-overview" class="tab on">
  <div class="card hero"><div class="muted small">Combined value</div><div class="big" id="ovTotal">£—</div>
@@ -40,8 +40,9 @@
  <p class="small muted">Each dated buy is compared with putting the same pounds into SPY, or into savings at your rate (compounded), on the same day. Sales reduce all three in proportion. SPY uses daily closes, excluding dividends.</p></div>
 </section>
 </div>
-<section id="t-isa" class="tab"><div class="card"><h3>ISA allowance</h3><p class="small" id="isaHead"></p><p class="small muted">£20,000 each per tax year (6 April – 5 April). Type how much you've paid into each ISA account this tax year. It resets automatically on 6 April.</p></div><div id="isaOut"></div></section>
+<div hidden aria-hidden="true"><section id="t-isa" class="tab"><div class="card"><h3>ISA allowance</h3><p class="small" id="isaHead"></p><p class="small muted">£20,000 each per tax year (6 April – 5 April). Type how much you've paid into each ISA account this tax year. It resets automatically on 6 April.</p></div><div id="isaOut"></div></section>
 <section id="t-news" class="tab"><div id="newsOut"></div></section>
+</div>
 <section id="t-sheet" class="tab">
  <div class="card"><h3>Tesla stock <span class="muted small">— mirrors your Numbers sheet</span></h3>
  <p class="muted small">Tap any white-outlined cell to edit. Prices come live; everything else recalculates with the same formulas as your document.</p>
@@ -100,5 +101,5 @@
 </main></div>
 <div id="themeSheet" class="sheet" hidden><div class="sheetbox"><h3>Colour scheme</h3><div id="themeGrid" class="themegrid"></div><button class="btn" id="themeClose">Done</button></div></div>
 <div id="toast" class="toast"></div>
-<script src="data/vault.js?v=6"></script><script src="app.js?v=6"></script>
+<script src="data/vault.js?v=7"></script><script src="app.js?v=7"></script>
 </body></html>
