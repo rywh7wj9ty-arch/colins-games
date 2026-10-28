@@ -1,0 +1,102 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#000">
+<title>Tesla Shares Tracker</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TSLA Shares"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=5">
+</head><body data-theme="midnight">
+<div id="lock" class="lock"><form class="lockbox" onsubmit="return false">
+ <div class="logo">T</div><h1>Tesla Shares</h1><p class="muted" id="lockMsg">Private tracker &middot; enter passcode</p><button type="button" class="btn primary" id="faceBtn" hidden>Unlock with Face ID</button>
+ <input id="pass" type="password" inputmode="text" autocomplete="current-password" placeholder="Passcode">
+ <label class="row small"><input type="checkbox" id="remember" checked> Keep unlocked on this device</label>
+ <button id="unlockBtn" class="btn primary">Unlock</button><p id="lockErr" class="err"></p>
+</form></div>
+<div id="app" hidden>
+<header class="top"><div><div class="ticker">TSLA <span id="srcTag" class="tag"></span></div>
+ <div class="price"><span id="pUsd">$—</span> <span id="pChg" class="chg"></span></div>
+ <div class="muted small" id="pMeta"></div></div>
+ <div class="topbtns"><button class="icon" id="refreshBtn" title="Refresh">⟳</button><button class="icon" id="themeBtn" title="Themes">◐</button></div></header>
+<nav class="tabs" id="tabs">
+ <button data-t="overview" class="on">Overview</button><button data-t="glance">Glance</button><button data-t="sheet">Sheet</button><button data-t="lots">Buy log</button><button data-t="history">History</button><button data-t="isa">ISA</button><button data-t="news">News</button><button data-t="charts">Charts</button><button data-t="whatif">What-if</button><button data-t="goals">Goals</button><button data-t="more">More</button></nav>
+<main>
+<section id="t-overview" class="tab on">
+ <div class="card hero"><div class="muted small">Combined value</div><div class="big" id="ovTotal">£—</div>
+  <div id="ovProfit" class="chg"></div><div class="muted small" id="ovDay"></div>
+  <div class="split"><div id="splitBar" class="bar"></div><div class="legend" id="splitLegend"></div></div></div>
+ <div id="personCards"></div>
+ <div class="card"><h3>Today</h3><div class="grid2" id="todayGrid"></div></div>
+</section>
+<section id="t-glance" class="tab"><div id="glance" class="glance"></div></section>
+<section id="t-lots" class="tab">
+ <div class="card"><h3>Buy log</h3><select id="lotAcct"></select><p class="small" id="lotSum"></p><div class="tblwrap" id="lotList"></div>
+ <p class="muted small">Each account's shares and average price are worked out from these lots. Leave $→£ blank to use that day's exchange rate.</p></div>
+ <div class="card"><h3>Add a lot</h3><div class="grid2"><select id="lotSide"><option value="buy">Buy</option><option value="sell">Sell</option></select><input type="date" id="lotDate"></div>
+ <div class="grid2"><input id="lotQty" type="number" step="any" inputmode="decimal" placeholder="Shares"><input id="lotPx" type="number" step="any" inputmode="decimal" placeholder="Price $"></div>
+ <input id="lotFx" type="number" step="any" inputmode="decimal" placeholder="$→£ rate (optional)"><button class="btn primary" id="lotAdd" style="width:100%">Add to selected account</button></div>
+ <div class="card"><h3>What if I buy £X more?</h3><div class="grid2"><input id="bxGbp" type="number" inputmode="decimal" placeholder="£ amount"><select id="bxAcct"></select></div><div id="bxOut" class="small"></div></div>
+</section>
+<section id="t-history" class="tab">
+ <div class="card"><h3>Real value vs cost</h3><div class="seg" id="histSeg"><button data-w="both" class="on">Combined</button><button data-w="0">Colin</button><button data-w="1">Caroline</button></div>
+ <canvas id="cHist" class="chart"></canvas><div class="legend small"><span><span class="dot" style="background:var(--c1)"></span>Value</span><span><span class="dot" style="background:var(--mu)"></span>Cost</span></div><p class="small muted" id="histNote"></p></div>
+ <div class="card"><h3>Compared with…</h3><canvas id="cCmp" class="chart"></canvas><div class="legend small"><span><span class="dot" style="background:var(--c1)"></span>Tesla</span><span><span class="dot" style="background:var(--c2)"></span>S&amp;P 500 (SPY)</span><span><span class="dot" style="background:var(--mu)"></span>Savings</span></div>
+ <div class="grid2" id="cmpOut" style="margin-top:8px"></div><label>Savings rate % a year<input id="savRate" type="number" step="0.1" inputmode="decimal"></label>
+ <p class="small muted">Each dated buy is compared with putting the same pounds into SPY, or into savings at your rate (compounded), on the same day. Sales reduce all three in proportion. SPY uses daily closes, excluding dividends.</p></div>
+</section>
+<section id="t-isa" class="tab"><div class="card"><h3>ISA allowance</h3><p class="small" id="isaHead"></p><p class="small muted">£20,000 each per tax year (6 April – 5 April). This counts the TSLA buys logged here in accounts marked as an ISA, so other ISA payments (cash ISAs and other shares) aren't included.</p></div><div id="isaOut"></div></section>
+<section id="t-news" class="tab"><div id="newsOut"></div></section>
+<section id="t-sheet" class="tab">
+ <div class="card"><h3>Tesla stock <span class="muted small">— mirrors your Numbers sheet</span></h3>
+ <p class="muted small">Tap any white-outlined cell to edit. Prices come live; everything else recalculates with the same formulas as your document.</p>
+ <div class="tblwrap"><table id="sheet"></table></div>
+ <div class="rowbtns"><button class="btn" id="addColin">+ Colin account</button><button class="btn" id="addCaroline">+ Caroline account</button></div></div>
+ <div class="card"><h3>Log a purchase or sale</h3><p class="muted small">Updates the number of shares and the average buy price ($) for that account.</p>
+  <div class="form"><select id="buyAcct"></select>
+  <div class="grid2"><label>Shares<input id="buyQty" type="number" step="any" inputmode="decimal" placeholder="e.g. 5"></label><label>Price $<input id="buyPx" type="number" step="any" inputmode="decimal" placeholder="e.g. 400"></label></div>
+  <div class="grid2"><button class="btn primary" id="buyBtn">Buy</button><button class="btn" id="sellBtn">Sell</button></div><p class="muted small" id="buyMsg"></p></div></div>
+ <div class="card"><h3>Formulas used</h3><ul class="small muted formulas">
+ <li>Current price £ = Current price $ × USD→GBP</li><li>Average buy £ = Average buy $ × USD→GBP</li>
+ <li>Total initial investment = Shares × Average buy £</li><li>Total stock price = Current price £ × Shares</li>
+ <li>Total profit = Total stock price − Total initial investment</li><li>Total % gain = (Total stock price − Initial) ÷ Initial</li>
+ <li>Person totals = SUM of their accounts; Grand total = Colin total + Caroline total</li></ul></div>
+</section>
+<section id="t-charts" class="tab">
+ <div class="card"><h3>TSLA price</h3><div class="seg" id="rangeSeg"><button data-r="1d" class="on">1D</button><button data-r="5d">5D</button><button data-r="1mo">1M</button><button data-r="6mo">6M</button><button data-r="1y">1Y</button><button data-r="5y">5Y</button></div>
+ <canvas id="cPrice" class="chart"></canvas><div class="muted small" id="cPriceInfo"></div></div>
+ <div class="card"><h3>Portfolio value (£)</h3><div class="seg" id="pvSeg"><button data-w="both" class="on">Combined</button><button data-w="0">Colin</button><button data-w="1">Caroline</button></div>
+ <canvas id="cPort" class="chart"></canvas><p class="muted small">Today's share counts × historical TSLA price × USD→GBP (Yahoo history). It shows what your current holdings were worth, not your actual past balance.</p></div>
+ <div class="card"><h3>Saved snapshots</h3><canvas id="cSnap" class="chart"></canvas><p class="muted small" id="snapInfo">The app saves your actual total once a day whenever you open it.</p></div>
+ <div class="card"><h3>Split</h3><canvas id="cDonut" class="donut"></canvas><div class="legend" id="donutLegend"></div></div>
+</section>
+<section id="t-whatif" class="tab">
+ <div class="card"><h3>What if TSLA was…</h3><div class="big" id="wiPrice">$—</div>
+ <input type="range" id="wiSlider" min="50" max="2000" step="1"><div class="seg" id="wiQuick"></div>
+ <div id="wiOut"></div></div>
+ <div class="card"><h3>Target calculator</h3><label>I want our combined holding to be worth (£)<input id="tgtVal" type="number" inputmode="decimal" placeholder="e.g. 250000"></label>
+ <label>Whose holding<select id="tgtWho"><option value="both">Combined</option><option value="0">Colin</option><option value="1">Caroline</option></select></label><div id="tgtOut" class="muted"></div></div>
+ <div class="card"><h3>Break-even prices</h3><div id="beOut"></div></div>
+ <div class="card"><h3>Currency what-if</h3><label>USD→GBP rate <span id="fxWiLbl"></span><input type="range" id="fxWi" min="0.6" max="0.95" step="0.001"></label><div id="fxWiOut" class="muted"></div></div>
+</section>
+<section id="t-goals" class="tab">
+ <div class="card"><h3>Price alerts</h3><div class="grid2"><select id="alDir"><option value="above">Rises above</option><option value="below">Falls below</option></select><input id="alPx" type="number" inputmode="decimal" placeholder="$ price"></div>
+ <button class="btn primary" id="alAdd">Add alert</button><ul id="alList" class="list"></ul><p class="muted small">You'll get an alert while the app is open, and the next time you open it if the price has crossed your level.</p></div>
+ <div class="card"><h3>Milestones</h3><div id="msList"></div><div class="grid2"><input id="msVal" type="number" inputmode="decimal" placeholder="£ milestone"><button class="btn" id="msAdd">Add</button></div></div>
+ <div class="card"><h3>Share-count goals</h3><div id="shGoals"></div></div>
+</section>
+<section id="t-more" class="tab">
+ <div class="card"><h3>Price & currency source</h3>
+ <label>Manual TSLA price $ (blank = live)<input id="manPx" type="number" step="any" inputmode="decimal"></label>
+ <label>Manual USD→GBP (blank = live)<input id="manFx" type="number" step="any" inputmode="decimal"></label>
+ <div id="srcInfo" class="muted small"></div></div>
+ <div class="card"><h3>Export & backup</h3><div class="rowbtns">
+ <button class="btn primary" id="exXlsx">Spreadsheet (.xlsx)</button><button class="btn" id="exCsv">CSV</button>
+ <button class="btn" id="exJson">Backup (JSON)</button><label class="btn file">Restore<input type="file" id="imJson" accept=".json,application/json" hidden></label></div>
+ <p class="muted small">The .xlsx keeps your sheet's layout and real formulas, so it opens in Numbers or Excel with your current figures.</p></div>
+ <div class="card"><h3>Account notes</h3><div id="notes" class="small"></div></div>
+ <div class="card"><h3>Face ID unlock</h3><div id="faceRow"></div></div>
+ <div class="card"><h3>Versions</h3><div id="versions" class="small"></div></div>
+ <div class="card"><h3>Privacy</h3><p class="small muted">Your figures are encrypted on the public site and only unlock with your passcode. After that they stay on this device only.</p>
+ <div class="rowbtns"><button class="btn" id="lockNow">Lock now</button><button class="btn" id="hideToggle">Hide amounts</button><button class="btn danger" id="resetDoc">Reset to document</button></div></div>
+</section>
+</main></div>
+<div id="themeSheet" class="sheet" hidden><div class="sheetbox"><h3>Colour scheme</h3><div id="themeGrid" class="themegrid"></div><button class="btn" id="themeClose">Done</button></div></div>
+<div id="toast" class="toast"></div>
+<script src="data/vault.js?v=5"></script><script src="app.js?v=5"></script>
+</body></html>
