@@ -23,6 +23,7 @@
     <div id="livesHud" class="pill" aria-label="Lives"><i class="lf"></i><i class="lf"></i><i class="lf"></i></div>
     <div id="timeHud" class="pill small">0:00</div>
     <div id="ghostHud" class="pill small hidden">👻 —</div>
+    <div id="goldHud" class="pill small hidden"></div>
     <button id="pauseBtn" class="roundBtn" aria-label="Pause"><span></span><span></span></button>
   </div>
 
@@ -39,6 +40,7 @@
     <button class="btn small" id="a2hsOk">Got it</button>
   </div>
   <div id="toast"></div>
+  <div id="assistPop" class="hidden"><b>🫧 Tricky bit?</b><span>Turn on the bubble helper: if you fall, a bubble floats you back without losing a life.</span><div><button class="btn small" id="assistYes">Yes please <i class="aKey"></i></button><button class="btn small" id="assistNo">No thanks</button></div></div>
   <div id="rotateTip" class="hidden"><span>📱↻ Turn your phone sideways for a bigger view</span><button id="rotateOk">OK</button></div>
 
   <!-- Title -->
@@ -46,12 +48,13 @@
     <div class="titleCard">
       <div class="logo"><span class="l1">Bobbin's</span><span class="l2">Button Box</span></div>
       <p class="sub">A little handmade world to poke and play with</p>
-      <span class="ver tver">v1.6</span>
+      <span class="ver tver">v1.7</span>
       <div class="menu">
         <button class="btn big" id="playBtn">Play</button>
         <button class="btn" id="levelsBtn">World Map</button>
         <button class="btn" id="creatorBtn">Level Creator</button>
         <button class="btn" id="costumeBtn">Wardrobe</button>
+        <button class="btn" id="extrasBtn">✨ Extras</button>
         <button class="btn" id="statsBtn">Stats</button>
         <button class="btn" id="settingsBtn">Settings</button>
       </div>
@@ -76,6 +79,7 @@
       <span class="mPill" id="mapStars">★ 0/60</span>
       <span class="mPill wallet"><span class="bubIcon"></span><b id="mapWallet">0</b></span>
       <button class="mBtn" id="mapStick">Stickers</button>
+      <button class="mBtn" id="mapExtras">✨ Extras</button>
       <button class="mBtn" id="mapList">List</button>
       <button class="mBtn" id="mapCreate">Create</button>
     </div>
@@ -117,13 +121,23 @@
     </div>
   </section>
 
+  <!-- Extras (v1.7): golden buttons, bonus levels, sticker book -->
+  <section id="book" class="screen hidden">
+    <div class="panel wide">
+      <h2>✨ Extras</h2>
+      <div id="bookBody"></div>
+      <button class="btn small back" data-go="title">Back</button>
+    </div>
+  </section>
+
   <!-- Settings (title) -->
   <section id="settings" class="screen hidden">
     <div class="panel">
       <h2>Settings</h2>
       <div class="sliders"></div>
+      <div class="featBox"><h3>Features <small>new in v1.7 · switch any off to play like v1.6</small></h3><div class="featList"></div></div>
       <div class="optRow"><button class="btn small" id="tvBtn">📺 TV mode: Auto</button><button class="btn small fsBtn hidden">⛶ Full screen</button><button class="btn small" id="fsTipsBtn">📱 Full screen tips</button></div>
-      <div class="verRow"><span class="ver">Bobbin v1.6</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.6/">v1.6 · physics</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <div class="verRow"><span class="ver">Bobbin v1.7</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.7/">v1.7 · threads &amp; secrets</a><a href="../bobbin-v1.6/">v1.6 · physics</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
       <button class="btn small back" data-go="title">Back</button>
     </div>
   </section>
@@ -161,13 +175,14 @@
         <button class="btn" id="resumeBtn">Resume</button>
         <button class="btn" id="cpBtn">Back to checkpoint</button>
         <button class="btn" id="resetPiecesBtn">Reset puzzle pieces</button>
+        <button class="btn hidden" id="bubbleBtn">🫧 Bubble helper: Off</button>
         <button class="btn" id="restartBtn">Restart level</button>
         <button class="btn" id="quitBtn">World Map</button>
       </div>
       <div class="sliders"></div>
       <div class="optRow"><button class="btn small fsBtn hidden">⛶ Full screen</button></div>
-      <div class="verRow"><span class="ver">Bobbin v1.6</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.6/">v1.6 · physics</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
-      <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab · R checkpoint · Esc to pause · Controllers work too 🎮</p>
+      <div class="verRow"><span class="ver">Bobbin v1.7</span> <details class="older"><summary>Older versions</summary><a href="../bobbin/">Latest</a><a href="../bobbin-v1.7/">v1.7 · threads &amp; secrets</a><a href="../bobbin-v1.6/">v1.6 · physics</a><a href="../bobbin-v1.5/">v1.5 · controllers &amp; TV</a><a href="../bobbin-v1.4/">v1.4 · bosses, music &amp; creator</a><a href="../bobbin-v1.3/">v1.3 · progression</a><a href="../bobbin-v1.2/">v1.2 · the look</a><a href="../bobbin-v1.1/">v1.1 · lives &amp; squash</a><a href="../bobbin-v1.0/">v1.0 · first 20 levels</a></details></div>
+      <p class="keys">Keys: ← → or A D to move · Space / W to jump · Shift / X to grab (in mid-air near a golden button: swing!) · R checkpoint · Esc to pause · Controllers work too 🎮</p>
     </div>
   </section>
 
@@ -179,6 +194,7 @@
       <p id="olText">Bobbin needs a little rest. Shake off the fluff and try again?</p>
       <div class="menu row">
         <button class="btn big" id="retryBtn">Try level again</button>
+        <button class="btn hidden" id="retryBubbleBtn">🫧 Try again with bubble helper</button>
         <button class="btn" id="outLevelsBtn">World Map</button>
       </div>
     </div>
