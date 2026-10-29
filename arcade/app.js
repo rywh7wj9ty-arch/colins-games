@@ -17,7 +17,8 @@ var GAMES=[
  {id:'thistledown',name:'Thistledown',tagline:'A glowing forest spirit. Leap, bash and glide home.',url:'https://rywh7wj9ty-arch.github.io/colins-games/thistledown/',accent:'#7fe0c8'},
  {id:'stitchling',name:'Stitchling',tagline:'A little burlap hero. Run, pop bubbles and grab the prizes.',url:'https://rywh7wj9ty-arch.github.io/colins-games/stitchling/',accent:'#e8a24a'},
  {id:'bloomhop',name:'Bloomhop',tagline:'Hop a toy meadow. Grab the Dazzle Bloom.',url:'https://rywh7wj9ty-arch.github.io/colins-games/bloomhop/',accent:'#5fe06a'},
- {id:'puffpip',name:'Puffpip',tagline:'Breathe in to float, breathe out to squeeze.',url:'https://rywh7wj9ty-arch.github.io/colins-games/puffpip/',accent:'#ffd84a'}
+ {id:'puffpip',name:'Puffpip',tagline:'Breathe in to float, breathe out to squeeze.',url:'https://rywh7wj9ty-arch.github.io/colins-games/puffpip/',accent:'#ffd84a'},
+ {id:'gloomgust',name:'Gloomgust',tagline:'Flash, suck and slam ghosts in a haunted hotel.',url:'https://rywh7wj9ty-arch.github.io/colins-games/gloomgust/',accent:'#7dffb0'}
 ];
 (function(){
  var root=document.getElementById('games');
