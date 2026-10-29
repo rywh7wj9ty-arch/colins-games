@@ -7,7 +7,7 @@
      4. Three.js scene + particles   8. HUD, menus, main loop
    To add a floor: push a new object into FLOORS (see FLOORS.lobby) with rooms[], doors[], props[], ghosts[], boss. */
 'use strict';
-const 202610291730 = '202610291730';
+const VERSION = '202610291815';
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1206,4 +1206,4 @@ function init() {
 }
 // test hooks for the scripted checks
 window.GG = { PICK: () => PICK, sim: s => { for (let t = 0; t < s; t += 1 / 30) step(1 / 30); }, step, startGame, HERO, GOOB, GHOSTS: () => GHOSTS, PROPS: () => PROPS, BOSS, SAVE: () => SAVE, TOOL, K, MB, IN, doFlash, doBurst, setGoo, firePlunger, finishFloor, tp: (x, z) => { const B = activeBody(); B.x = x; B.z = z; CAM.x = x; CAM.z = z; }, aim: a => { activeBody().aim = a; }, DARK, OPT, GAME };
-init();
+init(); if (window.__bootOK) window.__bootOK();

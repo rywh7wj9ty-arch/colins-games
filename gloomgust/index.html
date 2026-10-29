@@ -11,8 +11,17 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
-<link rel="stylesheet" href="style.css?v=202610291730">
+<link rel="stylesheet" href="style.css?v=202610291815">
 </head><body>
+<div id="boot" style="position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#1d1838;color:#9cff9c;font:700 22px system-ui;text-align:center;padding:20px">
+<div id="bootMsg">Loading Gloomgust…</div>
+<button id="bootBtn" style="display:none;margin-top:14px;font:700 18px system-ui;padding:10px 22px;border-radius:14px;border:3px solid #fff;background:#2fae5b;color:#fff">Tap to reload</button></div>
+<script>
+(function(){var shown=false;function fail(m){if(shown)return;shown=true;var b=document.getElementById('boot');if(!b)return;b.style.display='flex';document.getElementById('bootMsg').textContent='Oops, Gloomgust hit a problem: '+m;var k=document.getElementById('bootBtn');k.style.display='block';k.onclick=function(){try{navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})});caches&&caches.keys().then(function(ks){ks.forEach(function(c){caches.delete(c)})})}catch(e){}setTimeout(function(){location.reload()},400)};}
+window.addEventListener('error',function(e){fail((e.message||'load error'))});
+window.__bootOK=function(){var b=document.getElementById('boot');if(b)b.style.display='none'};
+setTimeout(function(){if(!window.GG)fail('it did not start (timed out)')},12000);})();
+</script>
 <canvas id="cv"></canvas>
 <div id="dim"></div>
 <div id="hud">
@@ -74,6 +83,6 @@
   <div class="btns"><button class="btn" id="rTitle">Title</button><button class="btn green" id="rAgain">Keep exploring</button></div></div></div>
 <div id="dead" class="screen modal"><div class="card"><h2>Eek! Wendel fainted</h2><p>Back to the last door you came through, with full health.</p>
   <div class="btns"><button class="btn green" id="dOk">Try again</button></div></div></div>
-<script src="three.min.js?v=202610291730"></script>
-<script src="game.js?v=202610291730"></script>
+<script src="three.min.js?v=202610291815"></script>
+<script src="game.js?v=202610291815"></script>
 </body></html>
