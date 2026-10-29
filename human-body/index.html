@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050914">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Inside the Human Body</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#050914;font-family:-apple-system,"SF Pro Display","Segoe UI",Roboto,Arial,sans-serif;color:#eaf4ff;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#load{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#1a2a55,#03050c);z-index:50;transition:opacity .8s}
+#load .h{width:70px;height:70px;animation:beat 1s infinite;filter:drop-shadow(0 0 18px #ff3b5c)}
+#load .t{margin-top:18px;font-size:22px;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+#load .s{opacity:.6;font-size:13px;margin-top:6px}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.18)}30%{transform:scale(.98)}45%{transform:scale(1.1)}}
+#top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 12px 6px;display:flex;gap:8px;align-items:center;z-index:5;pointer-events:none}
+#top .title{flex:1;font-weight:800;font-size:16px;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 0 12px #4ab8ff88}
+#top .title small{display:block;font-size:10px;font-weight:600;letter-spacing:2px;opacity:.6}
+.pill{pointer-events:auto;background:#ffffff14;border:1px solid #ffffff22;color:#fff;border-radius:18px;padding:7px 11px;font-weight:700;font-size:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#tabs{position:fixed;left:0;right:0;bottom:0;padding:6px 6px calc(env(safe-area-inset-bottom) + 6px);display:flex;gap:4px;z-index:6;background:linear-gradient(#0000,#000c 40%)}
+#tabs button{flex:1;border:0;border-radius:12px;padding:7px 0 6px;background:#ffffff12;color:#cfe3ff;font-weight:700;font-size:10.5px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#tabs button b{display:block;font-size:18px;margin-bottom:1px}
+#tabs button.on{background:linear-gradient(#ff4d6d,#c21d48);color:#fff;box-shadow:0 0 16px #ff3b5c66}
+#panel{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 64px);z-index:5;padding:6px 8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+#panel::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid #ffffff2a;border-radius:16px;padding:8px 12px;font-weight:700;font-size:13px;color:#fff;background:#0b1424cc;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.chip.on{background:var(--c,#4ab8ff);border-color:transparent;color:#041020;box-shadow:0 0 14px var(--c,#4ab8ff)}
+#hr{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 112px);z-index:5;background:#0b1424cc;border:1px solid #ffffff1c;border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#hr .bpm{font-weight:800;font-size:20px;min-width:74px;color:#ff6b86}
+#hr .bpm small{font-size:10px;color:#cfe3ff;font-weight:600;display:block;letter-spacing:1px}
+#hr input{flex:1;accent-color:#ff4d6d}
+#hr button{border:0;border-radius:10px;padding:6px 8px;font-weight:700;font-size:11px;background:#ffffff1a;color:#fff}
+#card{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 54px);z-index:7;background:linear-gradient(160deg,#122244ee,#0a1222ee);border:1px solid #4ab8ff55;border-radius:18px;padding:14px 16px;box-shadow:0 10px 40px #000a,0 0 24px #4ab8ff22;transform:translateY(calc(-100% - 140px));transition:transform .45s cubic-bezier(.2,1.2,.4,1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#card.on{transform:none}
+#card h3{margin:0 0 2px;font-size:19px}
+#card .k{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--c,#4ab8ff);font-weight:800}
+#card p{margin:8px 0 0;font-size:14px;line-height:1.45;opacity:.92}
+#card ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;line-height:1.5}
+#card .x{position:absolute;right:10px;top:8px;border:0;background:none;color:#fff;font-size:22px;opacity:.7}
+#cap{position:fixed;left:8px;right:8px;padding:10px 10px;border-radius:16px;background:radial-gradient(ellipse at center,#000a,#0000 75%);bottom:calc(env(safe-area-inset-bottom) + 120px);z-index:5;text-align:center;pointer-events:none;opacity:0;transition:opacity .6s}
+#cap.on{opacity:1}
+#cap .k{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ff8aa0;font-weight:800}
+#cap .m{font-size:18px;font-weight:700;line-height:1.35;text-shadow:0 2px 12px #000,0 0 3px #000;margin-top:4px}
+#cap .d{font-size:13.5px;opacity:.85;margin-top:5px;text-shadow:0 1px 8px #000}
+#ctl{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 66px);z-index:5;display:none;justify-content:center;gap:8px}
+#ctl button{border:1px solid #ffffff33;border-radius:16px;padding:9px 14px;font-weight:700;font-size:13px;background:#0b1424dd;color:#fff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#ctl button.hot{background:linear-gradient(#ff4d6d,#c21d48);border-color:transparent}
+#prog{position:fixed;left:0;top:0;height:3px;background:linear-gradient(90deg,#ff4d6d,#ffb347);z-index:8;width:0;box-shadow:0 0 10px #ff4d6d}
+#quiz{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:#02050cbb;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:20px}
+#quiz .box{width:100%;max-width:420px;background:linear-gradient(160deg,#16274d,#0a1222);border:1px solid #4ab8ff44;border-radius:22px;padding:20px;box-shadow:0 20px 60px #000}
+#quiz .n{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#4ab8ff;font-weight:800}
+#quiz h2{font-size:20px;margin:8px 0 14px;line-height:1.3}
+#quiz .a{display:block;width:100%;text-align:left;border:1px solid #ffffff22;background:#ffffff0d;color:#fff;border-radius:14px;padding:13px 14px;font-size:15px;font-weight:600;margin:8px 0;transition:background .2s}
+#quiz .a.ok{background:#1fbf75;border-color:#1fbf75}
+#quiz .a.no{background:#d63a55;border-color:#d63a55}
+#quiz .why{font-size:13.5px;opacity:.85;min-height:20px;margin-top:6px;line-height:1.4}
+#quiz .go{margin-top:12px;width:100%;border:0;border-radius:14px;padding:13px;font-weight:800;font-size:15px;background:linear-gradient(#ff4d6d,#c21d48);color:#fff}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8;transition:opacity .5s}
+#hint{position:fixed;top:calc(env(safe-area-inset-top) + 52px);left:0;right:0;text-align:center;font-size:12px;opacity:.6;z-index:4;pointer-events:none;transition:opacity 1s}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="load"><svg class="h" viewBox="0 0 32 32"><path fill="#ff3b5c" d="M16 29s-12-7.4-12-16a7 7 0 0 1 12-4.9A7 7 0 0 1 28 13c0 8.6-12 16-12 16z"/></svg><div class="t">Inside the Human Body</div><div class="s" id="lt">Loading 3D engine…</div></div>
+<div id="prog"></div>
+<div id="top"><div class="title">Inside the Body<small id="sub">EXPLORE · TAP ANY PART</small></div><button class="pill" id="qbtn">HD</button><button class="pill" id="resetb">⟲</button></div>
+<div id="hint">Drag to turn · pinch to zoom · tap a part</div>
+<div id="card"><button class="x" id="cx">×</button><div class="k" id="ck"></div><h3 id="ch"></h3><p id="cp"></p><ul id="cu"></ul></div>
+<div id="cap"><div class="k" id="capk"></div><div class="m" id="capm"></div><div class="d" id="capd"></div></div>
+<div id="hr"><div class="bpm"><span id="bpmv">68</span><small>BPM · HEART</small></div><input type="range" id="bpm" min="45" max="185" value="68"><button id="rest">Rest</button><button id="ex">Exercise</button></div>
+<div id="panel"></div>
+<div id="ctl"></div>
+<div id="tabs">
+<button data-m="body" class="on"><b>🧍</b>Body</button><button data-m="fly"><b>🩸</b>Fly</button><button data-m="neuron"><b>⚡</b>Neuron</button><button data-m="digest"><b>🍎</b>Digest</button><button data-m="cell"><b>🧬</b>Cell</button><button data-m="tour"><b>🎬</b>Tour</button><button data-m="quiz"><b>❓</b>Quiz</button></div>
+<div id="quiz"><div class="box" id="qbox"></div></div>
+<div id="flash"></div>
+<script>
+(function(){var srcs=["https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js","https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js","https://unpkg.com/three@0.134.0/build/three.min.js","three.min.js"],i=0;
+function next(){if(window.THREE){var s=document.createElement('script');s.src='app.js?v=1';document.body.appendChild(s);return}if(i>=srcs.length){document.getElementById('lt').textContent='Could not load 3D engine';return}var s=document.createElement('script');s.src=srcs[i++];s.onload=next;s.onerror=next;document.head.appendChild(s)}next()})();
+</script></body></html>
