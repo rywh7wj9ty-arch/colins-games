@@ -1,0 +1,125 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#07070d">
+<title>Solar + Battery: is it worth it?</title>
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root{--bg:#07070d;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.09);--tx:#f3f1ea;--mut:#a3a0b4;--sun:#ffb547;--sun2:#ff6a3d;--bat:#41e0a8;--grid:#7c8cff;--exp:#ffd84a;--bad:#ff5d6c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,sans-serif}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.hero{position:relative;min-height:62vh;overflow:hidden;display:flex;align-items:flex-end;padding:24px 20px 30px;padding-top:calc(24px + env(safe-area-inset-top))}
+#sky{position:absolute;inset:0;width:100%;height:100%}
+.hero .in{position:relative;z-index:2;max-width:720px;margin:0 auto;width:100%}
+.kick{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--sun)}
+h1{font-size:34px;line-height:1.05;margin:8px 0 10px;font-weight:800;letter-spacing:-.02em}
+h2{font-size:22px;margin:0 0 12px;letter-spacing:-.01em}
+h3{font-size:15px;margin:0 0 8px;color:var(--mut);font-weight:600}
+.verdict{font-size:17px;color:#e9e5ff}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px}
+section{padding:22px 0 6px;scroll-margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 12px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sc{border-radius:18px;padding:12px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));position:relative;overflow:hidden}
+.sc .nm{font-size:12px;color:var(--mut);font-weight:600}
+.sc .big{font-size:22px;font-weight:800;margin:4px 0 2px;letter-spacing:-.02em}
+.sc .sm{font-size:12px;color:var(--mut)}
+.sc.best{border-color:rgba(65,224,168,.6);box-shadow:0 0 0 1px rgba(65,224,168,.25),0 10px 40px -10px rgba(65,224,168,.35)}
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(65,224,168,.18);color:var(--bat);font-weight:700;letter-spacing:.04em}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}.kv:last-child{border:0}.kv b{font-weight:700}
+.pos{color:var(--bat)}.neg{color:var(--bad)}
+.seg{display:flex;background:rgba(255,255,255,.06);border-radius:12px;padding:3px;gap:3px;margin:6px 0 10px}
+.seg button{flex:1;border:0;background:none;color:var(--mut);font:600 13px inherit;font-family:inherit;padding:9px 4px;border-radius:9px}
+.seg button.on{background:rgba(255,255,255,.14);color:var(--tx)}
+.sl{margin:12px 0}.sl label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}.sl label span{color:var(--sun);font-weight:700}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:30px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--sun2),var(--sun))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;margin-top:-10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--sun2),var(--sun))}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:0}
+select{width:100%;background:rgba(255,255,255,.08);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:15px}
+svg text{fill:var(--mut);font-size:10px;font-family:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mut);margin-top:6px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));background:rgba(10,10,18,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line)}
+nav a{color:var(--mut);text-decoration:none;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 8px;border-radius:10px}
+nav a.on{color:var(--sun)}nav a svg{width:22px;height:22px}
+.review p{margin:0 0 12px;color:#dcd8ea}.review h3{color:var(--sun);margin-top:16px}
+.note{font-size:12px;color:var(--mut)}
+.pill{display:inline-block;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.08);font-size:12px;margin:2px 4px 2px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}td:first-child,th:first-child{text-align:left}th{color:var(--mut);font-weight:600}
+.flow{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px}
+.fade{animation:fu .7s both}@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+</style></head><body>
+<header class="hero"><canvas id="sky"></canvas><div class="in fade">
+<div class="kick">Solar PV + 13 kWh battery · 10-year review</div>
+<h1 id="hl">Is it worth it?</h1>
+<div class="verdict" id="vd">Crunching 17,520 half-hours of your usage…</div>
+</div></header>
+<main class="wrap">
+<section id="s-verdict">
+<div class="grid3" id="cards"></div>
+<div class="card" style="margin-top:12px"><h3>Cumulative cash position (after paying for the system)</h3><div id="cumChart"></div>
+<div class="legend"><span><i style="background:var(--bat)"></i>Battery only</span><span><i style="background:var(--sun)"></i>4 kW + battery</span><span><i style="background:var(--sun2)"></i>5 kW + battery</span><span><i style="background:var(--grid)"></i>£ in savings instead</span></div></div>
+<div class="card"><h3>Scenario</h3>
+<div class="seg" id="growthSeg"><button data-g="0">Prices flat</button><button data-g="3" class="on">Central +3%/yr</button><button data-g="6">High +6%/yr</button></div>
+<div class="note" id="growthNote"></div></div>
+</section>
+
+<section id="s-usage"><h2>Your usage</h2>
+<div class="grid2" id="useStats"></div>
+<div class="card" style="margin-top:12px"><h3>Where each kWh goes, by month (modelled year, matched to your bills)</h3><div id="monChart"></div>
+<div class="legend"><span><i style="background:var(--grid)"></i>House</span><span><i style="background:#c08cff"></i>Cars</span><span><i style="background:var(--bad)"></i>Peak-rate share</span></div></div>
+<div class="card"><h3>Your tariff: Intelligent Octopus Go (inc. 5% VAT)</h3>
+<table><tr><th>Period</th><th>Day</th><th>Night</th><th>Standing</th></tr>
+<tr><td>Jan–Mar 2026</td><td>31.94p</td><td>7.00p</td><td>47.08p</td></tr>
+<tr><td>Apr–Aug 2026</td><td>28.43p</td><td>3.50p</td><td>47.08p</td></tr>
+<tr><td>Sep 2026 → Aug 2027</td><td>34.53p</td><td>8.00p</td><td>54.45p</td></tr></table>
+<p class="note">Cheap window 23:30–05:30, plus any extra smart-charge slots Octopus gives the Tesla. The night rate more than doubled in September (3.50p → 8.00p), which makes your night-time units (mostly the cars) about £550 a year dearer. The day rate rose too, so the day–night gap a battery lives on is still about 26.5p.</p></div>
+<div class="card"><h3>The Mini overrun</h3><div id="mini"></div></div>
+<div class="card"><h3>Your 2026 electricity bills (energy + standing, inc. VAT)</h3><table id="bills"></table></div>
+</section>
+
+<section id="s-tune"><h2>Tune the model</h2>
+<div class="card">
+<h3>System</h3>
+<div class="seg" id="viewSeg"><button data-v="b">Battery only</button><button data-v="4" class="on">4 kW + battery</button><button data-v="5">5 kW + battery</button></div>
+<div class="sl"><label>Cost: battery only <span id="o-cb"></span></label><input id="cb" type="range" min="3000" max="12000" step="250" value="7000"></div>
+<div class="sl"><label>Cost: 4 kW + 13 kWh <span id="o-c4"></span></label><input id="c4" type="range" min="8000" max="20000" step="250" value="14000"></div>
+<div class="sl"><label>Cost: 5 kW + 13 kWh <span id="o-c5"></span></label><input id="c5" type="range" min="8000" max="22000" step="250" value="15250"></div>
+<div class="sl"><label>Battery size <span id="o-bat"></span></label><input id="bat" type="range" min="5" max="20" step="0.5" value="13"></div>
+<div class="sl"><label>Roof facing</label><select id="orient"><option value="S">South (best)</option><option value="SE">South-east</option><option value="SW">South-west</option><option value="E">East</option><option value="W">West</option></select></div>
+<div class="sl"><label>Location</label><select id="loc"><option value="1">Your area – Kent coast (PVGIS)</option><option value="0.96">London / South</option><option value="0.92">Midlands / Wales</option><option value="0.87">North of England</option><option value="0.82">Scotland</option></select></div>
+<div class="sl"><label>Weekends the cars are plugged in by day <span id="o-wk"></span></label><input id="wk" type="range" min="0" max="1" step="0.05" value="0.5"></div>
+<div class="sl"><label style="align-items:center">Battery tops up on cheap night power <input id="gc" type="checkbox" checked style="width:22px;height:22px"></label></div>
+</div>
+<div class="card"><h3>Tariffs (inc. VAT)</h3>
+<div class="sl"><label>Day rate <span id="o-day"></span></label><input id="day" type="range" min="15" max="50" step="0.1" value="34.53"></div>
+<div class="sl"><label>Night rate <span id="o-night"></span></label><input id="night" type="range" min="2" max="20" step="0.1" value="8.0"></div>
+<div class="sl"><label>Export rate (Outgoing Octopus) <span id="o-exp"></span></label><input id="exp" type="range" min="0" max="25" step="0.5" value="12"></div>
+<div class="sl"><label>Import price growth from Sep 2027 <span id="o-g"></span></label><input id="g" type="range" min="-3" max="10" step="0.5" value="3"></div>
+<div class="sl"><label>Export price growth <span id="o-eg"></span></label><input id="eg" type="range" min="-5" max="5" step="0.5" value="0"></div>
+</div>
+<div class="card"><h3>Money & wear</h3>
+<div class="sl"><label>Savings account rate (the alternative) <span id="o-int"></span></label><input id="int" type="range" min="0" max="7" step="0.25" value="4"></div>
+<div class="sl"><label>Years to look at <span id="o-yrs"></span></label><input id="yrs" type="range" min="5" max="25" step="1" value="10"></div>
+<div class="sl"><label>Panel degradation <span id="o-pd"></span></label><input id="pd" type="range" min="0" max="1.5" step="0.1" value="0.5"></div>
+<div class="sl"><label>Battery capacity fade <span id="o-bd"></span></label><input id="bd" type="range" min="0" max="5" step="0.25" value="2"></div>
+<div class="sl"><label>Inverter replacement (year 12, if inside the period) <span id="o-inv"></span></label><input id="inv" type="range" min="0" max="3000" step="100" value="1200"></div>
+</div>
+<div class="card"><h3>A typical day with the <span id="dayName">4 kW</span> system</h3>
+<div class="seg" id="daySeg"><button data-d="172" class="on">June Saturday</button><button data-d="171">June Friday</button><button data-d="14">January</button></div>
+<div id="dayChart"></div>
+<div class="legend"><span><i style="background:var(--sun)"></i>Solar</span><span><i style="background:var(--grid)"></i>Grid import</span><span><i style="background:var(--bat)"></i>Battery charge</span><span><i style="background:#c08cff"></i>Cars</span></div></div>
+<div class="card"><h3>Year-by-year (selected system)</h3><div id="yr"></div></div>
+</section>
+
+<section id="s-review" class="review"><h2>The review</h2><div class="card" id="review"></div></section>
+<p class="note" style="text-align:center;padding:10px 0 20px">Model: your Octopus half-hourly data (Jul–Oct 2026) scaled month by month to your 2026 bills, PVGIS 5.3 solar data (2020 weather), 35° pitch. Figures only – no account details stored.</p>
+</main>
+<nav id="nav"><a href="#s-verdict" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Verdict</a>
+<a href="#s-usage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Usage</a>
+<a href="#s-tune"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Tune</a>
+<a href="#s-review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Review</a></nav>
+<script src="data.js"></script><script src="sim.js"></script><script src="app.js"></script>
+</body></html>
