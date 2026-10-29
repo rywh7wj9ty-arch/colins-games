@@ -7,7 +7,7 @@
      4. Three.js scene + particles   8. HUD, menus, main loop
    To add a floor: push a new object into FLOORS (see FLOORS.lobby) with rooms[], doors[], props[], ghosts[], boss. */
 'use strict';
-const VERSION = '202610291815';
+const VERSION = '202610291840';
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -154,8 +154,9 @@ function readPad() {
 
 /* ---------- 4. three.js scene, materials, particles ---------- */
 const cv = $('cv');
-const R = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-R.setPixelRatio(Math.min(devicePixelRatio, 2)); R.outputEncoding = THREE.sRGBEncoding;
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let R; try { R = new THREE.WebGLRenderer({ canvas: cv, antialias: !IOS, powerPreference: IOS ? 'default' : 'high-performance' }); } catch (e) { R = new THREE.WebGLRenderer({ canvas: cv, antialias: false, context: cv.getContext('webgl') || cv.getContext('experimental-webgl') }); }
+R.setPixelRatio(Math.min(devicePixelRatio, IOS ? 1.5 : 2)); R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0e0b1c);   // no fog: characters stay crisp
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);

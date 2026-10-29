@@ -5,7 +5,7 @@
    - versioned files (?v=...) are only ever answered with that exact version, never another release's file;
    - the previous release's cache is kept one extra release, so a page that is still open during an update
      can finish loading its own files. */
-const VERSION = '202610291815';
+const VERSION = '202610291840';
 const CACHE = 'gloomgust-v10-' + VERSION;   
 const ASSETS = [
   './', 'index.html', 'style.css?v=' + VERSION, 'three.min.js?v=' + VERSION, 'game.js?v=' + VERSION, 'manifest.webmanifest',
