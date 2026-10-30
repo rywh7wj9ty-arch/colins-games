@@ -5,7 +5,7 @@
 input,select{font:inherit;color:inherit;background:#0e1530;border:1px solid #2a3768;border-radius:12px;padding:11px 12px;width:100%}
 .lockbox input[type=password]{margin:10px 0}.btn{font:inherit;font-weight:700;width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:linear-gradient(135deg,#ffb84d,#ff6a3d);color:#1a0f00}
 header{padding:18px 18px 6px}header h1{margin:0;font-size:24px}
-.tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:#0b1020e6;backdrop-filter:blur(10px)}
+.tabs{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:#0b1020e6;backdrop-filter:blur(10px)}
 .tabs button{flex:0 0 auto;font:inherit;font-size:14px;color:#c7d0ee;background:#141c38;border:1px solid #2a3768;border-radius:999px;padding:8px 14px}.tabs button.on{background:#ffb84d;color:#1a0f00;border-color:#ffb84d;font-weight:700}
 main{padding:6px 14px 20px;max-width:760px;margin:0 auto}
 .card{background:#141c38cc;border:1px solid #243262;border-radius:18px;padding:16px;margin:12px 0}
