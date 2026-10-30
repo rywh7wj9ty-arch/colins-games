@@ -7,8 +7,8 @@ calcAt=function(age){const c=_ca(age),v=S.rf&&S.rf[age];if(v===''||v==null||isNa
  return Object.assign(c,{red,p1,lump,pen:p1-lump/S.cf,real:1})};
 const redSrc=age=>{const v=S.rf&&S.rf[age];return v!==''&&v!=null&&!isNaN(+v)?'scheme':'estimate'};
 // tabs
-Q('.tabs').insertAdjacentHTML('beforeend','<button data-t="plan">Countdown</button><button data-t="mc">Stress test</button><button data-t="ls">Lump sum</button><button data-t="surv">Survivor</button><button data-t="stmt">Statements</button>');
-Q('main').insertAdjacentHTML('beforeend','<section id="t-plan" hidden></section><section id="t-mc" hidden></section><section id="t-ls" hidden></section><section id="t-surv" hidden></section><section id="t-stmt" hidden></section><section id="t-print" class="printonly"></section>');
+Q('.tabs').insertAdjacentHTML('beforeend','<button data-t="plan">Countdown</button><button data-t="mc">Stress test</button>');
+Q('main').insertAdjacentHTML('beforeend','<section id="t-plan" hidden></section><section id="t-mc" hidden></section><section id="t-print" class="printonly"></section>');
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!=='t-'+b.dataset.t);render()});
 Q('header').insertAdjacentHTML('beforeend','<button id="printBtn" class="btn noprint" style="width:auto;padding:8px 14px;margin-top:8px">Print / save PDF summary</button>');
 Q('#printBtn').onclick=()=>{renderPrint();window.print()};
@@ -90,11 +90,10 @@ function renderStmt(){const base=D.rows.filter(r=>!r.user).slice(-1)[0].year,ny=
   S.stmts=(S.stmts||[]).concat([s]);stmtsMerged=false;mergeStmts();render()};
  document.querySelectorAll('[data-del]').forEach(a=>a.onclick=e=>{e.preventDefault();const s=S.stmts[+a.dataset.del];S.stmts.splice(+a.dataset.del,1);D.rows=D.rows.filter(r=>!(r.user&&r.year==s.year));render()})}
 // 8) print summary
-function renderPrint(){const c=calcAt(S.age),s=series(S.age,S.sc),a=s.rows[0],b=s.rows.find(r=>r.a==SP.age)||a,m=S._mc||mc(),l=S._ls||lsCompare(),L=D.rows[D.rows.length-1];
+function renderPrint(){const c=calcAt(S.age),s=series(S.age,S.sc),a=s.rows[0],b=s.rows.find(r=>r.a==SP.age)||a,m=S._mc||mc(),L=D.rows[D.rows.length-1];
  Q('#t-print').innerHTML=`<h1>Pension summary · ${D.name}</h1><p>Printed ${fmtD(new Date())} · retiring ${fmtD(retDate())} at ${S.age} · ${S.real?'today’s money':'future £'}</p>
  <table><tr><td>Pension earned (${L.year})</td><td>${gbp(L.earned)}/yr</td></tr><tr><td>Pensionable salary</td><td>${gbp(L.salary)}</td></tr><tr><td>Scheme pension at ${S.age}</td><td>${gbp(c.pen)}/yr (reduction ${c.red.toFixed(1)}%, ${redSrc(S.age)=='scheme'?'scheme figure':'estimate'})</td></tr>
  <tr><td>Tesla pot at ${S.age} (${S.sc})</td><td>${gbp(s.pot0)}</td></tr><tr><td>Net income at ${S.age}</td><td>${gbp(a.tot)}/yr · ${gbp(a.tot/12)}/month</td></tr><tr><td>Net income at ${SP.age}</td><td>${gbp(b.tot)}/yr · ${gbp(b.tot/12)}/month</td></tr>
- <tr><td>Tesla withdrawal</td><td>${S.wr}% · lasts to 90 in ${m.p90.toFixed(0)}% of simulations, to 95 in ${m.p95.toFixed(0)}%</td></tr><tr><td>Max lump sum</td><td>${gbp(l.red.lump)} tax-free · breakeven age ${l.be||'100+'}</td></tr>
- <tr><td>Spouse’s pension</td><td>${S.svPct||svDefault()}% of pension</td></tr><tr><td>Days to retirement</td><td>${Math.ceil((retDate()-new Date())/864e5).toLocaleString('en-GB')}</td></tr></table>
+ <tr><td>Tesla withdrawal</td><td>${S.wr}% · lasts to 90 in ${m.p90.toFixed(0)}% of simulations, to 95 in ${m.p95.toFixed(0)}%</td></tr><tr><td>Days to retirement</td><td>${Math.ceil((retDate()-new Date())/864e5).toLocaleString('en-GB')}</td></tr></table>
  <p class="small">Assumptions: salary +${S.g}%/yr, pension increases ${S.pi}%/yr, State Pension £${SP.weekly}/wk from ${SP.age} +${S.si}%/yr, shares +${S.tg}%/yr after ARK 2031 target, commutation ${S.cf}:1. Not financial advice.</p>`}
-const _r9=render;render=function(){if(D)mergeStmts();_r9();if(!D)return;renderRed();renderPlan();renderMC();renderLS();renderSurv();renderStmt();remember()};
+const _r9=render;render=function(){_r9();if(!D)return;renderRed();renderPlan();renderMC();remember()};
