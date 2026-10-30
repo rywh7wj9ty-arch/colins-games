@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Orbiloo"><meta name="theme-color" content="#3f8fe0">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="icon" href="icons/favicon-32.png">
+<title>Orbiloo</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#4aa3f0;font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif;color:#fff;touch-action:none;overscroll-behavior:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#bright{position:fixed;inset:0;pointer-events:none;z-index:50}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 14px);background:rgba(30,80,170,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ov.on{display:flex}
+.panel{background:linear-gradient(160deg,rgba(255,255,255,.22),rgba(255,255,255,.08));border:2px solid rgba(255,255,255,.35);border-radius:26px;padding:16px 22px;max-height:100%;overflow:auto;text-align:center;box-shadow:0 10px 40px rgba(20,0,80,.4);min-width:min(420px,90vw);max-width:94vw}
+h1{margin:0;font-size:clamp(38px,9vh,76px);letter-spacing:1px;background:linear-gradient(90deg,#5ef0ff,#b78bff,#ff7ad9,#ffd84a,#7dff9a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 rgba(30,0,90,.5));font-weight:900}
+h2{margin:0 0 8px;font-size:26px}
+.sub{opacity:.9;margin:2px 0 10px;font-size:15px}
+.btn{display:block;margin:7px auto;min-width:220px;padding:11px 20px;font-family:inherit;font-weight:800;font-size:19px;color:#fff;border:0;border-radius:18px;background:linear-gradient(180deg,#7c6cff,#5a3fe0);box-shadow:0 4px 0 #3a22a8,0 6px 16px rgba(0,0,0,.25);cursor:pointer;outline:none}
+.btn.alt{background:linear-gradient(180deg,#36d6e8,#1aa3c9);box-shadow:0 4px 0 #11789a}
+.btn:focus-visible,.btn.f{outline:4px solid #ffe45c;outline-offset:3px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ver{position:fixed;right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:13px;opacity:.85;z-index:21}
+.set{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:6px 0;padding:6px 12px;border-radius:14px;background:rgba(255,255,255,.1);font-weight:700;text-align:left}
+.set.f{outline:3px solid #ffe45c}
+input[type=range]{width:160px;accent-color:#ffd84a}
+.tog{min-width:70px;padding:6px 10px;border-radius:12px;border:0;font-family:inherit;font-weight:800;font-size:15px;color:#fff;background:#5d5a8a}
+.tog.on{background:linear-gradient(180deg,#4fe08a,#22b863)}
+table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;text-align:left}td:last-child{text-align:right;font-weight:800;color:#ffe45c}
+.how{text-align:left;max-width:560px;font-size:15px;line-height:1.4}.how b{color:#ffe45c}
+#touch{position:fixed;inset:0;z-index:10;pointer-events:none;display:none}
+#touch.on{display:block}
+.tb{position:absolute;pointer-events:auto;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.45),rgba(255,255,255,.12));border:2px solid rgba(255,255,255,.5);color:#fff;font-family:inherit;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.tb.dn{transform:scale(.92);background:rgba(255,255,255,.5)}
+.tb small{font-size:11px;font-weight:800}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:30;background:rgba(40,20,120,.8);padding:8px 16px;border-radius:14px;font-weight:800;font-size:15px;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:70vw}
+#a2hs{margin-top:8px;font-size:13px;opacity:.85;display:none}
+#err{position:fixed;inset:0;z-index:99;display:none;background:#3f8fe0;color:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+#tPause{right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 10px);width:52px;height:52px;font-size:18px}
+#hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 14px);transform:translateX(-50%);z-index:11;font-weight:800;opacity:.85;pointer-events:none}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="touch"><div class="tb" id="tPause">❚❚</div></div>
+<div id="toast"></div>
+<div class="ov on" id="title"><div class="panel">
+ <h1>Orbiloo</h1><div class="sub">Loop round the planets. Let go at just the right moment.</div>
+ <button class="btn" id="bPlay">Play: Pebble Belt</button>
+ <div class="row"><button class="btn alt" id="bHow" style="min-width:150px">How to play</button><button class="btn alt" id="bStats" style="min-width:110px">Stats</button><button class="btn alt" id="bSet" style="min-width:120px">Settings</button></div>
+ <div id="a2hs">On iPhone: tap Share, then <b>Add to Home Screen</b>, to play full screen and offline.</div>
+</div></div>
+<div class="ver" id="ver"></div>
+<div class="ov" id="how"><div class="panel"><h2>How to play</h2><div class="how">
+ <p>You are <b>Loo</b>, a fluffy little moonling who runs round and round tiny planets.</p>
+ <p><b>Tap</b> (or press a button) to leap off. You fly straight out the way you were running, so time it so you're pointing at the next planet. Get close and its gravity catches you.</p>
+ <p>Grab <b>star berries</b> on the way. Flag planets are <b>checkpoints</b>. Miss everything and you float back to the last flag, so you can never get stuck.</p>
+ <p>Later planets move, spin the other way, and some have grumpy <b>spike moons</b> circling them. Reach the rainbow planet to finish.</p>
+ <p><b>Keys:</b> Space, Enter or ↑ to leap, Esc pause, arrows + Enter in menus.<br><b>Controller:</b> A to leap, Menu to pause, D-pad + A in menus, B back.<br><b>Touch:</b> tap anywhere.</p>
+ </div><button class="btn back">Back</button></div></div>
+<div class="ov" id="stats"><div class="panel"><h2>Stats</h2><table id="statT"></table><button class="btn back">Back</button></div></div>
+<div class="ov" id="settings"><div class="panel"><h2>Settings</h2>
+ <div class="set">Music<input type="range" min="0" max="100" id="sMus"></div>
+ <div class="set">Sound effects<input type="range" min="0" max="100" id="sSfx"></div>
+ <div class="set">Brightness<input type="range" min="60" max="140" id="sBri"></div>
+ <div class="sub" style="margin-top:10px;font-weight:800">Features</div>
+ <div id="feats"></div>
+ <div class="sub" style="margin-top:10px;font-weight:800">Older versions</div>
+ <div id="olds"></div>
+ <button class="btn back">Back</button></div></div>
+<div class="ov" id="pause"><div class="panel"><h2>Paused</h2>
+ <button class="btn" id="bRes">Resume</button><button class="btn alt" id="bRestart">Restart level</button><button class="btn alt" id="bPSet">Settings</button><button class="btn alt" id="bQuit">Quit to title</button></div></div>
+<div class="ov" id="over"><div class="panel"><h2 id="oTitle">Level clear!</h2><div id="oCrowns" style="font-size:40px"></div><table id="oT"></table>
+ <button class="btn" id="bAgain">Play again</button><button class="btn alt" id="bOTitle">Title</button></div></div>
+<div id="err"><h2>Something went wrong</h2><p id="errMsg"></p><button class="btn" onclick="location.reload()">Tap to reload</button></div>
+<script>
+window.addEventListener('error',e=>{const el=document.getElementById('err');if(el){el.style.display='flex';document.getElementById('errMsg').textContent=e.message||'error'}});
+</script>
+<script src="game.js"></script>
+</body></html>
