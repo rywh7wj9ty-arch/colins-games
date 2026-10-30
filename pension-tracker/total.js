@@ -1,4 +1,4 @@
-S.wr=5;S.sc='base';S.tg=0;S.endAge=90;
+S.wr=5;S.sc='base';S.tg=8;S.endAge=90;
 function teslaAt(rd,k){const tot=D.tesla.reduce((a,p)=>a+p.accounts.reduce((x,y)=>x+y.shares,0),0);if(k=='today')return tot*S.price*S.fxU;
  const now=yr(new Date()),T=yr(rd),tA=ARK.year+1-1e-9,tgt=ARK[k];const p=T<=tA?S.price*Math.pow(tgt/S.price,(T-now)/(tA-now)):tgt*Math.pow(1+S.post/100,T-tA);return tot*p*S.fxU}
 function renderTotal(){const C=calc(),rd=retDate(),by=+D.dob.slice(0,4),sp=SP.weekly*52,y57=rd.getFullYear()-2026;let pot=teslaAt(rd,S.sc);const pot0=pot,rows=[];
@@ -13,7 +13,7 @@ function renderTotal(){const C=calc(),rd=retDate(),by=+D.dob.slice(0,4),sp=SP.we
  Q('#t-total').innerHTML=`<div class="seg">${opt}</div>
  <div class="card"><h2>Total net income</h2><div class="grid">${card('At '+S.age,r57)}${card('At '+SP.age,r67)}</div><p class="small muted">Tesla pot at retirement: ${gbp(pot0)} (${S.sc=='today'?'today’s price':'ARK '+S.sc}). Withdrawals are tax-free (ISA).</p></div>
  <div class="card"><h2>Tesla withdrawal</h2><input type="range" min="0" max="10" step="0.5" id="wr" value="${S.wr}"><div><b>${S.wr}%</b> <span class="small muted">of the remaining pot each year</span></div>
- ${inp('tg','Share growth after retirement, % a year (our assumption)')}${inp('endAge','Show to age',1)}</div>
+ ${inp('tg','Share growth after retirement, % a year (your assumption)')}${inp('endAge','Show to age',1)}</div>
  <div class="card"><h2>Income each year</h2><div class="chips"><span class="chip"><i style="background:#ffb84d"></i>Pension (net)</span><span class="chip"><i style="background:#6aa8ff"></i>State (net)</span><span class="chip"><i style="background:#5be49b"></i>Tesla (tax-free)</span></div><svg viewBox="0 0 ${W} ${H}" width="100%">${g}</svg></div>
  <div class="card"><h2>Year by year</h2>${list}<p class="small muted">Net = after income tax on scheme + State Pension combined (tax shared pro rata). Scheme and State Pension held flat at their starting amounts and tax thresholds as set on the At 57 tab; real schemes usually add yearly increases.</p></div>`;
  Q('#wr').oninput=e=>{S.wr=+e.target.value;render()};document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{S.sc=b.dataset.sc;render()})}

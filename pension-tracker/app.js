@@ -3,7 +3,7 @@ const gbp=(n,d=0)=>'£'+Number(n).toLocaleString('en-GB',{minimumFractionDigits:
 const usd=n=>'$'+Number(n).toLocaleString('en-GB',{maximumFractionDigits:0});
 const ARK={title:"ARK’s Expected Share Price For Tesla In 2031",url:"https://www.ark-invest.com/articles/valuation-models/arks-expected-share-price-for-tesla-2031",year:2031,bear:3300,base:4400,bull:5000,
  prev:{year:2029,bear:2000,base:2600,bull:3100,url:"https://www.ark-invest.com/articles/valuation-models/arks-tesla-price-target-2029",date:"June 2024"}};
-let D,S={g:3.5,red:0,age:57,post:0,fx:null,price:null,priceAt:''};
+let D,S={g:3.5,red:0,age:57,post:8,fx:null,price:null,priceAt:''};
 async function decrypt(pass){const V=window.PEN_VAULT;const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
  const k=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(V.salt),iterations:V.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(V.iv)},k,b64(V.ct));return JSON.parse(new TextDecoder().decode(pt))}
@@ -51,7 +51,7 @@ function renderTsla(rd){const sh=D.tesla.map(p=>({n:p.name,s:p.accounts.reduce((
  <div class="card"><h2>At retirement (${rd.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}, age ${S.age})</h2><div class="scen">${sc.map(s=>`<div class="${s.k}"><span class="small muted">${s.k[0].toUpperCase()+s.k.slice(1)}</span><b>${usd(s.p)}</b><span class="small">${gbp(tot*s.p*fx)}</span></div>`).join('')}</div>
  <div class="tw" style="margin-top:10px"><table><tr><th></th><th>Bear</th><th>Base</th><th>Bull</th></tr>${sh.map(p=>`<tr><td>${p.n}</td>${sc.map(s=>`<td>${gbp(p.s*s.p*fx)}</td>`).join('')}</tr>`).join('')}<tr><td><b>Total</b></td>${sc.map(s=>`<td><b>${gbp(tot*s.p*fx)}</b></td>`).join('')}</tr></table></div></div>
  <div class="card"><h2>Projected value path</h2><canvas id="c2"></canvas><div class="small muted">Red bear · gold base · green bull. Compound path from today’s price to ARK’s end-${ARK.year} target, then ${S.post?S.post+'% a year':'held flat'} to retirement.</div></div>
- <div class="card"><h2>Inputs</h2>${inp('fxU','£ per $1',0.0001)}${inp('post','Growth after '+ARK.year+' (% a year; ARK gives no figure)')}${inp('age','Retirement age',1)}</div>
+ <div class="card"><h2>Inputs</h2>${inp('fxU','£ per $1',0.0001)}${inp('post','Growth after '+ARK.year+' (% a year; your assumption; ARK gives no figure)')}${inp('age','Retirement age',1)}</div>
  <div class="card small"><h2>Source</h2>ARK Invest, “<a href="${ARK.url}" target="_blank" rel="noopener">${ARK.title}</a>” (2026): expected ~$4,400, bear ~$3,300, bull ~$5,000 per share in ${ARK.year} (bear/bull are the 25th/75th percentiles of ARK’s Monte Carlo model). Previous target: $2,600 ($2,000 / $3,100) for ${ARK.prev.year}, <a href="${ARK.prev.url}" target="_blank" rel="noopener">published ${ARK.prev.date}</a>.<br><br>The years between now and ${ARK.year} are our interpolation, and the years after ${ARK.year} are our extrapolation from your input. They are not ARK figures. ARK says its forecasts reflect its own views and are not investment advice.</div>`;
  const cv=k=>yrs.map(t=>px(ARK[k],t)*tot*fx);chart('c2',yrs,[{c:'#ff7a7a',v:cv('bear')},{c:'#ffb84d',v:cv('base')},{c:'#5be49b',v:cv('bull')}],kfmt)}
 function showApp(data){D=data;Q('#gate').style.display='none';Q('#app').style.display='block';begin()}
