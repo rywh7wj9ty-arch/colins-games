@@ -1,0 +1,21 @@
+Object.assign(S,{cPen:'',cAge:'',cSP:'',cSPYear:''});
+function renderWhatIf(){const sh=[0,.25,.5,.75].map(x=>{const s=series(S.age,S.sc,x);return{x,r:s.rows[0],p:s.pot0}});
+ const ages=[55,57,60].map(a=>{const s=series(a,S.sc);return{a,r:s.rows[0],c:s.c,p:s.pot0}});
+ Q('#t-whatif').innerHTML=`<div class="chips">${moneyNote()}<span class="chip">Tesla: ${S.sc=='today'?'today’s price':'ARK '+S.sc} (change on Total income)</span></div>
+ <div class="card"><h2>Tesla stress test at retirement (${S.age})</h2>${sh.map(o=>`<div class="yr"><div><b>${o.x?'−'+o.x*100+'% crash':'No shock'}</b> <span class="small muted">pot ${gbp(o.p)}</span></div><div class="right"><b>${gbp(o.r.tot)}</b> <span class="muted small">${gbp(o.r.tot/12)}/mo</span></div><div class="small muted full">First-year total net income · Tesla ${gbp(o.r.w)}</div></div>`).join('')}</div>
+ <div class="card"><h2>Retire at 55, 57 or 60</h2>${ages.map(o=>`<div class="yr"><div><b>Age ${o.a}</b> <span class="small muted">${o.c.rd.getFullYear()}</span></div><div class="right"><b>${gbp(o.r.tot)}</b> <span class="muted small">${gbp(o.r.tot/12)}/mo</span></div><div class="small muted full">Scheme ${gbp(o.c.pen)} gross (${o.c.red.toFixed(0)}% reduction) · Tesla pot ${gbp(o.p)}${o.a==55?' · <span style="color:#ff7a7a">only possible with a protected pension age</span>':''}</div></div>`).join('')}</div>`}
+function renderCaroline(){const me=series(S.age,S.sc),y57=me.rows[0].y,y67=(me.rows.find(r=>r.a==SP.age)||me.rows[0]).y;
+ const cn=y=>{const p=(+S.cPen&&+S.cAge&&y>=+S.cAge)?+S.cPen:0,st=(+S.cSP&&+S.cSPYear&&y>=+S.cSPYear)?S.cSP*52*Math.pow(1+S.si/100,y-2026):0,g=p+st;return(g-incomeTax(g,y-2026))*RF(y)};
+ const tot=y=>me.rows.find(r=>r.y==y).tot+cn(y);
+ Q('#t-caroline').innerHTML=`<div class="chips">${moneyNote()}</div><div class="card"><h2>Caroline’s pensions</h2><p class="small muted">Leave blank until you have her figures. Her Tesla shares are already in the Tesla pot.</p>
+ <label class="f"><span>Her workplace/private pension, £ a year gross</span><input type="number" inputmode="decimal" data-k="cPen" value="${S.cPen}" placeholder="unknown"></label>
+ <label class="f"><span>Year it starts</span><input type="number" inputmode="numeric" data-k="cAge" value="${S.cAge}" placeholder="e.g. year"></label>
+ <label class="f"><span>Her State Pension, £ a week (today’s rate)</span><input type="number" inputmode="decimal" data-k="cSP" value="${S.cSP}" placeholder="unknown"></label>
+ <label class="f"><span>Year her State Pension starts</span><input type="number" inputmode="numeric" data-k="cSPYear" value="${S.cSPYear}" placeholder="e.g. year"></label></div>
+ <div class="card"><h2>Household net income</h2><div class="grid"><div class="kv"><span class="muted small">${y57} (you ${S.age})</span><b>${gbp(tot(y57))}/yr</b><span class="small">${gbp(tot(y57)/12)}/month</span><div class="small muted">Caroline ${gbp(cn(y57))}</div></div><div class="kv"><span class="muted small">${y67} (you ${SP.age})</span><b>${gbp(tot(y67))}/yr</b><span class="small">${gbp(tot(y67)/12)}/month</span><div class="small muted">Caroline ${gbp(cn(y67))}</div></div></div><p class="small muted">Caroline taxed separately on her own pension income. Uses the Tesla scenario and withdrawal set on Total income.</p></div>`;
+ document.querySelectorAll('#t-caroline [data-k]').forEach(i=>i.onchange=()=>{S[i.dataset.k]=i.value;render()})}
+function realBar(){if(Q('#realbar'))return;Q('.tabs').insertAdjacentHTML('afterend',`<div id="realbar" class="seg" style="margin:4px 14px 0"><button data-real="0">Future £</button><button data-real="1">Today’s money</button><label class="small" style="display:flex;align-items:center;gap:4px">Inflation <input id="inf" type="number" step="0.1" style="width:64px;padding:6px" value="${S.inf}">%</label></div>`);
+ document.querySelectorAll('[data-real]').forEach(b=>b.onclick=()=>{S.real=+b.dataset.real;render()});Q('#inf').onchange=e=>{S.inf=parseFloat(e.target.value)||0;render()}}
+const _r4=render;render=function(){_r4();if(!D)return;realBar();document.querySelectorAll('[data-real]').forEach(b=>b.classList.toggle('on',+b.dataset.real==S.real));renderWhatIf();renderCaroline();bind2();remember()};
+function bind2(){document.querySelectorAll('#t-whatif [data-k]').forEach(i=>i.onchange=()=>{S[i.dataset.k]=parseFloat(i.value)||0;render()})}
+function remember(){}
