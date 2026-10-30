@@ -23,7 +23,7 @@ function bind(){document.querySelectorAll('[data-k]').forEach(i=>i.onchange=()=>
 addEventListener('resize',()=>render());
 const inp=(k,l,step)=>`<label class="f"><span>${l}</span><input type="number" inputmode="decimal" step="${step||0.1}" data-k="${k}" value="${S[k]}"></label>`;
 async function begin(){Q('#sub').textContent=D.name+' · born '+new Date(D.dob).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
- try{const r=await fetch('../tesla-tracker/data/tsla.json?'+Date.now());const j=await r.json();S.price=j.price;S.fx=j.usdgbp;S.priceAt=new Date(j.updated*1000).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'})+' UK'}catch(e){S.price=S.price||400;S.fx=S.fx||0.75}
+ try{const r=await fetch('../tesla-tracker/data/tsla.json?'+Date.now());const j=await r.json();const xk=j.marketState==='PRE'?'preMarket':j.marketState==='POST'?'postMarket':null;S.price=xk&&j[xk+'Price']?j[xk+'Price']:j.price;S.priceLbl=xk&&j[xk+'Price']?(xk==='preMarket'?' (pre-market)':' (after hours)'):'';S.fx=j.usdgbp;S.priceAt=new Date(j.updated*1000).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/London'})+' UK'+S.priceLbl}catch(e){S.price=S.price||400;S.fx=S.fx||0.75}
  if(!S.fxU)S.fxU=S.fx;render()}
 function render(){if(!D)return;const C=calc(),L=C.L,R=D.rows,F=R[0],rd=retDate();
  Q('#t-ov').innerHTML=`<div class="card"><h2>Pension earned so far</h2><div class="big">${gbp(L.earned,2)} <span class="small muted">a year</span></div><div class="muted small">At 31 March ${L.year} · defined benefit, 1/${D.accrual}ths accrual · joined 1 August 2005</div></div>

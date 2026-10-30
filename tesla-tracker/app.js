@@ -70,12 +70,12 @@ async function webullQuote(){const q=(await jget('https://quotes-gw.webullfintec
  const ft=pt(q.faTradeTime);if(q.pPrice&&nn(q.pPrice)&&ft>t){const pre=nySession()==='pre';r={px:nn(q.pPrice),prev:pre?close:prev,close,ext:pre?'Pre-market':'After-hours',time:ft,src:'Webull'}}
  if(!close)throw'no';return r}
 async function tvFx(){const r=await fetch('https://scanner.tradingview.com/forex/scan',{method:'POST',headers:{'Content-Type':'text/plain'},cache:'no-store',body:JSON.stringify({symbols:{tickers:['FX_IDC:USDGBP']},columns:['close']})});const v=(await r.json()).data[0].d[0];if(!v)throw'no';return v}
-let loading=false;const BUILD='7';
+let loading=false;const BUILD='8';
 async function checkBuild(){try{const v=await jget('version.json?t='+Date.now(),5000);if(v.build&&v.build!==BUILD&&!sessionStorage.getItem('tt.reloaded.'+v.build)){sessionStorage.setItem('tt.reloaded.'+v.build,1);location.replace(location.pathname+'?b='+v.build+'&t='+Date.now())}}catch(e){}}
 async function loadPrices(manual){if(loading)return;checkBuild();loading=true;const btn=$('#refreshBtn');btn.classList.add('spin');const before=live.px,beforeT=live.time;
  try{
  try{const d=await jget(DATA+'tsla.json?t='+Date.now());live.ranges=d.ranges||{};live.fxHist=d.fxHist||[];live.cacheUpd=d.updated;
-  if(!live.time||d.marketTime>live.time){live.px=d.price;live.prev=d.prevClose;live.time=d.marketTime;live.src='Yahoo feed';live.ext=null}if(d.usdgbp&&!live.fx){live.fx=d.usdgbp;live.fxSrc='Yahoo GBP=X'}}catch(e){}
+  if(!live.time||d.marketTime>live.time){live.px=d.price;live.prev=d.prevClose;live.time=d.marketTime;live.src='Yahoo feed';live.ext=null}const xk=d.marketState==='PRE'?'preMarket':d.marketState==='POST'?'postMarket':null;if(xk&&d[xk+'Price']&&d[xk+'Time']>(live.time||0)){live.close=d.price;live.prev=d.price;live.px=d[xk+'Price'];live.time=d[xk+'Time'];live.ext=xk==='preMarket'?'Pre-market':'After-hours';live.src='Yahoo feed'}if(d.usdgbp&&!live.fx){live.fx=d.usdgbp;live.fxSrc='Yahoo GBP=X'}}catch(e){}
  const got=(await Promise.allSettled([cnbcQuote(),tvQuote()])).filter(x=>x.status==='fulfilled'&&x.value.px>0).map(x=>x.value);
  live.sources=got.map(g=>g.src);let q=got.filter(g=>!isNaN(g.time)).sort((a,b)=>b.time-a.time)[0]||got[0]||null;if(q&&isNaN(q.time))q.time=Date.now()/1000;
  if(q){live.fetched=Date.now();live.px=q.px;live.prev=q.prev;live.close=q.close;live.ext=q.ext;live.time=q.time;live.src=q.src;live.liveOk=true;

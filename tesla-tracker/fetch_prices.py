@@ -10,6 +10,17 @@ for rng,iv in [('1d','5m'),('5d','30m'),('1mo','1d'),('6mo','1d'),('1y','1d'),('
   out['ranges'][rng]=pts
   if rng=='1d':
     m=r['meta'];out['price']=m['regularMarketPrice'];out['prevClose']=m.get('chartPreviousClose') or m.get('previousClose');out['marketTime']=m['regularMarketTime']
+    try:
+      tp=m.get('currentTradingPeriod',{});now=time.time();reg=tp['regular'];pre=tp['pre'];post=tp['post']
+      last=pts[-1] if pts else None
+      st='PRE' if pre['start']<=now<pre['end'] else 'REGULAR' if reg['start']<=now<reg['end'] else 'POST' if post['start']<=now<post['end'] else 'CLOSED'
+      out['marketState']=st;pc=out['prevClose']
+      ext=[p for p in pts if p[0]<reg['start']] if st=='PRE' else [p for p in pts if p[0]>=reg['end']]
+      if st in('PRE','POST') and ext:
+        k='preMarket' if st=='PRE' else 'postMarket'
+        base=out['price']
+        out[k+'Price']=ext[-1][1];out[k+'Time']=ext[-1][0];out[k+'ChangePct']=round((ext[-1][1]/base-1)*100,2)
+    except Exception as e: print('ext',e,file=sys.stderr)
   time.sleep(1)
 try:
   fx=get('https://query2.finance.yahoo.com/v8/finance/chart/GBP=X?range=1y&interval=1d')['chart']['result'][0]
