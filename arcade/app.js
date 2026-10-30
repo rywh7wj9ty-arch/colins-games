@@ -20,6 +20,7 @@ var GAMES=[
  {id:'puffpip',name:'Puffpip',tagline:'Breathe in to float, breathe out to squeeze.',url:'https://rywh7wj9ty-arch.github.io/colins-games/puffpip/',accent:'#ffd84a'},
  {id:'sunleaf',name:'Sunleaf',tagline:'A leaf-spirit platformer. Dash, bounce and grow your way to the floating gardens.',url:'https://rywh7wj9ty-arch.github.io/colins-games/sunleaf/',accent:'#7fe06a'},
  {id:'hushwick',name:'Hushwick',tagline:'A moody candle-lit platformer. Roll, swing and run from the Hush through the Hollow Lane. Demo level.',url:'https://rywh7wj9ty-arch.github.io/colins-games/hushwick/',accent:'#ffcf7a'},
+ {id:'prismfuse',name:'Prismfuse',tagline:'A bright gem-stacking puzzle with hidden fuses. Clear rows, read the numbers and zap the fuses before they pop.',url:'https://rywh7wj9ty-arch.github.io/colins-games/prismfuse/',accent:'#c08bff'},
 ];
 (function(){
  var root=document.getElementById('games');

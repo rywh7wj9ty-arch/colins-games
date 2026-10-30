@@ -1,0 +1,2 @@
+{"name":"Prismfuse","short_name":"Prismfuse","description":"Stack the gems, read the numbers, zap the fuses.","start_url":"./","id":"prismfuse-v1.0","scope":"./","display":"fullscreen","orientation":"landscape","background_color":"#3a2a8c","theme_color":"#3a2a8c",
+"icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
