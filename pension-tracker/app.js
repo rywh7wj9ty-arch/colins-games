@@ -1,4 +1,4 @@
-const $=s=>document.querySelector(s),b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const Q=s=>document.querySelector(s),b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const gbp=(n,d=0)=>'£'+Number(n).toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
 const usd=n=>'$'+Number(n).toLocaleString('en-GB',{maximumFractionDigits:0});
 const ARK={title:"ARK’s Expected Share Price For Tesla In 2031",url:"https://www.ark-invest.com/articles/valuation-models/arks-expected-share-price-for-tesla-2031",year:2031,bear:3300,base:4400,bull:5000,
@@ -54,7 +54,7 @@ function renderTsla(rd){const sh=D.tesla.map(p=>({n:p.name,s:p.accounts.reduce((
  <div class="card"><h2>Inputs</h2>${inp('fxU','£ per $1',0.0001)}${inp('post','Growth after '+ARK.year+' (% a year; ARK gives no figure)')}${inp('age','Retirement age',1)}</div>
  <div class="card small"><h2>Source</h2>ARK Invest, “<a href="${ARK.url}" target="_blank" rel="noopener">${ARK.title}</a>” (2026): expected ~$4,400, bear ~$3,300, bull ~$5,000 per share in ${ARK.year} (bear/bull are the 25th/75th percentiles of ARK’s Monte Carlo model). Previous target: $2,600 ($2,000 / $3,100) for ${ARK.prev.year}, <a href="${ARK.prev.url}" target="_blank" rel="noopener">published ${ARK.prev.date}</a>.<br><br>The years between now and ${ARK.year} are our interpolation, and the years after ${ARK.year} are our extrapolation from your input. They are not ARK figures. ARK says its forecasts reflect its own views and are not investment advice.</div>`;
  const cv=k=>yrs.map(t=>px(ARK[k],t)*tot*fx);chart('c2',yrs,[{c:'#ff7a7a',v:cv('bear')},{c:'#ffb84d',v:cv('base')},{c:'#5be49b',v:cv('bull')}],kfmt)}
-function showApp(data){DATA=data;Q('#gate').style.display='none';Q('#app').style.display='block';begin()}
+function showApp(data){D=data;Q('#gate').style.display='none';Q('#app').style.display='block';begin()}
 async function tryOpen(){try{const data=await decrypt(Q('#pw').value);keep(data);showApp(data)}catch(e){Q('#gateErr').textContent='That code did not work'}}
 Q('#openBtn').onclick=tryOpen;
 function keep(d){}
