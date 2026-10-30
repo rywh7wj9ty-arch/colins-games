@@ -2,16 +2,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Pension">
-<title>Pension Tracker</title><link rel="stylesheet" href="style.css?v=2"></head><body>
+<title>Pension Tracker</title><link rel="stylesheet" href="style.css?v=3"></head><body>
 <div id="gate" class="lock"><form class="lockbox" onsubmit="return false">
  <div class="logo">£</div><h1>Pension Tracker</h1><p class="muted">Private &middot; enter your code</p>
  <input id="pw" type="password" autocomplete="current-password" placeholder="Code">
  <button id="openBtn" class="btn">Open</button><p id="gateErr" class="err"></p></form></div>
 <div id="app" style="display:none">
 <header><h1>Pension Tracker</h1><div class="muted small" id="sub"></div></header>
-<nav class="tabs"><button data-t="ov" class="on">Overview</button><button data-t="hist">History</button><button data-t="proj">At 57</button><button data-t="tsla">Tesla shares</button><button data-t="info">Notes</button></nav>
+<nav class="tabs"><button data-t="ov" class="on">Overview</button><button data-t="hist">History</button><button data-t="proj">At 57</button><button data-t="tsla">Tesla shares</button><button data-t="total">Total income</button><button data-t="info">Notes</button></nav>
 <main>
-<section id="t-ov"></section><section id="t-hist" hidden></section><section id="t-proj" hidden></section><section id="t-tsla" hidden></section><section id="t-info" hidden></section>
+<section id="t-ov"></section><section id="t-hist" hidden></section><section id="t-proj" hidden></section><section id="t-tsla" hidden></section><section id="t-total" hidden></section><section id="t-info" hidden></section>
 </main><footer class="muted small">Not financial advice. Figures from your scheme statements (2016–2025) as extracted in your Grok thread. <a href="#" id="closeBtn">Close</a></footer>
 </div>
-<script src="data/vault.js?v=1"></script><script src="app.js?v=2"></script><script src="ext.js?v=1"></script><script src="tax.js?v=1"></script><script src="charts.js?v=1"></script></body></html>
+<script src="data/vault.js?v=1"></script><script src="app.js?v=2"></script><script src="ext.js?v=1"></script><script src="tax.js?v=1"></script><script src="charts.js?v=1"></script><script src="total.js?v=1"></script></body></html>
