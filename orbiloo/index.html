@@ -40,13 +40,16 @@ table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;
 #err{position:fixed;inset:0;z-index:99;display:none;background:#3f8fe0;color:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
 #tPause{right:calc(env(safe-area-inset-right) + 12px);top:calc(env(safe-area-inset-top) + 10px);width:52px;height:52px;font-size:18px}
 #hint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 14px);transform:translateX(-50%);z-index:11;font-weight:800;opacity:.85;pointer-events:none}
+.wr{margin:6px 0}.wn{font-weight:800;font-size:14px;opacity:.9;text-align:left;margin:2px 4px}
+.lvb{display:inline-flex;flex-direction:column;align-items:center;width:104px;margin:3px;padding:6px 4px;border:0;border-radius:14px;font-family:inherit;color:#fff;background:linear-gradient(180deg,#7c6cff,#5a3fe0);box-shadow:0 3px 0 #3a22a8;outline:none}.lvb b{font-size:18px}.lvb span{font-size:12px}.lvb i{font-style:normal;font-size:11px;opacity:.9;white-space:nowrap;overflow:hidden;max-width:100px}
+.lvb:focus-visible,.lvb:focus{outline:4px solid #ffe45c;outline-offset:2px}.lvb.lk{opacity:.45}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="touch"><div class="tb" id="tPause">❚❚</div></div>
 <div id="toast"></div>
 <div class="ov on" id="title"><div class="panel">
  <h1>Orbiloo</h1><div class="sub">Loop round the planets. Let go at just the right moment.</div>
- <button class="btn" id="bPlay">Play: Pebble Belt</button>
+ <button class="btn" id="bPlay">Play</button>
  <div class="row"><button class="btn alt" id="bHow" style="min-width:150px">How to play</button><button class="btn alt" id="bStats" style="min-width:110px">Stats</button><button class="btn alt" id="bSet" style="min-width:120px">Settings</button></div>
  <div id="a2hs">On iPhone: tap Share, then <b>Add to Home Screen</b>, to play full screen and offline.</div>
 </div></div>
@@ -56,8 +59,10 @@ table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;
  <p><b>Tap</b> (or press a button) to leap off. You fly straight out the way you were running, so time it so you're pointing at the next planet. Get close and its gravity catches you.</p>
  <p>Grab <b>star berries</b> on the way. Flag planets are <b>checkpoints</b>. Miss everything and you float back to the last flag, so you can never get stuck.</p>
  <p>Later planets move, spin the other way, and some have grumpy <b>spike moons</b> circling them. Reach the rainbow planet to finish.</p>
+ <p>There are <b>20 levels</b> in 4 worlds, and each one is a little longer and trickier. Fly through <b>boost rings</b> to speed up, dive into <b>wormholes</b> to skip ahead, and watch <b>flip planets</b>: their arrows flash just before they swap spin. In level 20, land on <b>Grumbo</b> 3 times to win.</p>
  <p><b>Keys:</b> Space, Enter or ↑ to leap, Esc pause, arrows + Enter in menus.<br><b>Controller:</b> A to leap, Menu to pause, D-pad + A in menus, B back.<br><b>Touch:</b> tap anywhere.</p>
  </div><button class="btn back">Back</button></div></div>
+<div class="ov" id="map"><div class="panel"><h2>World map</h2><div class="sub" id="mapC"></div><div id="mapG"></div><button class="btn back">Back</button></div></div>
 <div class="ov" id="stats"><div class="panel"><h2>Stats</h2><table id="statT"></table><button class="btn back">Back</button></div></div>
 <div class="ov" id="settings"><div class="panel"><h2>Settings</h2>
  <div class="set">Music<input type="range" min="0" max="100" id="sMus"></div>
@@ -71,7 +76,7 @@ table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;
 <div class="ov" id="pause"><div class="panel"><h2>Paused</h2>
  <button class="btn" id="bRes">Resume</button><button class="btn alt" id="bRestart">Restart level</button><button class="btn alt" id="bPSet">Settings</button><button class="btn alt" id="bQuit">Quit to title</button></div></div>
 <div class="ov" id="over"><div class="panel"><h2 id="oTitle">Level clear!</h2><div id="oCrowns" style="font-size:40px"></div><table id="oT"></table>
- <button class="btn" id="bAgain">Play again</button><button class="btn alt" id="bOTitle">Title</button></div></div>
+ <button class="btn" id="bNext">Next level</button><button class="btn alt" id="bAgain">Play again</button><button class="btn alt" id="bOTitle">World map</button></div></div>
 <div id="err"><h2>Something went wrong</h2><p id="errMsg"></p><button class="btn" onclick="location.reload()">Tap to reload</button></div>
 <script>
 window.addEventListener('error',e=>{const el=document.getElementById('err');if(el){el.style.display='flex';document.getElementById('errMsg').textContent=e.message||'error'}});
