@@ -23,3 +23,19 @@ footer{text-align:center;padding:10px 20px 30px}a{color:#ffb84d}
 .yr{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:9px 0;border-bottom:1px solid #243262}.yr .right{text-align:right}.yr .full{grid-column:1/-1}
 .printonly{display:none}
 @media print{body{background:#fff;color:#000}#app>*:not(main),main>section{display:none!important}main>#t-print{display:block!important;color:#000}#t-print table{width:100%;border-collapse:collapse}#t-print td{border-bottom:1px solid #ccc;padding:6px}#gate,.noprint{display:none!important}}
+/* r5 tidy */
+#picker{position:sticky;top:0;z-index:20;padding:8px 14px;background:#0b1020ee;backdrop-filter:blur(12px);max-width:760px;margin:0 auto}
+#pkr{width:100%;display:flex;align-items:center;gap:8px;font:inherit;color:#e8ecf8;background:#141c38;border:1px solid #2a3768;border-radius:14px;padding:12px 14px;text-align:left}
+#pkr b{flex:1;font-size:17px}#pkr .chev{color:#ffb84d;font-size:18px}
+#sheet{position:fixed;inset:0;z-index:30;background:#0006}.sheetIn{position:absolute;left:10px;right:10px;top:64px;max-width:740px;margin:0 auto;max-height:calc(100vh - 90px);overflow:auto;background:#141c38;border:1px solid #2a3768;border-radius:18px;padding:8px;box-shadow:0 20px 50px #000a}
+.sheetIn .grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9aa6c8;padding:10px 10px 4px}
+.sheetIn button{display:block;width:100%;text-align:left;font:inherit;color:#e8ecf8;background:none;border:0;border-radius:10px;padding:11px 12px}.sheetIn button.on{background:#ffb84d;color:#1a0f00;font-weight:700}
+header{padding:16px 18px 2px;max-width:760px;margin:0 auto}header h1{font-size:22px}
+.card{margin:14px 0;padding:16px}.card h2{font-size:16px;font-weight:700;margin:0 0 10px}.card p{margin:8px 0 0}
+.card details summary{list-style:none;cursor:pointer;display:flex;align-items:center}.card details summary::-webkit-details-marker{display:none}
+.card details summary h2{margin:0;flex:1}.card details summary::after{content:'▸';color:#ffb84d;transition:transform .2s}.card details[open] summary::after{transform:rotate(90deg)}.card details[open] summary{margin-bottom:10px}
+label.f{display:block;margin:10px 0}label.f span{display:block;font-size:13px;color:#9aa6c8;margin-bottom:4px}
+#realbar{max-width:732px;margin:6px auto 0!important;flex-wrap:wrap}
+html,body{overflow-x:hidden}.tw{overflow-x:auto}canvas,svg{max-width:100%}
+@media print{#picker{display:none!important}}
+#realbar{margin:6px 14px 0!important;gap:6px}#realbar button{padding:8px 10px}#realbar #inf{width:52px!important}
