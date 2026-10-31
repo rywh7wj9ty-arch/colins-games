@@ -1,5 +1,5 @@
 /* Orbiloo service worker: offline after first load. Page is network-first (4 s timeout), assets cache-first. */
-const PREFIX='orbiloo-main-';const CACHE=PREFIX+'202610311300';
+const PREFIX='orbiloo-main-';const CACHE=PREFIX+'202610311400';
 const ASSETS=['./','index.html','game.js','manifest.webmanifest','icons/apple-touch-icon.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/favicon-32.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
