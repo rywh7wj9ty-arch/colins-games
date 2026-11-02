@@ -41,6 +41,8 @@ table{width:100%;border-collapse:collapse;font-weight:700}td{padding:5px 4px;bor
 #touch .b.dn{background:rgba(255,255,255,.55)}
 #pauseBtn{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:11;display:none;border:0;border-radius:14px;background:rgba(255,255,255,.4);color:#fff;font-size:20px;font-weight:900;width:46px;height:40px}
 #err{position:fixed;inset:0;z-index:99;display:none;background:#6ec6ff;color:#fff;align-items:center;justify-content:center;flex-direction:column;font-weight:800;text-align:center}
+@media (max-height:500px){#clear .card{padding:10px 16px}#clear h2{font-size:21px;margin-bottom:4px}#clear td{padding:2px 4px;font-size:14px}#trophy{width:92px!important;height:92px!important}#trGoals{font-size:12px!important;margin-top:3px!important}#clear .btn{padding:8px 16px;font-size:16px;margin:4px 5px 0}}
+#clTab{columns:auto}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="touch">
@@ -54,7 +56,7 @@ table{width:100%;border-collapse:collapse;font-weight:700}td{padding:5px 4px;bor
  <div><button class="btn" data-a="play">▶ Play</button><button class="btn sky" data-a="settings">Settings</button><button class="btn grn" data-a="stats">Stats</button></div>
  <div class="sub" style="font-size:13px;margin-top:10px">Move: arrows / D-pad · Jump: Z, Space or Ⓐ · Run &amp; Spark: X, Shift or Ⓑ/Ⓧ · Pause: Esc or Start</div>
 </div>
-<div id="ver">v1.1</div>
+<div id="ver">v1.2</div>
 <div id="a2hs">To play full screen: tap Share, then <b>Add to Home Screen</b>.</div>
 <div id="pause" class="scr"><div class="card" style="text-align:center"><h2>Paused</h2>
  <button class="btn" data-a="resume">Resume</button><button class="btn sky" data-a="settings">Settings</button><button class="btn grn" data-a="restart">Restart level</button><button class="btn sky" data-a="quit">Title screen</button></div></div>
@@ -76,7 +78,7 @@ table{width:100%;border-collapse:collapse;font-weight:700}td{padding:5px 4px;bor
 window.addEventListener('error',e=>{document.getElementById('err').style.display='flex';});
 (function(){
 'use strict';
-const VERSION='1.1';
+const VERSION='1.2';
 const T=16, ROWS=15;const HERO='Bopsy';
 const cv=document.getElementById('cv'), cx=cv.getContext('2d');
 const $=id=>document.getElementById(id);
@@ -92,6 +94,10 @@ const FEATS=[
  ['shellwake','Shellbugs wake up','Kicked-out shells pop back out after a while.',true],
  ['fx','Sparkles & dust','Particles, dust puffs and brick bits.',true],
  ['shake','Screen shake','A little bump when bricks break.',true],
+ ['blocks25','2.5D blocks','Blocks, pipes and ground show their tops and sides in depth.',true],
+ ['scenery','Background scenery','3D trees and a far-off castle behind the level.',true],
+ ['oneway','Classic one-way camera','Old-school: the screen only scrolls forward and you cannot go back.',false],
+ ['autoq','Auto quality','Turns heavy effects down if the game runs slowly.',true],
  ['depth','3D look','Lit, bevelled blocks, shiny 3D coins and glows.',true],
  ['shadows','Soft shadows','Shadows under characters, items and platforms.',true],
  ['parallax','Distant mountains','Extra far-away background layer for depth.',true],
@@ -243,7 +249,7 @@ function updPlayer(){const p=G.p;if(p.dead)return;
  let carry=0;if(p.ride){carry=p.ride.dx}
  p.x+=carry;
  if(moveX(p)){p.vx=0}
- if(p.x<cam)p.x=cam,p.vx=Math.max(0,p.vx);
+ if(feat.oneway&&p.x<cam)p.x=cam,p.vx=Math.max(0,p.vx);
  // vertical
  const wasGr=p.gr;p.gr=false;
  if(p.ride){p.y+=p.ride.dy}
@@ -296,7 +302,7 @@ function flagSeq(){const p=G.p,f=G.flag;f.t++;
  else if(f.ph===1){p.vx=1.2;p.x+=p.vx;p.vy=Math.min(MAXF,p.vy+.4);const r=moveY(p);if(r.res===1){p.vy=0;p.gr=true}p.anim+=.2;if(p.x>LV.hutX*T+28){f.ph=2;f.t=0;p.hide=true}}
  else if(f.ph===2){if(feat.timer&&G.time>0){const n=Math.min(G.time,3);G.time-=n;G.score+=50*n;if(f.t%3===0)sfx('tick')}else if(f.t>60){f.ph=3;finishLevel()}}}
 function finishLevel(){G.timeLeft=G.timeAtFlag;sfx('clear');stats.clears++;const secs=(performance.now()-G.runStats.t0)/1000;stats.best=Math.max(stats.best,G.score);if(!stats.bestTime||secs<stats.bestTime)stats.bestTime=secs;saveStats();
- $('clTab').innerHTML=row('Score',G.score)+row('Coins',G.runStats.coins)+row('Enemies bopped',G.runStats.stomps)+row('Flag bonus',G.flag.pts)+row('Time taken',secs.toFixed(1)+' s')+row('Lives lost',G.runStats.deaths);
+ const r2=(a,b,c,d)=>'<tr><td>'+a+'</td><td><b>'+b+'</b></td><td style="padding-left:14px">'+c+'</td><td><b>'+d+'</b></td></tr>';$('clTab').innerHTML=r2('Score',G.score,'Coins',G.runStats.coins)+r2('Bopped',G.runStats.stomps,'Flag bonus',G.flag.pts)+r2('Time',secs.toFixed(1)+' s','Lives lost',G.runStats.deaths);
  const goals=[['Grab the flag high (2000+)',G.flag.pts>=2000],['No lives lost',G.runStats.deaths===0],['Collect 25+ coins',G.runStats.coins>=25],['Finish with 200+ time left',!feat.timer||G.timeLeft>=200]];const got=goals.filter(g=>g[1]).length;const tier=got>=4?3:got>=2?2:1;trophyTier=tier;stats.trophy=Math.max(stats.trophy||0,tier);stats['tr'+tier]=(stats['tr'+tier]||0)+1;saveStats();
  $('trName').textContent=['','Bronze trophy','Silver trophy','Gold trophy'][tier];$('trGoals').innerHTML=goals.map(g=>(g[1]?'⭐ ':'☆ ')+g[0]).join('<br>');trophyT=0;
  $('clT').textContent=G.flag.pts>=5000?'Top of the flag! Course clear!':'Course clear!';state='clear';show('clear');}
@@ -319,7 +325,8 @@ function row(a,b){return '<tr><td>'+a+'</td><td>'+b+'</td></tr>'}
 function flipKill(e,dir){if(e.dead)return;e.dead=true;e.st='flip';e.vy=-3.5;e.vx=dir*1;addScore(200,e.x,e.y);sfx('kick');G.runStats.stomps++;stats.stomps++}
 function updEnts(){const p=G.p;
  for(const e of G.ents){
-  if(!e.on){if(e.x<cam+innerWidth/scale+40)e.on=true;else continue}
+  if(!e.on){if(e.x<cam+innerWidth/scale+40&&e.x>cam-40)e.on=true;else continue}
+  if(e.st!=='flip'&&(e.x<cam-120||e.x>cam+innerWidth/scale+120))continue; // frozen while far off-screen
   if(e.st==='flip'){e.x+=e.vx;e.vy+=.3;e.y+=e.vy;continue}
   if(e.st==='flat'){if(--e.timer<=0)e.gone=true;continue}
   e.anim+=.1;
@@ -381,12 +388,12 @@ function step(){frame++;
  for(const k in bumpT){if(--bumpT[k]<=0)delete bumpT[k]}
  if(feat.timer&&!G.flag){G.timeAcc++;if(G.timeAcc>=24){G.timeAcc=0;G.time--;if(G.time===100){musFast=1.4;sfx('up')}if(G.time<=0){G.time=0;killPlayer(false)}}}
  // camera: forward-scroll only, like the classic
- const vw=innerWidth/scale;const target=p.x-vw*.4;if(target>cam)cam=target;cam=Math.min(cam,W*T-vw);cam=Math.max(cam,0);
+ const vw=innerWidth/scale;if(feat.oneway){const target=p.x-vw*.4;if(target>cam)cam=target}else{G.look=(G.look||0)+((p.face*vw*.12)-(G.look||0))*.04;const target=p.x+p.w/2-vw*.5+G.look;cam+=(target-cam)*.12;const mn=p.x+p.w-vw*.85,mx=p.x-vw*.15;if(cam<mn)cam=mn;if(cam>mx)cam=mx}cam=Math.min(cam,W*T-vw);cam=Math.max(cam,0);
  if(shakeT>0)shakeT--;
  if(frame%60===0)stats.playSecs++;}
 // ---------- drawing ----------
 let scale=2,DPR=1;
-function resize(){DPR=Math.min(2,devicePixelRatio||1);cv.width=innerWidth*DPR;cv.height=innerHeight*DPR;scale=innerHeight/(ROWS*T);layoutTouch()}
+let lowDPR=false;function resize(){DPR=lowDPR?1:Math.min(2,devicePixelRatio||1);cv.width=innerWidth*DPR;cv.height=innerHeight*DPR;scale=innerHeight/(ROWS*T);layoutTouch()}
 addEventListener('resize',resize);
 function rr(x,y,w,h,r){cx.beginPath();cx.roundRect?cx.roundRect(x,y,w,h,r):cx.rect(x,y,w,h)}
 function circle(x,y,r,c){cx.fillStyle=c;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill()}
@@ -411,7 +418,8 @@ function drawBg(){const vw=innerWidth/scale,H=ROWS*T;
  // near hills, lit from top-right
  for(let i=-1;i<vw/200+2;i++){const k=Math.floor(cam*.5/200)+i,x=k*200-cam*.5,rx=k%2?70:50,ry=k%2?55:38;
   cx.fillStyle=rg(x+80+rx*.3,214-ry*.7,4,x+80,214,rx*1.1,k%2?['#9cf0ae','#58c47c','#3fa862']:['#8ae69e','#4fbb72','#38a05a']);cx.beginPath();cx.ellipse(x+80,214,rx,ry,0,0,7);cx.fill()}
- if(feat.fog){cx.fillStyle=lg(0,150,0,215,['rgba(255,255,255,0)','rgba(255,255,255,.22)']);cx.fillRect(0,150,vw,70)}}
+ if(feat.fog){cx.fillStyle=lg(0,150,0,215,['rgba(255,255,255,0)','rgba(255,255,255,.22)']);cx.fillRect(0,150,vw,70)}
+ drawScenery(vw);}
 const D3=()=>feat.depth;
 function bevel(x,y,w,h,r,top,mid,bot,edge){// glossy bevelled block
  cx.fillStyle=edge;rr(x,y,w,h,r);cx.fill();
@@ -442,6 +450,31 @@ function shadow(x,y,w){if(!feat.shadows)return;// find ground below
  if(gy===null)return;const dist=Math.max(0,gy-y),a=Math.max(0,.28-dist/300),s=Math.max(.4,1-dist/120);
  cx.fillStyle=`rgba(30,40,80,${a})`;cx.beginPath();cx.ellipse(x,gy+.5,w*s,2.4*s,0,0,7);cx.fill()}
 // ---- Bopsy: a bouncy round puffball with big eyes and a sprout ----
+const DX=6,DY=-5;
+function poly(pts,c){cx.fillStyle=c;cx.beginPath();cx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)cx.lineTo(pts[i],pts[i+1]);cx.closePath();cx.fill()}
+const isPipe=c=>c==='PL'||c==='PR'||c==='pl'||c==='pr';
+function drawDepth(x0,x1){// 2.5D extrusion: top & right faces behind the play plane
+ for(let x=x0;x<=x1;x++)for(let y=0;y<ROWS;y++){const c=map[y][x];if(!c||c==='H')continue;const X=x*T,Y=y*T+(bumpT[x+','+y]?-Math.sin((8-bumpT[x+','+y])/8*Math.PI)*5:0);
+  const up=y>0&&map[y-1][x]&&map[y-1][x]!=='H',rt=x<W-1&&map[y][x+1]&&map[y][x+1]!=='H';
+  let top,side;
+  if(c===1){top='#7ee07a';side='#b8763e'}else if(c==='B'){top='#ffc8a8';side='#c0552e'}else if(c==='Q'){top='#fff0a0';side='#c88010'}else if(c==='U'){top='#e8c49a';side='#8a6038'}else if(c==='S'){top='#f4d09a';side='#8a5a2a'}
+  else if(isPipe(c)){if(c==='PL'||c==='pl'){const top2=c==='PL';const w=top2?34:30,ox=top2?-1:1;
+    if(top2||!(y>0&&isPipe(map[y-1][x]))){const tx=X+ox;cx.fillStyle='#0a5550';cx.beginPath();cx.ellipse(tx+w/2+DX/2,Y+DY/2,w/2+.5,3.6,0,0,7);cx.fill();cx.fillStyle=lg(tx,0,tx+w,0,['#3fd0c4','#c8fff8','#3fd0c4']);cx.beginPath();cx.ellipse(tx+w/2+DX/2,Y+DY/2,w/2,3.2,0,0,7);cx.fill();if(top2){cx.fillStyle='#04302c';cx.beginPath();cx.ellipse(tx+w/2+DX/2,Y+DY/2,w/2-4,2,0,0,7);cx.fill()}}
+    poly([X+ox+w,Y,X+ox+w+DX,Y+DY,X+ox+w+DX,Y+T+DY+(top2?0:4),X+ox+w,Y+T+(top2?0:4)],'#0b6a64')}continue}
+  else continue;
+  if(!up){poly([X,Y,X+T,Y,X+T+DX,Y+DY,X+DX,Y+DY],top);cx.fillStyle='rgba(255,255,255,.25)';cx.fillRect(X+DX*.5,Y+DY*.5-.4,T,.8)}
+  if(!rt){poly([X+T,Y,X+T+DX,Y+DY,X+T+DX,Y+T+DY,X+T,Y+T],side);cx.fillStyle='rgba(0,0,0,.12)';cx.fillRect(X+T,Y+T+DY*.2,DX*.8,1)}}}
+function drawScenery(vw){if(!feat.scenery)return;
+ // distant castle on a hill
+ const cxp=900-cam*.15;for(const off of [0]){const bx=((cxp+off)%1800+1800)%1800-300;if(bx<-120||bx>vw+40)continue;const by=150;
+  cx.fillStyle='rgba(170,200,235,.9)';rr(bx,by-30,70,40,3);cx.fill();for(const [tx,h] of [[-6,56],[30,72],[64,52]]){cx.fillStyle='#b4d0ee';rr(bx+tx,by-h,14,h+10,2);cx.fill();cx.fillStyle='#ff9ab8';cx.beginPath();cx.moveTo(bx+tx-2,by-h);cx.lineTo(bx+tx+7,by-h-14);cx.lineTo(bx+tx+16,by-h);cx.fill()}
+  cx.fillStyle='rgba(255,240,170,.9)';rr(bx+31,by-50,6,8,3);cx.fill();rr(bx+28,by-14,12,24,[6,6,0,0]);cx.fill()}
+ // round 3D trees mid layer
+ for(let i=-1;i<vw/90+2;i++){const k=Math.floor(cam*.65/90)+i,x=k*90-cam*.65+((k*31)%30),s=.8+((k*17)%5)/10,y=206;
+  cx.fillStyle=lg(x-2,0,x+3,0,['#8a5a3a','#c08a5a','#7a4a2a']);cx.fillRect(x-2,y-14*s,5,14*s);
+  cx.fillStyle=rg(x-5*s,y-26*s,2,x,y-20*s,14*s,['#b8f5a0','#5ccf6a','#2f9e4a']);cx.beginPath();cx.arc(x,y-22*s,11*s,0,7);cx.arc(x-7*s,y-16*s,8*s,0,7);cx.arc(x+7*s,y-16*s,8*s,0,7);cx.fill();
+  cx.fillStyle='rgba(255,255,255,.35)';cx.beginPath();cx.ellipse(x-4*s,y-28*s,3.5*s,2*s,-.5,0,7);cx.fill()}
+ if(feat.fog){cx.fillStyle='rgba(235,248,255,.14)';cx.fillRect(0,120,vw,100)}}
 function drawHero(p){if(p.hide)return;
  const x=p.x+p.w/2,yb=p.y+p.h;shadow(x,yb-1,7*(p.big?1.4:1));
  if(p.inv>0&&(frame>>2)%2)return;
@@ -574,6 +607,7 @@ function draw(){cx.setTransform(DPR,0,0,DPR,0,0);
  if(D3()){cx.fillStyle='rgba(20,40,90,.09)';for(let x=x0;x<=x1;x++)for(let y=0;y<13;y++){const c=map[y][x];if(c&&c!==1&&c!=='H'&&!(y<12&&map[y+1][x]&&map[y+1][x]!=='H')){if(c==='pl'||c==='pr'||c==='PL'||c==='PR')continue;cx.fillRect(x*T+2,y*T+16,T-2,2)}}}
  if(feat.checkpoint){const X=LV.cpX*T;cx.fillStyle=lg(X+6,0,X+10,0,['#6a4a2a','#b08a5a','#6a4a2a']);cx.fillRect(X+6.5,8*T,3,5*T);cx.fillStyle=G.cp?lg(0,8*T,0,8*T+10,['#fff3a0','#ffc030']):lg(0,8*T,0,8*T+10,['#d0f0ff','#7ac8f0']);const wv=Math.sin(frame*.12);cx.beginPath();cx.moveTo(X+9,8*T);cx.quadraticCurveTo(X+15,8*T+4+wv,X+22,8*T+5+wv);cx.lineTo(X+9,8*T+10);cx.fill();circle(X+8,8*T,3.2,'#fff');shadow(X+8,13*T-1,6)}
  drawGoal();
+ if(feat.blocks25)drawDepth(x0,x1);
  for(let x=x0;x<=x1;x++)for(let y=0;y<ROWS;y++){const c=map[y][x];if(c&&c!=='H')drawTile(c,x*T,y*T,x+','+y)}
  for(const c of G.coinsL)if(!c.got&&c.x>cam-T&&c.x<cam+vw)drawCoin(c.x,c.y);
  for(const pl of G.plats){if(feat.shadows){cx.fillStyle='rgba(20,40,90,.12)';rr(pl.x+3,pl.y+8,pl.w,4,2);cx.fill()}
@@ -627,14 +661,17 @@ function pauseGame(){if(state!=='play')return;state='pause';musOn=false;show('pa
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame()});
 function buildSettings(){$('sMus').value=opts.mus;$('sSfx').value=opts.sfx;$('sBri').value=opts.bri;
  $('feats').innerHTML=FEATS.map(f=>`<button class="tg${feat[f[0]]?' on':''}" data-f="${f[0]}"><span>${f[1]}<small>${f[2]}</small></span><span class="s">${feat[f[0]]?'On':'Off'}</span></button>`).join('');
- $('olds').innerHTML='<a class="btn sky" href="../nibdash-v1.0/">v1.0 (Nib the fox)</a>';}
+ $('olds').innerHTML='<a class="btn sky" href="../nibdash-v1.1/">v1.1</a><a class="btn sky" href="../nibdash-v1.0/">v1.0 (Nib the fox)</a>';}
 $('feats').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;const k=b.dataset.f;feat[k]=!feat[k];save('feat',feat);b.classList.toggle('on',feat[k]);b.querySelector('.s').textContent=feat[k]?'On':'Off'});
 ['sMus','sSfx','sBri'].forEach(id=>$(id).addEventListener('input',e=>{const k={sMus:'mus',sSfx:'sfx',sBri:'bri'}[id];opts[k]=+e.target.value;save('opts',opts);setVol();applyBri();if(id==='sSfx')sfx('coin')}));
 function applyBri(){cv.style.filter=opts.bri===100?'':'brightness('+opts.bri/100+')'}
 function buildStats(){const s=stats;$('stTab').innerHTML=row('Games started',s.plays)+row('Courses cleared',s.clears)+row('Best score',s.best)+row('Fastest clear',s.bestTime?s.bestTime.toFixed(1)+' s':'–')+row('Best trophy',['None yet','Bronze','Silver','Gold'][s.trophy||0])+row('Trophies won','🥉'+(s.tr1||0)+'  🥈'+(s.tr2||0)+'  🏆'+(s.tr3||0))+row('Best flag bonus',s.topFlag)+row('Coins collected',s.coins)+row('Enemies bopped',s.stomps)+row('Shells kicked',s.kicks)+row('Bricks smashed',s.bricks)+row('Jumps',s.jumps)+row('1-ups',s.oneups)+row('Lives lost',s.deaths)+row('Time played',Math.round(s.playSecs/60)+' min')}
 // ---------- loop ----------
 let last=performance.now(),acc=0;
-function loop(now){requestAnimationFrame(loop);let dt=now-last;last=now;if(dt>100)dt=100;acc+=dt;
+let slowF=0,qWin=0;
+function loop(now){requestAnimationFrame(loop);let dt=now-last;last=now;
+ if(state==='play'&&feat.autoq&&!document.hidden){qWin++;if(dt>24)slowF++;if(qWin>=120){if(slowF>70){if(!lowDPR&&DPR>1){lowDPR=true;resize()}else if(feat.shadows||feat.scenery||feat.depth){feat.shadows=false;feat.scenery=false;feat.parallax=false}else if(feat.blocks25){feat.blocks25=false;feat.depth=false}save('feat',feat)}qWin=0;slowF=0}}
+if(dt>100)dt=100;acc+=dt;
  while(acc>=1000/60){acc-=1000/60;readInput();if(state==='play')step();else{frame++;menuNav()}}
  musTick();drawTrophyCard();
  if(state==='title'&&!G){cx.setTransform(DPR,0,0,DPR,0,0);cx.save();cx.scale(scale,scale);cam+=.3;drawBg();cx.restore()}else if(G)draw();}
