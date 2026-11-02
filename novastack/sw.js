@@ -1,6 +1,6 @@
 /* Novastack service worker: offline after first load. Page is network-first (4 s timeout), assets cache-first. */
-const PREFIX='novastack-v10-';const CACHE=PREFIX+'202611021230';
-const ASSETS=['./','index.html','game.js','manifest.webmanifest','icons/apple-touch-icon.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/favicon-32.png'];
+const PREFIX='novastack-v11-';const CACHE=PREFIX+'202611021400';
+const ASSETS=['./','index.html','game.js','r3d.js','vendor/three/three.module.min.js','vendor/three/addons/geometries/RoundedBoxGeometry.js','vendor/three/addons/postprocessing/EffectComposer.js','vendor/three/addons/postprocessing/RenderPass.js','vendor/three/addons/postprocessing/UnrealBloomPass.js','vendor/three/addons/postprocessing/OutputPass.js','vendor/three/addons/postprocessing/Pass.js','vendor/three/addons/postprocessing/ShaderPass.js','vendor/three/addons/postprocessing/MaskPass.js','vendor/three/addons/shaders/CopyShader.js','vendor/three/addons/shaders/LuminosityHighPassShader.js','vendor/three/addons/shaders/OutputShader.js','vendor/three/addons/environments/RoomEnvironment.js','manifest.webmanifest','icons/apple-touch-icon.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/favicon-32.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 const to=ms=>new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms));

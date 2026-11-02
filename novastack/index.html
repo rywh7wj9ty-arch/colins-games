@@ -33,20 +33,39 @@ input[type=range]{width:160px;accent-color:#5ff0ff}
 .tog.on{background:linear-gradient(180deg,#2fe0c0,#1a9fb8)}
 table{margin:0 auto;border-collapse:collapse;font-size:15px}td{padding:3px 14px;text-align:left}td:last-child{text-align:right;font-weight:800;color:#7ff6ff}
 .how{text-align:left;max-width:600px;font-size:14px;line-height:1.4}.how b{color:#7ff6ff}
-#touch{position:fixed;inset:0;z-index:10;pointer-events:none;display:none}
-#touch.on{display:block}
-.tb{position:absolute;pointer-events:auto;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(120,240,255,.35),rgba(60,80,200,.15));border:2px solid rgba(110,240,255,.6);color:#eaffff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(80,230,255,.3)}
-.tb.dn{transform:scale(.92);background:rgba(120,240,255,.5)}
-.tb small{font-size:10px;font-weight:800;letter-spacing:1px}
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);z-index:30;background:rgba(20,40,120,.8);border:1px solid #5ff0ff;padding:7px 16px;border-radius:4px 12px;font-weight:800;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none}
 #a2hs{margin-top:8px;font-size:13px;opacity:.9;display:none}
 #err{position:fixed;inset:0;z-index:99;display:none;background:#0b1440;color:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+#gl{z-index:0}#cv{z-index:1}
+#hud{position:fixed;z-index:5;pointer-events:none;display:none;font-family:"Avenir Next Condensed","Avenir Next","Segoe UI",system-ui,sans-serif;color:#eaffff;padding:.5em .7em;border-left:2px solid rgba(110,240,255,.8);background:linear-gradient(90deg,rgba(20,40,120,.45),rgba(20,40,120,0));text-shadow:0 0 8px rgba(80,220,255,.5)}
+#hud .hm{font-weight:900;letter-spacing:.25em;font-size:.8em;color:#0b1440;background:linear-gradient(90deg,#5ff0ff,#c79bff);display:inline-block;padding:.15em .6em;margin-bottom:.6em;clip-path:polygon(0 0,100% 0,92% 100%,0 100%)}
+#hud .hl{font-size:.68em;letter-spacing:.3em;color:#7ff6ff;font-weight:700}
+#hud .hv{font-size:1.15em;font-weight:800;margin-bottom:.45em;font-variant-numeric:tabular-nums}
+#hud .hv.big{font-size:1.9em;line-height:1.05;background:linear-gradient(90deg,#fff,#a8f6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#hud .hv small{font-size:.6em;opacity:.8}
+#hud .hg{display:grid;grid-template-columns:1fr 1fr;gap:.2em .8em}
+#hud .bar{height:.35em;background:rgba(255,255,255,.15);margin-top:.2em}#hud .bar i{display:block;height:100%;background:linear-gradient(90deg,#5ff0ff,#c79bff);box-shadow:0 0 8px #5ff0ff}
+#rhud{position:fixed;z-index:5;pointer-events:none;font-weight:900;letter-spacing:.15em}
+.tag{margin:.3em 0;padding:.15em .5em;border-left:3px solid}.tag.y{color:#ffe74a;border-color:#ffe74a}.tag.p{color:#ff9ae8;border-color:#ff9ae8}
+.plbl{position:fixed;z-index:5;pointer-events:none;display:none;font-weight:900;letter-spacing:.35em;color:#7ff6ff;text-shadow:0 0 8px #3be}
+body.playing .plbl{display:block}
+#callout{position:fixed;z-index:6;pointer-events:none;transform:translate(-50%,-50%);text-align:center;opacity:0;white-space:nowrap}
+#callout .ca{font-weight:900;font-style:italic;letter-spacing:.08em;color:#fff;text-shadow:0 0 14px #5ff0ff,0 0 30px #8a6bff}
+#callout .cb{font-size:.62em;font-weight:900;color:#ffe74a;letter-spacing:.2em;text-shadow:0 0 10px #ffb84a}
+#callout.go{animation:co 1.5s ease-out forwards}
+@keyframes co{0%{opacity:0;transform:translate(-50%,-50%) scale(1.8);letter-spacing:.6em}12%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%) scale(.95)}}
+#pauseBtn{position:fixed;z-index:7;display:none;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 10px);width:34px;height:34px;border-radius:50%;border:1px solid rgba(127,246,255,.45);background:rgba(20,40,120,.3);color:rgba(234,255,255,.75);font-size:12px;font-weight:900;padding:0}
+#tut{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(6,10,40,.55);pointer-events:none}
+#tut.on{display:flex;animation:fi .4s}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+#tut .tg{display:grid;grid-template-columns:repeat(3,auto);gap:14px 28px;text-align:center;font-weight:700;font-size:14px;line-height:1.25}
+#tut b{display:block;font-size:30px;color:#7ff6ff;text-shadow:0 0 12px #3be;margin-bottom:4px}
+#tut small{margin-top:16px;opacity:.8;letter-spacing:.2em}
 </style></head><body>
-<canvas id="cv"></canvas>
-<div id="touch">
- <div class="tb" id="tL">◀</div><div class="tb" id="tR">▶</div><div class="tb" id="tD">▼</div><div class="tb" id="tH"><small>HOLD</small></div>
- <div class="tb" id="tRot">⟳</div><div class="tb" id="tCcw">⟲</div><div class="tb" id="tDrop">⤓</div><div class="tb" id="tPause">❚❚</div>
-</div>
+<canvas id="gl" style="display:none"></canvas><canvas id="cv"></canvas>
+<div id="hud"></div><div id="rhud"></div><div id="holdLbl" class="plbl">HOLD</div><div id="nextLbl" class="plbl">NEXT</div><div id="callout"></div>
+<button id="pauseBtn" aria-label="Pause">❚❚</button>
+<div id="tut"><div class="tg"><div><b>⇆</b>Drag sideways<br>to move</div><div><b>◉</b>Tap left / right<br>to rotate</div><div><b>⇣</b>Flick down<br>to drop</div><div><b>↓</b>Drag down slowly<br>to soft drop</div><div><b>⇡</b>Flick up<br>to hold</div><div><b>✌</b>Two-finger tap<br>to pause</div></div><small>Tap anywhere to start</small></div>
 <div id="toast"></div>
 <div class="ov on" id="title"><div class="panel">
  <h1>NOVASTACK</h1><div class="sub">Neon block-stacking above the orbital city</div>
@@ -65,7 +84,7 @@ table{margin:0 auto;border-collapse:collapse;font-size:15px}td{padding:3px 14px;
  <p>Clear 4 rows at once for a <b>Novaburst</b>. Twist a T piece into a tight gap for a <b>T-spin</b>. Clear rows on back-to-back pieces for a <b>combo</b>, and chain Novabursts and T-spins for a <b>back-to-back</b> bonus.</p>
  <p><b>Keys:</b> ← → move, ↓ soft drop, Space hard drop, ↑ or X rotate, Z rotate back, A rotate 180, C or Shift hold, Esc or P pause.<br>
  <b>Controller:</b> D-pad move and soft drop, D-pad up hard drop, A rotate, B rotate back, X/Y rotate 180 / hard drop, LB/RB hold, Menu pause. Menus: D-pad + A, B to go back.<br>
- <b>Touch:</b> use the buttons, or on the board: drag sideways to move, tap to rotate, flick down to hard drop, drag down slowly to soft drop, flick up to hold.</p>
+ <b>Touch:</b> no buttons, just gestures anywhere on the screen: drag sideways to move, tap the right half to rotate clockwise and the left half to rotate back, flick down to hard drop, drag down slowly to soft drop, flick up to hold, and tap with two fingers (or the small ❚❚ icon) to pause.</p>
  </div><button class="btn back">Back</button></div></div>
 <div class="ov" id="stats"><div class="panel"><h2>Stats</h2><table id="statT"></table><button class="btn back">Back</button></div></div>
 <div class="ov" id="settings"><div class="panel"><h2>Settings</h2>
@@ -86,5 +105,7 @@ table{margin:0 auto;border-collapse:collapse;font-size:15px}td{padding:3px 14px;
 <script>
 window.addEventListener('error',e=>{const el=document.getElementById('err');if(el){el.style.display='flex';document.getElementById('errMsg').textContent=e.message||'error'}});
 </script>
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js"}}</script>
+<script type="module" src="r3d.js"></script>
 <script src="game.js"></script>
 </body></html>
