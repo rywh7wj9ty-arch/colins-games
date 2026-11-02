@@ -1,0 +1,44 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#05010d">
+<title>Music World</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;background:#05010d;overflow:hidden;font-family:-apple-system,system-ui,sans-serif;color:#fff;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+#start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(circle at 50% 40%,#2a0b4d,#05010d 70%);z-index:10;padding:24px;text-align:center;transition:opacity .6s}
+#start h1{font-size:44px;margin:0;letter-spacing:2px;background:linear-gradient(90deg,#ff3cac,#ffd36b,#2bd2ff);-webkit-background-clip:text;color:transparent}
+#start p{opacity:.8;max-width:330px;margin:0 0 10px;line-height:1.4}
+.big{border:0;border-radius:30px;padding:16px 26px;font-size:18px;font-weight:700;color:#fff;width:270px;cursor:pointer}
+#bMic{background:linear-gradient(90deg,#ff3cac,#784ba0)}#bDemo{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
+#msg{color:#ffd36b;max-width:320px;font-size:14px;min-height:20px}
+#hud{position:fixed;left:0;right:0;bottom:0;padding:10px 10px calc(12px + env(safe-area-inset-bottom));z-index:5;display:none;flex-direction:column;gap:8px;transition:opacity .4s}
+#top{position:fixed;top:calc(10px + env(safe-area-inset-top));left:0;right:0;text-align:center;z-index:5;display:none;pointer-events:none;transition:opacity .4s}
+#wname{font-size:22px;font-weight:800;letter-spacing:1px;text-shadow:0 0 14px rgba(255,255,255,.6)}
+#src{font-size:12px;opacity:.7}
+.row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.b{background:rgba(10,5,25,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:18px;padding:9px 12px;font-size:14px;cursor:pointer}
+.b.on{background:rgba(255,60,172,.45);border-color:#ff3cac}
+#meters{display:flex;gap:4px;justify-content:center;align-items:flex-end;height:22px}
+#meters i{width:40px;background:#fff;border-radius:3px;height:2px;display:block}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+#toast{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.6);padding:10px 16px;border-radius:14px;z-index:9;opacity:0;transition:opacity .4s;pointer-events:none}
+#photo{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px}
+#photo img{max-width:90%;max-height:70%;border-radius:12px}
+body.clean #hud,body.clean #top{opacity:0;pointer-events:none}
+#lt{position:fixed;bottom:20px;width:100%;text-align:center;opacity:.6;font-size:13px;z-index:11}
+</style></head><body>
+<div id="start"><h1>MUSIC WORLD</h1><p>Five worlds that dance to whatever's playing. Put some music on near your phone, or use my built-in beat.</p>
+<button class="big" id="bMic">🎤 Listen to my music</button><button class="big" id="bDemo">🎧 Play demo beat</button><div id="msg"></div></div>
+<div id="top"><div id="wname">—</div><div id="src"></div></div>
+<div id="hud"><div id="meters"><i id="m0"></i><i id="m1"></i><i id="m2"></i><i id="m3"></i></div>
+<div class="row"><button class="b" id="prev">◀</button><button class="b" id="next">World ▶</button><button class="b on" id="auto">🔄 Auto</button><button class="b" id="pal">🎨 Colours</button></div>
+<div class="row"><button class="b" id="swap">🎧 Demo</button><button class="b" id="fs">⛶ Full screen</button><button class="b" id="shot">📸 Photo</button></div></div>
+<div id="flash"></div><div id="toast"></div>
+<div id="photo"><img id="pimg" alt="photo"><div class="row"><button class="b" id="psave">💾 Save / share</button><button class="b" id="pclose">✕ Close</button></div><div style="font-size:13px;opacity:.7">On iPhone you can also press and hold the picture to save it.</div></div>
+<div id="lt">Loading 3D engine…</div>
+<script>
+(function(){var srcs=['https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js','https://unpkg.com/three@0.134.0/build/three.min.js','lib/three.min.js'],i=0;
+var post=['lib/CopyShader.js','lib/LuminosityHighPassShader.js','lib/EffectComposer.js','lib/RenderPass.js','lib/ShaderPass.js','lib/UnrealBloomPass.js','app.js?v=2'],j=0;
+function more(){if(j>=post.length)return;var s=document.createElement('script');s.src=post[j++];s.onload=more;s.onerror=more;document.body.appendChild(s)}
+function next(){if(window.THREE){document.getElementById('lt').textContent='';more();return}if(i>=srcs.length){document.getElementById('lt').textContent='Could not load 3D engine';return}var s=document.createElement('script');s.src=srcs[i++];s.onload=next;s.onerror=next;document.head.appendChild(s)}next()})();
+</script></body></html>
