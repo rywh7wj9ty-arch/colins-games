@@ -1,2 +1,2 @@
-{"name":"Nib's Big Dash","short_name":"Nib's Dash","description":"Run, hop and bop across Sunnyside Hills.","start_url":"./","scope":"./","display":"fullscreen","orientation":"landscape","background_color":"#6ec6ff","theme_color":"#6ec6ff",
+{"name":"Bopsy's Big Dash","short_name":"Bopsy's Dash","description":"Run, hop and bop across Sunnyside Hills.","start_url":"./","scope":"./","display":"fullscreen","orientation":"landscape","background_color":"#6ec6ff","theme_color":"#6ec6ff",
 "icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
