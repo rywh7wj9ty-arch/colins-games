@@ -23,7 +23,6 @@ var GAMES=[
  {id:'prismfuse',name:'Prismfuse',tagline:'A bright gem-stacking puzzle with hidden fuses. Clear rows, read the numbers and zap the fuses before they pop.',url:'https://rywh7wj9ty-arch.github.io/colins-games/prismfuse/',accent:'#c08bff'},
  {id:'orbiloo',name:'Orbiloo',tagline:'Loop round tiny smiling planets and leap between them. 20 levels across 4 worlds, with a boss at the end.',url:'https://rywh7wj9ty-arch.github.io/colins-games/orbiloo/',accent:'#8fd3ff'},
  {id:'nibdash',name:"Bopsy's Big Dash",tagline:'A bouncy classic platformer. Bop baddies, bump shiny blocks, grow big and race to the flag for a trophy. One level.',url:'https://rywh7wj9ty-arch.github.io/colins-games/nibdash/',accent:'#ff9a3a'},
- {id:'novastack',name:'Novastack',tagline:'Glossy 3D neon blocks in a holographic chamber above a megacity. Marathon, Sprint 40, Ultra and Zen, with gesture controls and a synthwave soundtrack.',url:'https://rywh7wj9ty-arch.github.io/colins-games/novastack/',accent:'#5ff0ff'},
 ];
 (function(){
  var root=document.getElementById('games');
