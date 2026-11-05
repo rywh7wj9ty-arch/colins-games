@@ -22,7 +22,7 @@ h2{margin:0 0 8px;font-size:26px}
 .btn.alt{background:linear-gradient(180deg,#36d6e8,#1aa3c9);box-shadow:0 4px 0 #11789a}
 .btn:focus-visible,.btn.f{outline:4px solid #ffe45c;outline-offset:3px}
 .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.ver{position:fixed;right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:13px;opacity:.85;z-index:21}
+.ver{position:fixed;right:calc(env(safe-area-inset-right) + 12px);bottom:calc(env(safe-area-inset-bottom) + 8px);font-size:14px;font-weight:800;opacity:.95;z-index:21;background:rgba(36,28,110,.5);padding:4px 10px;border-radius:999px}
 .set{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:6px 0;padding:6px 12px;border-radius:14px;background:rgba(255,255,255,.1);font-weight:700;text-align:left}
 .set.f{outline:3px solid #ffe45c}
 input[type=range]{width:160px;accent-color:#ffd84a}
@@ -48,7 +48,7 @@ table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;
 <div id="touch"><div class="tb" id="tPause">❚❚</div></div>
 <div id="toast"></div>
 <div class="ov on" id="title"><div class="panel">
- <h1>Orbiloo</h1><div class="sub">Loop round the planets. Let go at just the right moment.</div>
+ <h1>Orbiloo</h1><div class="sub" style="font-weight:900;letter-spacing:.4px;margin-top:-2px">v1.4</div><div class="sub">Loop round the planets. Let go at just the right moment.</div>
  <button class="btn" id="bPlay">Play</button>
  <div class="row"><button class="btn alt" id="bDaily" style="min-width:150px">Daily Orbit</button><button class="btn alt" id="bWard" style="min-width:150px">Wardrobe</button></div><div class="sub" id="dInfo" style="font-size:13px"></div>
  <div class="row"><button class="btn alt" id="bHow" style="min-width:150px">How to play</button><button class="btn alt" id="bStats" style="min-width:110px">Stats</button><button class="btn alt" id="bSet" style="min-width:120px">Settings</button></div>
@@ -62,6 +62,7 @@ table{margin:0 auto;border-collapse:collapse;font-size:16px}td{padding:4px 14px;
  <p>Later planets move, spin the other way, and some have grumpy <b>spike moons</b> circling them. Reach the rainbow planet to finish.</p>
  <p>There are <b>20 levels</b> in 4 worlds, and each one is a little longer and trickier. Fly through <b>boost rings</b> to speed up, dive into <b>wormholes</b> to skip ahead, and watch <b>flip planets</b>: their arrows flash just before they swap spin. In level 20, land on <b>Grumbo</b> 3 times to win.</p>
  <p><b>New in v1.3</b> (each can be switched off in Settings):<br>• <b>Charge leap:</b> hold to charge (watch the ring), let go to leap further and faster. A quick tap is a short hop.<br>• <b>Nudge:</b> once per leap, tap again (or press an arrow, D-pad or stick) to steer a little. A tap steers you towards the nearest planet ahead.<br>• <b>Slingshots:</b> skim close past a planet without landing to whip off faster.<br>• <b>Planet weights:</b> big planets pull hard and turn slowly, tiny ones pull gently and spin fast.<br>• <b>Jelly bumpers</b> bounce you (and give your nudge back). <b>Mossy planets</b> make Loo run slower.<br>• <b>Combos:</b> land again quickly to build a multiplier, up to x8.<br>• <b>Ghost:</b> race a see-through Loo replaying your best run.<br>• <b>Golden stars:</b> one is hidden off the path in each level. Find 3 in a world to open its bonus level.<br>• <b>Wardrobe:</b> crowns unlock hats and trails.<br>• <b>Daily Orbit:</b> a new level every day. Keep your streak going!</p>
+ <p><b>New in v1.4</b> (each can be switched off in Settings; switching the new ones off brings back the v1.3 look):<br>• <b>Rounder planets</b> with soft shadows, bright rims and a little squish when you land.<br>• <b>Deeper sky</b> with extra far-off layers. Colours stay bright, and the haze stays light.<br>• <b>Leap flourishes:</b> a burst when you launch, a ripple when a planet catches you, and a pop on combos.<br>• <b>Expressive Loo:</b> blinks, flopping ears, little steps, and a face for charging and flying.<br>• <b>Smoother camera</b> that eases ahead along your run.<br>• <b>Heading ribbon:</b> a short streak shows where you are flying. It does not aim for you.</p>
  <p><b>Keys:</b> Space, Enter or ↑ to leap, Esc pause, arrows + Enter in menus.<br><b>Controller:</b> A to leap, Menu to pause, D-pad + A in menus, B back.<br><b>Touch:</b> tap anywhere.</p>
  </div><button class="btn back">Back</button></div></div>
 <div class="ov" id="map"><div class="panel"><h2>World map</h2><div class="sub" id="mapC"></div><div id="mapG"></div><button class="btn back">Back</button></div></div>
