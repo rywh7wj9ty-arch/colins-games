@@ -15,13 +15,13 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 html,body{margin:0;height:100%;background:#05070f;overflow:hidden;font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif;color:#e8e6f4;touch-action:none;overscroll-behavior:none}
 #cv{position:fixed;inset:0;width:100vw;height:100vh;display:block}
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:radial-gradient(ellipse at 50% 40%,rgba(20,26,52,.55),rgba(3,4,10,.9));z-index:20}
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:max(34px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:radial-gradient(ellipse at 50% 40%,rgba(20,26,52,.55),rgba(3,4,10,.9));z-index:20}
 .hidden{display:none!important}
 .panel{width:min(560px,100%);max-height:100%;overflow:auto;text-align:center;padding:18px 22px;border-radius:22px;background:rgba(14,18,36,.86);border:1px solid rgba(160,170,230,.18);box-shadow:0 0 60px rgba(120,140,255,.08)}
 h1{font-size:clamp(34px,8vw,64px);margin:0;letter-spacing:.04em;color:#f3eedc;text-shadow:0 0 22px rgba(255,214,140,.35)}
 h2{margin:4px 0 12px;font-size:24px;color:#f3eedc}
 .sub{opacity:.75;margin:4px 0 14px;font-size:15px}
-.ver{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:13px;opacity:.6}
+.ver{position:fixed;top:max(6px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:25;font-size:13px;font-weight:800;letter-spacing:.04em;opacity:.95;pointer-events:none;text-shadow:0 1px 3px #000;background:rgba(6,8,18,.78);border:1px solid rgba(255,220,170,.28);border-radius:999px;padding:3px 10px}
 button,.btn{font:inherit;font-size:18px;font-weight:700;color:#f3eedc;background:linear-gradient(#2a3157,#1b2140);border:1px solid rgba(190,200,255,.25);border-radius:999px;padding:11px 26px;margin:5px;min-width:160px;cursor:pointer;display:inline-block;text-decoration:none}
 button:active{transform:scale(.97)}
 button.main{background:linear-gradient(#e9b866,#b9792f);color:#1b1206;border-color:#ffd99a}
@@ -50,19 +50,67 @@ h3{margin:14px 0 4px;font-size:15px;opacity:.8;text-align:left;text-transform:up
 @media (orientation:portrait) and (max-width:700px){#rot{display:flex}}
 #err{position:fixed;inset:0;z-index:50;background:#05070f;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:30px}
 .keys{font-size:14px;opacity:.8;text-align:left;line-height:1.6}
+.pill.pop{animation:hpop .42s ease}
+@keyframes hpop{35%{transform:scale(1.16)}100%{transform:scale(1)}}
+#death{position:fixed;inset:0;z-index:16;display:flex;align-items:center;justify-content:center;pointer-events:none;padding:max(10px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.dcard{background:rgba(10,12,24,.8);border:1px solid rgba(255,214,160,.3);border-radius:18px;padding:12px 18px;text-align:center;max-width:min(480px,92vw);box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.dtitle{font-size:22px;font-weight:800;color:#f3eedc}
+.dwhy{opacity:.88;margin-top:4px}
+.dsub{opacity:.62;font-size:13px;margin-top:6px}
+.old .now{margin-bottom:4px}
+body.polish .panel{background:radial-gradient(90% 70% at 0% 0%,rgba(255,214,170,.1),transparent 46%),linear-gradient(180deg,rgba(24,28,52,.94),rgba(10,12,24,.94));border:1px solid rgba(214,196,160,.28);box-shadow:0 16px 48px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,236,210,.16)}
+body.polish #hud .pill{background:rgba(8,10,22,.66);border:1px solid rgba(255,220,170,.22)}
+body.polish button.main{box-shadow:0 0 0 1px rgba(255,236,200,.35),0 8px 22px rgba(0,0,0,.25)}
+body.polish .old a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;background:rgba(255,210,122,.12);text-decoration:none;font-weight:800}
+@media (orientation:landscape) and (max-height:500px){
+ body.polish .screen{padding:max(36px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+ body.polish .panel{padding:8px 14px;border-radius:16px;-webkit-overflow-scrolling:touch}
+ body.polish h1{font-size:clamp(28px,7vh,40px)}
+ body.polish h2{font-size:20px;margin:0 0 6px}
+ body.polish .sub{font-size:13px;margin:2px 0 6px}
+ body.polish button,.btn{font-size:15px;padding:8px 14px;min-width:0;margin:3px}
+ body.polish #title .panel{width:min(920px,100%);display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.9fr);column-gap:14px;align-items:center;text-align:left}
+ body.polish #title .actions{text-align:right}
+ body.polish #how .panel,body.polish #stats .panel,body.polish #settings .panel,body.polish #finish .panel{width:min(960px,100%)}
+ body.polish #settings .panel{text-align:left}
+ body.polish #feats{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;align-items:center}
+ body.polish #feats h3{grid-column:1/-1;margin:8px 0 0}
+ body.polish #feats .row{margin:0;font-size:14px;background:rgba(255,255,255,.045);border-radius:999px;padding:2px 4px 2px 12px}
+ body.polish .row{margin:2px 0;font-size:14px}
+ body.polish .sw{min-height:36px;padding:5px 12px;flex:none}
+ body.polish table{font-size:14px}body.polish td{padding:2px 4px}
+ body.polish #pause .panel br{display:none}
+ body.polish #finish .panel{display:grid;grid-template-columns:1.05fr .95fr;grid-template-areas:"copy copy" "table acts";align-items:center;text-align:left;column-gap:12px}
+ body.polish #finish .fincopy{grid-area:copy}
+ body.polish #finish #finTab{grid-area:table}
+ body.polish #finish .finacts{grid-area:acts;text-align:right}
+ body.polish #hud{font-size:15px}
+ body.polish #pauseBtn{min-height:40px;min-width:44px}
+ body.polish #touch .tb{width:74px;height:74px;font-size:26px}
+ body.polish #tJ{width:86px!important;height:86px!important}
+ body.polish .keys{font-size:13px;line-height:1.4}
+ body.polish .dcard{padding:8px 14px}
+ body.polish .dtitle{font-size:18px}
+}
 </style>
 </head><body>
 <canvas id="cv"></canvas>
 <div id="hud" class="hidden"><div><span class="pill" id="hEmb">✦ 0/30</span><span class="pill" id="hKeep">◈ 0/3</span><span class="pill" id="hTime">0:00</span></div><button id="pauseBtn" aria-label="Pause">❚❚</button></div>
 <div id="touch" class="hidden"><div class="tb" id="tL">◀</div><div class="tb" id="tR">▶</div><div class="tb" id="tG">GRAB</div><div class="tb" id="tJ">⤒</div></div>
 <div id="toast" style="opacity:0"></div>
+<div id="death" class="hidden" aria-live="polite"><div class="dcard"><div class="dtitle" id="dTitle">The flame went out</div><div class="dwhy" id="dWhy"></div><div class="dsub">The lantern is bringing you back…</div></div></div>
+<div class="ver" id="verTag">Hushwick v1.1</div>
 
 <div class="screen" id="title"><div class="panel">
+ <div class="copy">
  <h1>Hushwick</h1>
  <div class="sub">Little Wick's candle is the only light in the Hollow. Keep it burning.</div>
+ </div>
+ <div class="actions">
  <button class="main" id="bPlay">Play: The Hollow Lane</button><br>
  <button id="bHow">How to play</button><button id="bStats">Stats</button><button id="bSet">Settings</button>
-</div><div class="ver">Hushwick v1.0</div></div>
+ </div>
+</div></div>
 
 <div class="screen hidden" id="how"><div class="panel"><h2>How to play</h2><div class="keys">
  <b>Move</b>: ◀ ▶ buttons · Arrows/A D · left stick or D-pad<br>
@@ -81,14 +129,14 @@ h3{margin:14px 0 4px;font-size:15px;opacity:.8;text-align:left;text-transform:up
  <h3>Features</h3>
  <div id="feats"></div>
  <h3>Older versions</h3>
- <div class="old" style="text-align:left">v1.0 is the current version (frozen copy: <a href="../hushwick-v1.0/">/hushwick-v1.0/</a>). Older versions will appear here after updates.</div>
+ <div class="old" id="older" style="text-align:left"><div class="now">You are playing <b>v1.1</b>.</div><a href="../hushwick-v1.0/">v1.0</a><span> · original Hollow Lane</span></div>
  <br><button class="back">Back</button></div></div>
 
 <div class="screen hidden" id="pause"><div class="panel"><h2>Paused</h2>
  <button class="main" id="bResume">Resume</button><br><button id="bRetry">Back to last lantern</button><br><button id="bRestart">Restart level</button><br><button id="bPSet">Settings</button><button id="bQuit">Quit to title</button></div></div>
 
-<div class="screen hidden" id="finish"><div class="panel"><h2>You found the way out</h2><div class="sub">The door creaks shut behind you. Something on the other side sighs.</div><table id="finTab"></table><br>
- <button class="main" id="bAgain">Play again</button><button id="bFinTitle">Title</button></div></div>
+<div class="screen hidden" id="finish"><div class="panel"><div class="fincopy"><h2>You found the way out</h2><div class="sub">The door creaks shut behind you. Something on the other side sighs.</div></div><table id="finTab"></table>
+ <div class="finacts"><button class="main" id="bAgain">Play again</button><button id="bFinTitle">Title</button></div></div></div>
 
 <div id="rot">Turn your phone sideways to play Hushwick.</div>
 <div id="a2hs" class="hidden"><span>📲 For full screen: tap <b>Share</b> then <b>Add to Home Screen</b>.</span><button id="a2x">OK</button></div>
