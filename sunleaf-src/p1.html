@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sunleaf">
+<meta name="theme-color" content="#7fd3ff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png">
+<title>Sunleaf</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#7fd3ff;font-family:"Avenir Next","Nunito","Segoe UI",system-ui,sans-serif;color:#24402a;touch-action:none;overscroll-behavior:none}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+.scr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));z-index:20}
+.scr.on{display:flex}
+.card{background:rgba(255,253,240,.94);border-radius:26px;box-shadow:0 10px 0 rgba(40,90,40,.18),0 18px 40px rgba(30,70,60,.25);padding:18px 22px;max-width:620px;width:100%;max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+h1{margin:0;font-size:clamp(44px,11vh,86px);line-height:1;color:#fff;letter-spacing:1px;text-shadow:0 4px 0 #2f9e57,0 8px 0 #1f7a40,0 14px 24px rgba(0,60,30,.35);font-weight:900}
+h2{margin:0 0 10px;font-size:26px;color:#2f8f4f}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:18px;padding:12px 20px;margin:5px;font-weight:800;font-size:18px;font-family:inherit;color:#fff;background:linear-gradient(#5fd17a,#2fa957);box-shadow:0 5px 0 #1f7a40;cursor:pointer;transition:transform .08s;min-width:120px}
+.btn.alt{background:linear-gradient(#ffd45e,#f3a83a);box-shadow:0 5px 0 #c27a1d;color:#5a3300}
+.btn.pink{background:linear-gradient(#ffa9c0,#f07aa0);box-shadow:0 5px 0 #c4527a}
+.btn.sky{background:linear-gradient(#8fdcff,#4fb4ec);box-shadow:0 5px 0 #2a83b8}
+.btn:active{transform:translateY(3px) scale(.97)}
+.btn.f,.lv.f{outline:4px solid #fff;outline-offset:2px;transform:scale(1.05)}
+#title{flex-direction:column;text-align:center}
+#title .sub{color:#fff;font-weight:800;font-size:clamp(14px,3.4vh,20px);margin:8px 0 14px;text-shadow:0 2px 6px rgba(0,60,30,.5)}
+#ver{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));color:#fff;font-weight:800;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.4);z-index:21}
+#a2hs{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));z-index:21;background:rgba(255,255,255,.88);border-radius:14px;padding:7px 12px;font-size:13px;font-weight:700;display:none;max-width:300px}
+.lvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.lv{border:0;border-radius:18px;padding:12px 10px;background:linear-gradient(#eaffd8,#c4f0a8);box-shadow:0 5px 0 #7cc45a;font-family:inherit;color:#24402a;cursor:pointer;text-align:center}
+.lv b{display:block;font-size:17px}.lv small{display:block;font-size:12.5px;opacity:.8;margin-top:3px}
+.lv.lock{filter:grayscale(.8);opacity:.6}
+.lv.endless{background:linear-gradient(#e3f6ff,#a9e0ff);box-shadow:0 5px 0 #4fa6d6}
+.row{display:flex;align-items:center;gap:12px;margin:10px 0;font-weight:800}
+.row label{width:120px}.row input[type=range]{flex:1;height:30px;accent-color:#2fa957}
+.row input.f{outline:3px solid #2fa957;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:15px}td{padding:4px 6px;border-bottom:1px solid rgba(0,0,0,.07)}td:last-child{text-align:right;font-weight:800}
+.ctr{text-align:center}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#hud.on{display:block}
+#hudL{position:absolute;left:max(12px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));display:flex;gap:10px;align-items:center;font-weight:900;font-size:22px;color:#fff;text-shadow:0 2px 0 rgba(30,90,40,.6),0 0 8px rgba(0,0,0,.25)}
+#motes{display:flex;align-items:center;gap:5px}
+.sunico{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffbe0,#ffd23a 55%,#f39c1e);box-shadow:0 0 10px #ffd84a}
+#petals{display:flex;gap:2px;font-size:20px}
+#hudR{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));display:flex;gap:10px;align-items:center;font-weight:900;color:#fff;font-size:18px;text-shadow:0 2px 0 rgba(30,90,40,.6)}
+#pauseB{pointer-events:auto;width:44px;height:44px;border-radius:14px;border:0;background:rgba(255,255,255,.75);font-weight:900;font-size:18px;color:#2f8f4f}
+#combo{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);font-weight:900;font-size:26px;color:#fff;text-shadow:0 3px 0 #e8812a,0 0 14px rgba(255,200,60,.8);opacity:0;transition:opacity .2s}
+#power{position:absolute;left:max(12px,env(safe-area-inset-left));top:calc(max(8px,env(safe-area-inset-top)) + 40px);font-weight:900;font-size:15px;color:#fff;background:rgba(80,180,110,.7);border-radius:12px;padding:3px 10px;display:none}
+#toast{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-weight:900;font-size:30px;color:#fff;text-shadow:0 3px 0 #2f9e57,0 0 16px rgba(0,0,0,.3);opacity:0;transition:opacity .3s;white-space:nowrap}
+#touch{position:fixed;inset:0;z-index:11;display:none}
+#touch.on{display:block}
+#stick{position:absolute;left:max(20px,calc(env(safe-area-inset-left) + 8px));bottom:max(18px,calc(env(safe-area-inset-bottom) + 6px));width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.55)}
+#knob{position:absolute;left:39px;top:39px;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.tb{position:absolute;border-radius:50%;border:3px solid rgba(255,255,255,.7);background:rgba(255,255,255,.28);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.tb.on{background:rgba(255,255,255,.6)}
+#tJump{right:max(22px,calc(env(safe-area-inset-right) + 8px));bottom:max(22px,calc(env(safe-area-inset-bottom) + 8px));width:86px;height:86px;font-size:17px}
+#tDash{right:calc(max(22px,calc(env(safe-area-inset-right) + 8px)) + 96px);bottom:max(18px,calc(env(safe-area-inset-bottom) + 4px));width:66px;height:66px;font-size:14px}
+#tGrow{right:calc(max(22px,calc(env(safe-area-inset-right) + 8px)) + 16px);bottom:calc(max(22px,calc(env(safe-area-inset-bottom) + 8px)) + 98px);width:66px;height:66px;font-size:14px;background:rgba(120,230,140,.35)}
+.note{font-size:13px;opacity:.75}
+a{color:#2f8f4f}
+#ver{cursor:pointer;pointer-events:auto}
+.feats{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
+.feat{border:0;border-radius:14px;padding:7px 10px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;color:#24402a;background:#e7f6d8;box-shadow:0 3px 0 #b7d9a4}
+.feat.off{background:#f3f0e4;box-shadow:0 3px 0 #ddd2b8;opacity:.78}
+.feat.f{outline:3px solid #2fa957}
+body.ui11 #ver{background:rgba(255,253,240,.94);color:#1c7a3e;padding:5px 12px;border-radius:999px;text-shadow:none;box-shadow:0 3px 0 rgba(31,122,64,.25),0 8px 18px rgba(20,60,30,.18)}
+body.ui11 #title .titleCopy{background:rgba(255,253,240,.92);border-radius:28px;padding:8px 16px 10px;box-shadow:0 10px 28px rgba(30,80,40,.16)}
+body.ui11 #hudL,body.ui11 #hudR{background:rgba(18,48,28,.34);border-radius:16px;padding:4px 10px 4px 8px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+body.ui11 #pauseB{background:rgba(255,253,240,.92)}
+body.ui11 #toast{background:rgba(16,46,28,.38);border-radius:16px;padding:4px 14px}
+body.ui11 #stick{background:rgba(255,255,255,.32);box-shadow:inset 0 0 0 3px rgba(255,255,255,.5),0 8px 18px rgba(20,50,30,.16)}
+body.ui11 #knob{background:rgba(255,255,255,.92)}
+body.ui11 .tb{background:rgba(255,255,255,.42);box-shadow:0 6px 14px rgba(20,50,30,.16)}
+body.ui11 #tJump{background:rgba(255,255,255,.52)}
+body.ui11 #moteN.pop{display:inline-block;animation:motePop .28s ease}
+@keyframes motePop{40%{transform:scale(1.35)}to{transform:scale(1)}}
+@media (max-height:480px){
+  body.ui11 .scr{padding:max(6px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+  body.ui11 .card{padding:10px 14px;border-radius:18px}
+  body.ui11 h2{font-size:20px;margin-bottom:6px}
+  body.ui11 .btn{padding:8px 12px;font-size:15px;min-width:96px;margin:3px;border-radius:14px}
+  body.ui11 .row{margin:6px 0}
+  body.ui11 .row label{width:92px}
+  body.ui11 .note{font-size:12px;margin:6px 0}
+  body.ui11 #title{flex-direction:row;justify-content:center;align-items:center;gap:clamp(16px,4vw,40px);text-align:left}
+  body.ui11 #title .titleCopy{display:flex;flex-direction:column;align-items:flex-start}
+  body.ui11 #title h1{font-size:clamp(36px,15vh,64px)}
+  body.ui11 #title .sub{margin:4px 0 0;text-align:left;max-width:16em}
+  body.ui11 #title .titleBtns{display:flex;flex-direction:column;align-items:stretch}
+  body.ui11 #title .titleBtns>div{display:flex;flex-direction:column}
+  body.ui11 #title .titleBtns .btn{margin:3px 0;min-width:148px}
+  body.ui11 #result .card{display:grid;grid-template-columns:minmax(0,1.2fr) auto;column-gap:18px;row-gap:4px;align-items:center;text-align:left;max-width:880px}
+  body.ui11 #result h2{grid-column:1/-1;text-align:center;margin:0 0 2px}
+  body.ui11 #resBtns{display:flex;flex-direction:column;align-items:stretch}
+  body.ui11 #resBtns .btn{margin:3px 0}
+  body.ui11 #hudL{font-size:18px}
+  body.ui11 #hudR{font-size:16px}
+  body.ui11 #pauseB{width:40px;height:40px}
+  body.ui11 #combo{font-size:22px}
+  body.ui11 table{font-size:14px}
+  body.ui11 td{padding:2px 6px}
+  body.ui11 .feats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  body.ui11 .feat{width:100%;text-align:left;padding:6px 8px}
+  body.ui11 .lv{padding:8px 8px}
+  body.ui11 .lv b{font-size:15px}
+}
+@media (max-height:480px) and (max-width:720px){
+  body.ui11 #title h1{font-size:clamp(34px,16vh,52px)}
+  body.ui11 #title .titleBtns .btn{min-width:128px;font-size:14px;padding:7px 10px}
+}
+</style>
+</head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><div id="hudL"><div id="motes"><span class="sunico"></span><span id="moteN">0</span></div><div id="petals"></div><div id="stones"></div></div>
+<div id="combo"></div><div id="power"></div><div id="toast"></div>
+<div id="hudR"><span id="score"></span><button id="pauseB">II</button></div></div>
+<div id="touch"><div id="stick"><div id="knob"></div></div><div class="tb" id="tGrow">GROW</div><div class="tb" id="tDash">DASH</div><div class="tb" id="tJump">JUMP</div></div>
+<div class="scr on" id="title"><div class="titleCopy"><h1>Sunleaf</h1><div class="sub">Grow your way to the floating gardens</div></div>
+<div class="titleBtns"><div><button class="btn" data-a="levels">Play</button><button class="btn sky" data-a="endless">Sky Garden</button></div>
+<div><button class="btn alt" data-a="stats">Stats</button><button class="btn pink" data-a="settings">Settings</button></div></div></div>
+<div id="ver" title="Settings and older versions">v1.1</div><div id="a2hs">Tip: tap Share, then <b>Add to Home Screen</b> to play full screen and offline.</div>
+<div class="scr" id="levels"><div class="card"><h2>Choose a garden</h2><div class="lvgrid" id="lvgrid"></div><div class="ctr"><button class="btn alt" data-a="back">Back</button></div></div></div>
+<div class="scr" id="settings"><div class="card"><h2>Settings</h2>
+<div class="row"><label>Music</label><input type="range" id="sMusic" min="0" max="100"></div>
+<div class="row"><label>Sound FX</label><input type="range" id="sSfx" min="0" max="100"></div>
+<div class="row"><label>Brightness</label><input type="range" id="sBright" min="70" max="130"></div>
+<div class="row"><label>Effects</label><button class="btn sky" id="sFx" data-a="fx">Auto</button><button class="btn sky" id="sShake" data-a="shake">Shake: On</button></div>
+<div class="row"><label>Touch buttons</label><button class="btn sky" id="sTouch" data-a="touchsz">Normal</button></div>
+<h2 style="margin-top:12px">v1.1 polish</h2>
+<div id="feats" class="feats"></div>
+<div class="row" style="flex-wrap:wrap"><button class="btn" id="sAllOn" data-a="allon" type="button">All on</button><button class="btn alt" id="sAllOff" data-a="alloff" type="button">All off</button></div>
+<p class="note">Each switch stands alone. All off restores the v1.0 look, camera and feel. Run speed, jump height, gravity, dash and every garden route stay the same.</p>
+<h2 style="margin-top:12px">Older versions</h2><div id="older"></div>
+<p class="note">Controls &mdash; Keys: arrows/WASD move, Space/Z jump, X/Shift dash, C grow (hold up for a vine, down for a bounce pad), R back to checkpoint, Esc pause. Controller: stick/D-pad, A jump, X or B dash, Y or RB grow, Start pause.</p>
+<div class="ctr"><button class="btn alt" data-a="back">Back</button></div></div></div>
+<div class="scr" id="stats"><div class="card"><h2>Stats</h2><table id="statT"></table><div class="ctr"><button class="btn alt" data-a="back">Back</button></div></div></div>
+<div class="scr" id="pause"><div class="card ctr"><h2>Paused</h2><button class="btn" data-a="resume">Resume</button><button class="btn sky" data-a="restartcp">Back to checkpoint</button><button class="btn alt" data-a="restart">Restart</button><button class="btn pink" data-a="settings">Settings</button><button class="btn alt" data-a="quit">Quit</button></div></div>
+<div class="scr" id="result"><div class="card ctr"><h2 id="resT">Garden reached!</h2><table id="resTab"></table><div id="resBtns"></div></div></div>
