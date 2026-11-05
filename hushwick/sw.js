@@ -1,5 +1,6 @@
-// Hushwick service worker. Only deletes its own old caches (hushwick-<stamp>; frozen copies use hushwick-v1.0-<stamp>).
-var P="hushwick-",V=P+"20261030001000";
+// Hushwick v1.1 service worker. Live caches are "hushwick-" plus digits only.
+// activate() deletes older live caches and never matches frozen hushwick-v1.0- caches.
+var P="hushwick-",V=P+"20261105180000";
 var FILES=['./','index.html','manifest.webmanifest','planck.min.js','game.js','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','icons/favicon-32.png'];
 function mine(n){return n.indexOf(P)===0&&/^\d+$/.test(n.slice(P.length))}
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}).then(function(){return self.skipWaiting()}))});
