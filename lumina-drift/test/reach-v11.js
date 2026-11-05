@@ -1,0 +1,21 @@
+// node test/reach-v11.js — full route and ability gates with forgiving drift turned on.
+const reach = require('./reach.js');
+const LD = require('./load-core.js')();
+const t0 = Date.now();
+const full = reach(LD, { stepOpt: { forgive: true }, log: true });
+const miss = full.missing;
+console.log('FORGIVE route', full.got, '/', full.total, 'endAt', full.endAt, 'missing', miss.length, 'sec', ((Date.now() - t0) / 1000) | 0);
+if (miss.length) miss.forEach(m => console.log('  MISSING', m));
+const t1 = Date.now();
+const noDash = reach(LD, { stepOpt: { forgive: true }, cap: () => ({ dash: false }), log: true });
+const storm = noDash.L.echoes.filter(e => e.x > 5100).map(e => e.id);
+const got = noDash.order.map(o => o.id);
+const leaked = storm.filter(i => got.includes(i));
+console.log('FORGIVE without dash', noDash.got, 'storm leaked', leaked.length, 'sec', ((Date.now() - t1) / 1000) | 0);
+const noWall = reach(LD, { stepOpt: { forgive: true }, cap: () => ({ wall: false }) });
+const noGlide = reach(LD, { stepOpt: { forgive: true }, cap: () => ({ glide: false }) });
+const far = noGlide.L.echoes.filter(e => e.x > 9200 && e.y < 700).map(e => e.id);
+const farGot = noGlide.order.map(o => o.id).filter(i => far.includes(i));
+console.log('FORGIVE without wall', noWall.got, 'without glide', noGlide.got, 'far', farGot.length, '/', far.length);
+const ok = !miss.length && full.got >= full.endAt && !leaked.length && noWall.got < 26 && farGot.length < far.length;
+process.exit(ok ? 0 : 1);
