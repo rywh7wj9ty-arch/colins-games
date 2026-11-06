@@ -23,5 +23,13 @@
    "type": "image/png",
    "purpose": "maskable"
   }
+ ],
+ "description": "Live TSLA price, combined pot, goals and alerts for Colin & Caroline",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "categories": [
+  "finance"
  ]
 }
