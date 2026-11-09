@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a3a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bird Diary">
+<meta name="description" content="Colin's daily bird sightings diary — Kent reserves.">
+<title>Bird Diary</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<header class="top">
+  <div>
+    <p class="eyebrow">Kent · daily list</p>
+    <h1>Bird Diary</h1>
+  </div>
+  <button type="button" class="chip" id="btnStats" aria-expanded="false">Stats</button>
+</header>
+
+<section id="statsPanel" class="panel stats" hidden>
+  <div class="stat"><span id="statSpecies">0</span><label>species this year</label></div>
+  <div class="stat"><span id="statDays">0</span><label>days out</label></div>
+  <div class="stat"><span id="statPlace">—</span><label>favourite place</label></div>
+  <div class="yearlist-wrap">
+    <h3>Year list <span class="muted">(first seen)</span></h3>
+    <ol id="yearList" class="yearlist"></ol>
+  </div>
+</section>
+
+<section class="panel add-panel">
+  <h2 class="sr">Quick add</h2>
+  <div class="row place-row">
+    <label for="place">Place</label>
+    <select id="place"></select>
+  </div>
+  <div class="row add-row">
+    <div class="input-wrap">
+      <input id="birdInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+             placeholder="Add a bird…" enterkeyhint="done" aria-autocomplete="list" aria-controls="suggest">
+      <ul id="suggest" class="suggest" role="listbox" hidden></ul>
+    </div>
+    <button type="button" id="btnMic" class="icon-btn" title="Speak a bird name" aria-label="Speak a bird name" hidden>🎤</button>
+    <button type="button" id="btnAdd" class="btn primary">Add</button>
+  </div>
+  <p id="micStatus" class="mic-status muted" hidden></p>
+  <p class="hint muted">Phone adds stay on this device until you export them for Grok.</p>
+</section>
+
+<section class="panel" id="todaySection">
+  <div class="sec-head">
+    <h2>Today <span id="todayLabel" class="muted"></span></h2>
+    <span id="todayPlace" class="place-pill"></span>
+  </div>
+  <ul id="todayList" class="bird-list"></ul>
+  <p id="todayEmpty" class="empty">No birds logged yet today.</p>
+</section>
+
+<section class="panel search-panel">
+  <label for="filter" class="sr">Search species</label>
+  <input id="filter" type="search" placeholder="Search species across days…" enterkeyhint="search">
+  <div id="filterResults" class="filter-results" hidden></div>
+</section>
+
+<section class="panel" id="logSection">
+  <div class="sec-head">
+    <h2>Log</h2>
+    <button type="button" id="btnExport" class="chip subtle">Export phone entries</button>
+  </div>
+  <div id="log" class="log"></div>
+  <p id="logEmpty" class="empty">Your running log will appear here.</p>
+</section>
+
+<footer class="foot muted">
+  Tell Grok what you saw and he’ll add it to the shared diary.
+  Phone-only entries are marked <span class="phone-tag">on this phone</span>.
+</footer>
+
+<textarea id="exportBox" class="export-box" readonly hidden></textarea>
+
+<script src="birds.js?v=1"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
