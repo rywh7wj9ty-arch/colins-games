@@ -4,12 +4,19 @@ out=sys.argv[1] if len(sys.argv)>1 else 'tesla-tracker/data'
 UA={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36'}
 cj=http.cookiejar.CookieJar();op=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 def g(u):return op.open(urllib.request.Request(u,headers=UA),timeout=30).read()
-def chart(sym,rng='5y'):
+def chart(sym,rng='10y'):
   r=json.loads(g(f'https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range={rng}&interval=1d'))['chart']['result'][0]
   return [[t,round(c,5)] for t,c in zip(r['timestamp'],r['indicators']['quote'][0]['close']) if c is not None]
 hist={'updated':int(time.time()),'source':'Yahoo Finance daily closes'}
+def chart_try(sym):
+  last=None
+  for rng in ('10y','5y'):
+    try:return chart(sym,rng)
+    except Exception as e:
+      last=e;print('hist',sym,rng,e,file=sys.stderr);time.sleep(1)
+  raise last or RuntimeError('no history')
 for k,s in [('TSLA','TSLA'),('SPY','SPY'),('USDGBP','GBP=X')]:
-  try:hist[k]=chart(s);time.sleep(1)
+  try:hist[k]=chart_try(s);time.sleep(1)
   except Exception as e:print('hist',k,e,file=sys.stderr)
 if 'TSLA' in hist: json.dump(hist,open(f'{out}/history.json','w'),separators=(',',':'))
 def rss(u,n=12):
