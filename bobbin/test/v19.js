@@ -124,6 +124,20 @@ try { fs.mkdirSync(S, { recursive: true }); } catch (e) {}
   });
   ok('forgiving jumps do not add a second hop', dub === 1, dub);
 
+  // a boing launch must not be rewritten as an ordinary hop
+  const boing = await p.evaluate(() => {
+    __b19.f('*', 1); __b19.hold(1); __bob.start(3); __b19.lives(9);
+    const pad = (__bob.route() || []).find(s => s.t === 'boingwall');
+    __bob.warp(pad.pad - 1.1, -0.6);
+    __b19.drive({ x: 0 }); __b19.tick(12);
+    __b19.drive({ x: 1, jump: true });
+    let min = 0;
+    for (let i = 0; i < 40; i++) { const q = __b19.tick(1); if (q.vy < min) min = q.vy; }
+    __b19.hold(0);
+    return +min.toFixed(2);
+  });
+  ok('coyote time does not cancel a boing launch', boing < -16, boing);
+
   // snap: respawn grace
   const grace = await p.evaluate(() => {
     __bob.start(1);

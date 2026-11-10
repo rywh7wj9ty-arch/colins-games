@@ -2523,7 +2523,7 @@ function applySettings(){SND.setVol('music',save.music);SND.setVol('sfx',save.sf
 var last=performance.now(),acc=0,saveT=0,fpsA=[];
 function frame(now){requestAnimationFrame(frame);var dt=Math.min(0.1,(now-last)/1000);last=now;clock+=dt;try{padPoll(dt)}catch(e){if(!PADK.err){PADK.err=1;console.warn('pad',e)}}fpsA.push(dt);if(fpsA.length>120)fpsA.shift();
   if(!L)return;
-  if(state==='play'||state==='end'||(state==='title'||state==='costume')){acc+=dt*(window.__bobSpeed||1);var n=0;while(acc>=STEP&&n<14){if(state==='play'||state==='end')stepGame(STEP);else idleStep(STEP);acc-=STEP;n++}if(n>=14)acc=0}
+  if(!window.__bobHold&&(state==='play'||state==='end'||(state==='title'||state==='costume'))){acc+=dt*(window.__bobSpeed||1);var n=0;while(acc>=STEP&&n<14){if(state==='play'||state==='end')stepGame(STEP);else idleStep(STEP);acc-=STEP;n++}if(n>=14)acc=0}
   updateParticles(dt);
   if(state==='play'){timeHud.textContent=fmt(L.t);saveT+=dt;if(saveT>10){saveT=0;persist()}
     if(rotShownAt&&performance.now()-rotShownAt>7000){rotShownAt=0;document.getElementById('rotateTip').classList.add('hidden')}}
@@ -3007,7 +3007,10 @@ var _up19=updatePlayer;
 updatePlayer=function(p,dt){var vv=p.body.getLinearVelocity(),v0x=vv.x,v0y=vv.y,c0=p.coyote,b0=p.buffer,cut0=!!p.cut,wasZip=!!(p.grab&&p.grab.ud&&p.grab.ud.type==='zip');
   _up19(p,dt);if(!p.body||p.squash)return;
   if(f19('coyote')){if(p.grounded&&p.coyote>0.05)p.coyote=0.16;else if(!p.grounded&&p.coyote>c0+0.04&&p.coyote<=0.105)p.coyote=0.16;
-    if(p.buffer>b0+0.08)p.buffer=0.20}
+    // only a fresh press (buffer still sitting above 0.1) gets the longer window.
+    // a boing or a jump clears the buffer to 0, and that must not be refilled or the
+    // next grounded tick spends it as a normal hop and cancels the launch
+    if(p.buffer>0.1&&p.buffer>b0+0.08)p.buffer=0.20}
   if(f19('hop')&&!cut0&&p.cut&&!input.jump){var v1=p.body.getLinearVelocity();
     if(v0y<-2&&v1.y<0&&Math.abs(v1.y-v0y*0.5)<0.55)p.body.setLinearVelocity(V(v1.x,v0y*0.72))}
   if(f19('steer')&&!p.grounded&&!p.grab&&!p.thread&&!p.stick&&Math.abs(input.x)>0.2){var v=p.body.getLinearVelocity(),max=6.4,nx=v.x+input.x*18*dt;
@@ -3122,5 +3125,8 @@ window.__b19={f:function(k,v){if(k==='*')F19.forEach(function(f){save.f19[f[0]]=
   levers:function(){return L?L.levers.map(function(l){return {sig:l.sig,x:+l.x.toFixed(2),on:!!l.on,a:+l.body.getAngle().toFixed(2)}}):[]},
   toggles:function(){return L?L.toggles.map(function(t){return {sig:t.sig,x:+t.x.toFixed(2),on:!!t.on}}):[]},
   zips:function(){return L?L.zips.map(function(z){var q=z.body.getPosition();return {name:z.name,x:+q.x.toFixed(2),y:+q.y.toFixed(2)}}):[]},
+  exit:function(){return L&&L.exit?{x:+L.exit.x.toFixed(2),y:+L.exit.y.toFixed(2),w:L.w}:null},
+  chase:function(){var c=L&&L.chase;return c?{active:!!c.active,done:!!c.done,sx:+c.sx.toFixed(2),x0:c.x0,x1:c.x1}:null},
+  hold:function(on){window.__bobHold=on?1:0},
   b19:function(){return JSON.parse(JSON.stringify(save.b19))}};
 })();
