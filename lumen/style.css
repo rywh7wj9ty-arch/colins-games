@@ -181,11 +181,11 @@ table.top tr.hi td { color: var(--accent); }
 .slider { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .slider input { width: 150px; accent-color: var(--accent); touch-action: pan-x; }
 .slider output { width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--dim); font-size: 13px; }
-.toggle { width: 50px; height: 30px; border-radius: 15px; background: rgba(255,255,255,.12); position: relative; flex-shrink: 0; transition: background .2s; }
-.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform .2s; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-.toggle.on { background: color-mix(in srgb, var(--accent) 70%, #333); }
-@supports not (color: color-mix(in srgb, red 50%, blue)) { .toggle.on { background: #c9a27a; } }
-.toggle.on::after { transform: translateX(20px); }
+.toggle, .f23toggle { width: 50px; height: 30px; border-radius: 15px; background: rgba(255,255,255,.12); position: relative; flex-shrink: 0; transition: background .2s; }
+.toggle::after, .f23toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform .2s; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.toggle.on, .f23toggle.on { background: color-mix(in srgb, var(--accent) 70%, #333); }
+@supports not (color: color-mix(in srgb, red 50%, blue)) { .toggle.on, .f23toggle.on { background: #c9a27a; } }
+.toggle.on::after, .f23toggle.on::after { transform: translateX(20px); }
 .set-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .set-actions button { padding: 11px 14px; border-radius: 12px; background: var(--glass2); border: 1px solid var(--line); font-size: 14px; }
 .set-actions button.danger { color: #ff9aa8; border-color: rgba(255,120,140,.35); }
@@ -289,6 +289,25 @@ kbd { display: inline-block; min-width: 24px; padding: 2px 7px; border-radius: 7
 body.relax #hud-pps, body.relax #hud-time { opacity: 0; }
 body.relax .pop .main { letter-spacing: .3em; font-weight: 300; }
 #replay-bar[hidden], #tut-tip[hidden], #tut-btn[hidden] { display: none; }
+
+/* ---------------- v2.3 ---------------- */
+#buttons .b-180 { display: none; }
+#buttons.show-180 .pad.right { grid-template-columns: 1.15fr var(--bs, 58px); }
+#buttons.show-180 .b-hold { grid-column: 1; width: auto; }
+#buttons.show-180 .b-180 { display: flex; align-items: center; justify-content: center; grid-column: 2; grid-row: 1; font-size: 13px; letter-spacing: .06em; font-weight: 600; }
+#v23-call { position: fixed; z-index: 6; pointer-events: none; opacity: 0; text-align: left; }
+#v23-call.on { animation: v23in 1.45s ease forwards; }
+#v23-call span { display: block; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: #fff; text-shadow: 0 0 12px var(--accent), 0 1px 0 rgba(0,0,0,.25); font-size: 15px; line-height: 1.35; }
+@keyframes v23in { 0% { opacity: 0; } 10% { opacity: 1; } 72% { opacity: 1; } 100% { opacity: 0; } }
+#coach { position: fixed; z-index: 8; left: 50%; bottom: calc(18px + var(--sb)); transform: translateX(-50%); width: min(440px, calc(100% - 24px)); padding: 14px 16px; border-radius: 18px; background: rgba(14,16,36,.94); border: 1px solid rgba(255,255,255,.22); color: #fff; box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+#coach[hidden] { display: none; }
+#coach p { margin: 0 0 10px; font-size: 14.5px; line-height: 1.45; }
+#coach b { font-weight: 600; }
+#coach button { padding: 10px 16px; border-radius: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); font-weight: 600; }
+#res-grade { display: flex; align-items: center; gap: 14px; margin: 4px 0 8px; }
+#res-grade[hidden] { display: none; }
+#res-grade .rg { font-size: 42px; font-weight: 250; letter-spacing: .08em; color: #fff; text-shadow: 0 0 18px var(--accent); line-height: 1; }
+#res-grade .rd { font-size: 14px; color: var(--dim); letter-spacing: .04em; }
 .chal > button, .rep > button, #tut-btn button, .seg2 button { padding: 12px 20px; min-height: 44px; border-radius: 14px; background: var(--glass2); border: 1px solid var(--line); font-size: 15px; letter-spacing: .06em; flex-shrink: 0; }
 .chal > button.primary, .rep > button.primary, #tut-btn button.primary { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 34%, transparent), color-mix(in srgb, var(--accent2) 26%, transparent)); border-color: rgba(255,255,255,.28); }
 @media (max-aspect-ratio: 3/4) { #cpucv { opacity: .82; } }

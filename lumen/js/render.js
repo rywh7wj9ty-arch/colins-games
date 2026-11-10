@@ -17,6 +17,7 @@ function mk(w, h) { const c = document.createElement('canvas'); c.width = Math.m
 const easeOut = t => 1 - Math.pow(1 - t, 3);
 
 export function blockSprite(px, color, style) {
+  if (style === 'rich') return richGlass(px, color);
   if (style && style !== 'glass' && STYLE_SPRITES[style]) return STYLE_SPRITES[style](px, color);
   const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
   const ins = Math.max(0.5, s * 0.04), w = s - ins * 2, r = s * 0.17;
@@ -142,11 +143,39 @@ function glowSprite(px, color, a = 0.6) {
   rg.addColorStop(0, css(shade(color, 0.3), a)); rg.addColorStop(0.35, css(base, a * 0.42)); rg.addColorStop(1, css(base, 0));
   g.fillStyle = rg; g.fillRect(0, 0, s, s); return c;
 }
-function ghostSprite(px, color) {
+function ghostSprite(px, color, clear) {
   const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
-  const ins = Math.max(1, s * 0.09), w = s - ins * 2, r = s * 0.16;
-  rrect(g, ins, ins, w, w, r); g.fillStyle = css(rgb(color), 0.10); g.fill();
-  g.lineWidth = Math.max(1, s * 0.05); g.strokeStyle = css(shade(color, 0.25), 0.55); g.stroke();
+  const ins = Math.max(1, s * 0.08), w = s - ins * 2, r = s * 0.16;
+  rrect(g, ins, ins, w, w, r); g.fillStyle = css(rgb(color), clear ? 0.22 : 0.10); g.fill();
+  g.lineWidth = Math.max(1, s * (clear ? 0.075 : 0.05)); g.strokeStyle = css(shade(color, 0.25), clear ? 0.95 : 0.55); g.stroke();
+  if (clear) {
+    g.lineWidth = Math.max(1, s * 0.06); g.strokeStyle = 'rgba(255,255,255,0.9)';
+    g.beginPath(); g.moveTo(ins + w * 0.18, ins + w * 0.22); g.lineTo(ins + w * 0.55, ins + w * 0.22); g.stroke();
+  }
+  return c;
+}
+// v2.3 richer glass: the same colour, with extra hard-edged highlights. No shadow blur and no tint.
+function richGlass(px, color) {
+  const s = Math.max(4, Math.round(px)); const c = mk(s, s); const g = c.getContext('2d');
+  const ins = Math.max(0.5, s * 0.04), w = s - ins * 2, r = s * 0.17;
+  const base = rgb(color);
+  let gr = g.createLinearGradient(0, ins, 0, ins + w);
+  gr.addColorStop(0, css(shade(color, 0.34), 0.98)); gr.addColorStop(0.45, css(base, 0.92)); gr.addColorStop(1, css(shade(color, -0.38), 0.96));
+  rrect(g, ins, ins, w, w, r); g.fillStyle = gr; g.fill();
+  g.save(); rrect(g, ins, ins, w, w, r); g.clip();
+  let rg = g.createRadialGradient(s * 0.48, s * 0.58, 0, s * 0.48, s * 0.58, s * 0.58);
+  rg.addColorStop(0, css(shade(color, 0.72), 0.85)); rg.addColorStop(0.5, css(shade(color, 0.28), 0.22)); rg.addColorStop(1, css(base, 0));
+  g.fillStyle = rg; g.fillRect(0, 0, s, s);
+  g.beginPath(); g.moveTo(ins, ins + w * 0.08); g.lineTo(ins + w * 0.72, ins); g.lineTo(ins + w * 0.28, ins + w * 0.42); g.closePath();
+  g.fillStyle = 'rgba(255,255,255,0.42)'; g.fill();
+  g.beginPath(); g.moveTo(ins + w * 0.55, ins + w * 0.62); g.lineTo(ins + w, ins + w * 0.4); g.lineTo(ins + w, ins + w); g.lineTo(ins + w * 0.38, ins + w); g.closePath();
+  g.fillStyle = css(shade(color, -0.45), 0.28); g.fill();
+  g.restore();
+  const lw = Math.max(1, s * 0.065);
+  rrect(g, ins + lw / 2, ins + lw / 2, w - lw, w - lw, Math.max(0, r - lw / 2));
+  g.strokeStyle = 'rgba(255,255,255,0.92)'; g.lineWidth = lw; g.stroke();
+  g.beginPath(); g.moveTo(ins + w * 0.16, ins + lw * 2); g.lineTo(ins + w * 0.62, ins + lw * 2);
+  g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = Math.max(1, s * 0.045); g.stroke();
   return c;
 }
 function shardSprite(px, color) { // a triangular glass shard for shatter
@@ -173,7 +202,9 @@ export class Renderer {
     this.collapse = null; this.shakeAmp = 0; this.shakeT = 0; this.kick = 0; this.lean = 0; this.leanV = 0;
     this.vis = null; this.twist = 0; this.spinTint = 0; this.stackDirty = true; this.time = 0; this.danger = 0;
     this.drift = []; this.spawnId = 0; this.pulseBoard = 0; this.waveFront = -1;
+    this.richGlass = false; this.clearGhost = false; this.clearQueue = false; this.lineLight = false; this.crisp = false; this.lights = [];
   }
+  px(v) { if (!this.crisp) return v; const d = this.dpr || 1; return Math.round(v * d) / d; }
   setOptions(o) { Object.assign(this, o); this.P.max = this.reduced ? 350 : 1200; this.stackDirty = true; }
   resize(L, dpr) {
     this.L = L; this.dpr = dpr;
@@ -186,16 +217,17 @@ export class Renderer {
     const L = this.L; if (!L) return; const d = this.dpr; const sp = {};
     const mk1 = (i) => {
       const pal = this.palette(i); const o = { block: [], glow: [], ghost: [], dot: [], shard: [], mini: [], flash: null };
+      const style = this.richGlass && (!this.pieceStyle || this.pieceStyle === 'glass') ? 'rich' : this.pieceStyle;
       pal.forEach((col, k) => {
         const id = k + 1;
-        o.block[id] = blockSprite(L.cell * d, col, this.pieceStyle);
-        o.mini[id] = blockSprite(Math.max(L.hold.m, L.next.m) * d, col, this.pieceStyle);
+        o.block[id] = blockSprite(L.cell * d, col, style);
+        o.mini[id] = blockSprite(Math.max(L.hold.m, L.next.m) * d, col, style);
         o.glow[id] = glowSprite(L.cell * 3 * d, col, 0.55);
-        o.ghost[id] = ghostSprite(L.cell * d, col);
+        o.ghost[id] = ghostSprite(L.cell * d, col, this.clearGhost);
         o.dot[id] = glowSprite(24 * d, col, 0.95);
         o.shard[id] = shardSprite(Math.max(6, L.cell * 0.45) * d, col);
       });
-      { const gc = '#c9d3ea'; o.block[8] = blockSprite(L.cell * d, gc, this.pieceStyle); o.glow[8] = glowSprite(L.cell * 3 * d, gc, 0.3); o.dot[8] = glowSprite(24 * d, gc, 0.95); o.shard[8] = shardSprite(Math.max(6, L.cell * 0.45) * d, gc); o.ghost[8] = o.ghost[1]; o.mini[8] = o.block[8]; } // v2.2 garbage
+      { const gc = '#c9d3ea'; o.block[8] = blockSprite(L.cell * d, gc, style); o.glow[8] = glowSprite(L.cell * 3 * d, gc, 0.3); o.dot[8] = glowSprite(24 * d, gc, 0.95); o.shard[8] = shardSprite(Math.max(6, L.cell * 0.45) * d, gc); o.ghost[8] = o.ghost[1]; o.mini[8] = o.block[8]; } // v2.2 garbage
       o.flash = glowSprite(L.cell * 1.6 * d, '#ffffff', 0.9);
       o.white = blockSprite(L.cell * d, '#f4f8ff');
       return o;
@@ -323,6 +355,10 @@ export class Renderer {
       this.spinTint = 1;
       if (!this.reducedMotion) this.addShake(e.lines >= 2 ? 4 : 2, 0.22);
     }
+    if (this.lineLight && (e.lines || e.pc)) {
+      for (const y of e.rows || []) this.lights.push({ y, t: 0, dur: e.pc ? 0.7 : 0.42 });
+      if (e.pc) this.lights.push({ y: -1, t: 0, dur: 0.85, pc: true });
+    }
     if (e.pc) {
       const n = this.reduced ? 60 : 220;
       for (let i = 0; i < n; i++) {
@@ -386,6 +422,7 @@ export class Renderer {
     const L = this.L; if (!L) return;
     this.time += dt;
     const g = this.g, d = this.dpr, c = L.cell, game = view.game;
+    g.imageSmoothingEnabled = !this.crisp;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if (view.title) { this.renderDrift(dt, view); this.stepParticles(dt); this.drawParticles(); return; }
     if (!game) return;
@@ -411,7 +448,9 @@ export class Renderer {
     this.lean += (leanTarget - this.lean) * (1 - Math.exp(-dt / 0.25));
     const ox = L.bx + L.bw / 2, oy = L.by + L.bh;
     g.setTransform(d, 0, 0, d, 0, 0);
-    g.translate(ox + sx, oy + sy + this.kick); g.rotate(this.lean); g.translate(-ox, -oy);
+    let tx = ox + sx, ty = oy + sy + this.kick;
+    if (this.crisp) { tx = this.px(tx); ty = this.px(ty); }
+    g.translate(tx, ty); if (!this.crisp) g.rotate(this.lean); g.translate(-ox, -oy);
     const flip = !!this.flip; // v2.2 "upside down" challenge rule: the well is drawn mirrored top-to-bottom
     if (flip) { g.save(); const fcy = L.by + L.bh / 2; g.translate(0, 2 * fcy); g.scale(1, -1); }
 
@@ -470,6 +509,7 @@ export class Renderer {
       this.rowFlash = this.rowFlash.filter(f => f.t < f.dur);
       g.globalCompositeOperation = 'source-over';
     }
+    this.drawLights(dt);
     // Tetris light beams: every column fires a shaft of light up the well
     if (this.beams.length) {
       g.globalCompositeOperation = 'lighter';
@@ -511,7 +551,10 @@ export class Renderer {
       const p = game.cur, id = TYPE_ID[p.type];
       if (this.showGhost) {
         const gy = game.ghostY();
-        if (gy !== p.y) for (const [cx, cy] of SHAPES[p.type][p.rot]) if (gy + cy >= HIDDEN) g.drawImage(sp.ghost[id], this.bx(p.x + cx), this.by(gy + cy), c, c);
+        if (gy !== p.y) {
+          if (this.clearGhost) this.drawGhostGuide(p, gy, id);
+          for (const [cx, cy] of SHAPES[p.type][p.rot]) if (gy + cy >= HIDDEN) g.drawImage(sp.ghost[id], this.px(this.bx(p.x + cx)), this.px(this.by(gy + cy)), c, c);
+        }
       }
       // smoothed position
       const key = this.spawnId;
@@ -525,7 +568,7 @@ export class Renderer {
       let mx = 0, my = 0; for (const [cx, cy] of cells) { mx += cx + 0.5; my += cy + 0.5; } mx /= 4; my /= 4;
       const pcx = this.bx(vx + mx), pcy = this.by(vy + my);
       g.save();
-      if (this.twist) { g.translate(pcx, pcy); g.rotate(this.twist); g.translate(-pcx, -pcy); }
+      if (this.twist && !this.crisp) { g.translate(pcx, pcy); g.rotate(this.twist); g.translate(-pcx, -pcy); }
       const lockK = game.grounded() ? Math.min(1, game.lockT / game.lockDelay) : 0;
       if (this.tspinHint && p.type === 'T' && game.lastRot && game.detectSpin() !== 'none') { // v2.2: the T glows when a spin is set up
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.55 + 0.35 * Math.sin(this.time * 12);
@@ -535,18 +578,18 @@ export class Renderer {
       }
       if (!this.reduced) {
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.5 + 0.15 * Math.sin(this.time * 5);
-        for (const [cx, cy] of cells) { const yy = vy + cy; if (yy < HIDDEN - 2) continue; g.drawImage(sp.glow[id], this.bx(vx + cx - 1), this.by(yy - 1), c * 3, c * 3); }
+        for (const [cx, cy] of cells) { const yy = vy + cy; if (yy < HIDDEN - 2) continue; g.drawImage(sp.glow[id], this.px(this.bx(vx + cx - 1)), this.px(this.by(yy - 1)), c * 3, c * 3); }
         g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
       }
       for (const [cx, cy] of cells) {
         const yy = vy + cy; if (yy < HIDDEN - 2) continue;
         g.globalAlpha = yy < HIDDEN - 0.5 ? 0.55 : 1;
-        g.drawImage(sp.block[id], this.bx(vx + cx), this.by(yy), c, c);
+        g.drawImage(sp.block[id], this.px(this.bx(vx + cx)), this.px(this.by(yy)), c, c);
       }
       g.globalAlpha = 1;
       if (lockK > 0) { // the piece brightens as its lock delay runs out
         g.globalCompositeOperation = 'lighter'; g.globalAlpha = lockK * 0.35;
-        for (const [cx, cy] of cells) if (vy + cy >= HIDDEN - 1) g.drawImage(sp.white, this.bx(vx + cx), this.by(vy + cy), c, c);
+        for (const [cx, cy] of cells) if (vy + cy >= HIDDEN - 1) g.drawImage(sp.white, this.px(this.bx(vx + cx)), this.px(this.by(vy + cy)), c, c);
         g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
       }
       g.restore();
@@ -625,7 +668,11 @@ export class Renderer {
   drawHold(game) {
     const H = this.L.hold, g = this.g;
     g.drawImage(this.holdPanel, H.x, H.y, H.w, H.h);
-    if (game.hold) this.drawMini(game.hold, H.x + H.w / 2, H.y + H.h / 2 + H.labelH / 2, H.m, game.holdUsed ? 0.35 : 1);
+    if (game.hold) {
+      const x = H.x + H.w / 2, y = H.y + H.h / 2 + H.labelH / 2;
+      if (this.clearQueue && !game.holdUsed) this.queuePlate(x, y, H.m, game.hold);
+      this.drawMini(game.hold, x, y, H.m, game.holdUsed ? 0.35 : 1);
+    }
   }
   drawNext(game) {
     const N = this.L.next, g = this.g;
@@ -633,12 +680,66 @@ export class Renderer {
     const q = game.queue.slice(0, 5);
     if (N.horizontal) {
       const slot = (N.w - N.pad * 2) / 5.4;
-      q.forEach((t, i) => { const s = i === 0 ? 1.15 : 0.85; const x = N.x + N.pad + (i === 0 ? slot * 0.6 : slot * (i + 0.9)); this.drawMini(t, x, N.y + N.h / 2 + N.labelH / 2, N.m * s, i === 0 ? 1 : 0.8); });
+      q.forEach((t, i) => {
+        const s = this.clearQueue ? (i === 0 ? 1.32 : 0.86) : (i === 0 ? 1.15 : 0.85);
+        const x = N.x + N.pad + (i === 0 ? slot * 0.6 : slot * (i + 0.9));
+        const y = N.y + N.h / 2 + N.labelH / 2;
+        if (this.clearQueue && i === 0) this.queuePlate(x, y, N.m * s, t);
+        this.drawMini(t, x, y, N.m * s, i === 0 ? 1 : 0.8);
+      });
     } else {
       const top = N.y + N.labelH, avail = N.h - N.labelH - N.pad;
       const first = avail * 0.26, rest = (avail - first) / 4;
-      q.forEach((t, i) => { const s = i === 0 ? 1.12 : 0.82; const y = i === 0 ? top + first / 2 : top + first + rest * (i - 0.5); this.drawMini(t, N.x + N.w / 2, y, N.m * s, i === 0 ? 1 : 0.78); });
+      q.forEach((t, i) => {
+        const s = this.clearQueue ? (i === 0 ? 1.3 : 0.84) : (i === 0 ? 1.12 : 0.82);
+        const y = i === 0 ? top + first / 2 : top + first + rest * (i - 0.5);
+        const x = N.x + N.w / 2;
+        if (this.clearQueue && i === 0) this.queuePlate(x, y, N.m * s, t);
+        this.drawMini(t, x, y, N.m * s, i === 0 ? 1 : 0.78);
+      });
     }
+  }
+  queuePlate(x, y, m, type) {
+    const g = this.g, id = TYPE_ID[type], col = (WORLDS[this.world].pieces[id - 1]) || '#ffffff';
+    const s = m * 3.4;
+    g.save();
+    rrect(g, x - s / 2, y - s / 2, s, s, Math.max(4, m * 0.4));
+    g.fillStyle = css(rgb(col), 0.2); g.fill();
+    g.lineWidth = 1.5; g.strokeStyle = css(shade(col, 0.2), 0.9); g.stroke();
+    g.restore();
+  }
+  drawGhostGuide(p, gy, id) {
+    const g = this.g, L = this.L, c = L.cell;
+    const col = (WORLDS[this.world].pieces[id - 1]) || '#ffffff';
+    g.save(); g.strokeStyle = css(rgb(col), 0.75); g.lineWidth = 1.25; g.lineCap = 'butt';
+    for (const [cx, cy] of SHAPES[p.type][p.rot]) {
+      const x = this.px(this.bx(p.x + cx) + c * 0.5);
+      const y0 = this.px(this.by(p.y + cy) + c), y1 = this.px(this.by(gy + cy));
+      if (y1 <= y0 + 1) continue;
+      g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke();
+    }
+    g.restore();
+  }
+  drawLights(dt) {
+    if (!this.lights.length) return;
+    const g = this.g, L = this.L, c = L.cell;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const Lgt of this.lights) {
+      Lgt.t += dt; const k = 1 - Lgt.t / Lgt.dur; if (k <= 0) continue;
+      if (Lgt.pc) {
+        g.strokeStyle = `rgba(255,255,255,${0.9 * k})`; g.lineWidth = 2.5;
+        g.strokeRect(L.bx + 1, L.by + 1, L.bw - 2, L.bh - 2);
+      } else {
+        const y = this.by(Lgt.y);
+        g.fillStyle = `rgba(255,255,255,${0.85 * k})`;
+        g.fillRect(L.bx, y + c * 0.42, L.bw, Math.max(1, c * 0.14));
+        const ac = rgb(WORLDS[this.world].accent);
+        g.fillStyle = css(ac, 0.28 * k);
+        g.fillRect(L.bx, y, L.bw, c);
+      }
+    }
+    this.lights = this.lights.filter(Lgt => Lgt.t < Lgt.dur);
+    g.restore();
   }
   drawRings(dt) {
     if (!this.rings.length) return; const g = this.g;

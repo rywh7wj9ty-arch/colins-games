@@ -1,13 +1,34 @@
 /* LUMEN input: keyboard, touch gestures (cell-snapped drag, tap rotate, flick drop, swipe-up hold) and on-screen buttons. */
+import { preciseIntent, dragColumns, softRows } from './v23.js';
 export class Input {
   constructor(app) {
     this.app = app; this.ptrs = new Map(); this.multi = null; this.keys = new Set();
+    this.rotCount = { 1: 0, '-1': 0, 2: 0 };
     window.addEventListener('keydown', e => this.keyDown(e));
     window.addEventListener('keyup', e => this.keyUp(e));
     window.addEventListener('blur', () => this.releaseAll());
   }
   get game() { const a = this.app; return a.screen === 'game' && a.running && a.game && !a.game.over && !a.replay ? a.game : null; }
-  releaseAll() { const g = this.app.game; if (g) { g.held.left = g.held.right = false; g.dasDir = 0; g.setSoft(false); } this.keys.clear(); this.ptrs.clear(); this.multi = null; }
+  releaseAll() {
+    const g = this.app.game;
+    if (g) { g.held.left = g.held.right = false; g.dasDir = 0; g.setSoft(false); g.rotHeld = 0; }
+    this.rotCount = { 1: 0, '-1': 0, 2: 0 };
+    this.keys.clear(); this.ptrs.clear(); this.multi = null;
+  }
+  usePrecise() { return !!(this.app.feat23 && this.app.feat23('touch')); }
+  spin(g, dir) {
+    if (g.handling) { this.rotCount[dir] = (this.rotCount[dir] || 0) + 1; g.rotHeld = dir; g.queueRotate(dir); }
+    else g.rotate(dir);
+  }
+  spinOff(dir) {
+    this.rotCount[dir] = Math.max(0, (this.rotCount[dir] || 0) - 1);
+    const g = this.app.game;
+    if (!g || !g.handling) return;
+    const c = this.rotCount;
+    g.rotHeld = c[2] ? 2 : c[1] ? 1 : c[-1] ? -1 : 0;
+  }
+  hold(g) { if (g.handling) g.queueHold(); else g.holdPiece(); }
+  turn(g, dir) { if (g.handling) g.queueRotate(dir); else g.rotate(dir); }
 
   // ---------------- keyboard ----------------
   keyDown(e) {
@@ -24,15 +45,19 @@ export class Input {
       case 'ArrowLeft': game.pressDir(-1); break;
       case 'ArrowRight': game.pressDir(1); break;
       case 'ArrowDown': game.setSoft(true); break;
-      case 'ArrowUp': case 'KeyX': game.rotate(1); break;
-      case 'KeyZ': case 'ControlLeft': game.rotate(-1); break;
-      case 'KeyA': game.rotate(2); break;
-      case 'KeyC': case 'ShiftLeft': case 'ShiftRight': game.holdPiece(); break;
+      case 'ArrowUp': case 'KeyX': this.spin(game, 1); break;
+      case 'KeyZ': case 'ControlLeft': this.spin(game, -1); break;
+      case 'KeyA': this.spin(game, 2); break;
+      case 'KeyC': case 'ShiftLeft': case 'ShiftRight': this.hold(game); break;
       case 'Space': game.hardDrop(); break;
     }
   }
   keyUp(e) {
-    const g = this.app.game; if (!g) return; const k = e.code || e.key;
+    const k = e.code || e.key;
+    if (k === 'ArrowUp' || k === 'KeyX') this.spinOff(1);
+    else if (k === 'KeyZ' || k === 'ControlLeft') this.spinOff(-1);
+    else if (k === 'KeyA') this.spinOff(2);
+    const g = this.app.game; if (!g) return;
     if (k === 'ArrowLeft') g.releaseDir(-1);
     else if (k === 'ArrowRight') g.releaseDir(1);
     else if (k === 'ArrowDown') g.setSoft(false);
@@ -52,7 +77,8 @@ export class Input {
   }
   pieceKey(g) { return g.pieces * 1000 + g.st.holds; }
   step() { const L = this.app.L; const s = this.app.settings.sensitivity || 1; return Math.max(10, L.cell * 0.92) / s; }
-  down(e) {
+  down(e) { if (this.usePrecise()) return this.downP(e); this.downClassic(e); }
+  downClassic(e) {
     e.preventDefault();
     const a = this.app; a.sound.unlock();
     if (a.settings.controls === 'buttons') return;
@@ -67,7 +93,8 @@ export class Input {
       for (const q of this.ptrs.values()) q.mode = 'multi';
     }
   }
-  move(e) {
+  move(e) { if (this.usePrecise()) return this.moveP(e); this.moveClassic(e); }
+  moveClassic(e) {
     const p = this.ptrs.get(e.pointerId); if (!p) return; e.preventDefault();
     const g = this.game; const now = performance.now();
     p.x = e.clientX; p.y = e.clientY; p.samples.push([now, p.x, p.y]); while (p.samples.length > 2 && now - p.samples[0][0] > 120) p.samples.shift();
@@ -104,14 +131,15 @@ export class Input {
     const a = s[0], b = s[s.length - 1]; const dt = Math.max(8, b[0] - a[0]);
     return { vx: (b[1] - a[1]) / dt, vy: (b[2] - a[2]) / dt };
   }
-  up(e) {
+  up(e) { if (this.usePrecise()) return this.upP(e); this.upClassic(e); }
+  upClassic(e) {
     const p = this.ptrs.get(e.pointerId); if (!p) return; e.preventDefault();
     this.ptrs.delete(e.pointerId);
     const g = this.game; const now = performance.now();
     if (p.mode === 'multi') {
       if (!this.ptrs.size && this.multi) {
         const m = this.multi; this.multi = null;
-        if (g && now - m.t0 < 350 && m.maxD < 24) g.rotate(-1);
+        if (g && now - m.t0 < 350 && m.maxD < 24) this.turn(g, -1);
       }
       return;
     }
@@ -119,7 +147,7 @@ export class Input {
     if (!p.mode && now - p.t0 < 320 && p.maxD < 14) {
       const mode = this.app.settings.tapMode;
       const dir = mode === 'sides' ? (p.x < window.innerWidth / 2 ? -1 : 1) : 1;
-      g.rotate(dir);
+      this.turn(g, dir);
       return;
     }
     if (p.mode !== 'done') {
@@ -130,7 +158,77 @@ export class Input {
     }
   }
 
-  upAction(g) { if (this.app.settings.swipeUp === 'hard') g.hardDrop(); else g.holdPiece(); }
+  upAction(g) { if (this.app.settings.swipeUp === 'hard') g.hardDrop(); else this.hold(g); }
+
+  // v2.3 precise touch. A bigger dead zone, hysteresis on columns, and a hard drop that asks for a long straight flick.
+  stepP() { const L = this.app.L; const s = this.app.settings.sensitivity || 1; return Math.max(12, L.cell) / s; }
+  tapDir(p) {
+    const w = window.innerWidth, mode = this.app.settings.tapMode, side = this.app.L && this.app.L.side;
+    if (side && p.x < w * 0.28) return -1;
+    if (side && p.x > w * 0.72) return 1;
+    return mode === 'sides' ? (p.x < w / 2 ? -1 : 1) : 1;
+  }
+  downP(e) {
+    e.preventDefault();
+    const a = this.app; a.sound.unlock();
+    if (a.settings.controls === 'buttons') return;
+    const g = this.game; if (!g) return;
+    try { e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    const now = performance.now();
+    const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, ax: e.clientX, ay: e.clientY, x: e.clientX, y: e.clientY, t0: now, moved: 0, soft: 0, mode: null, key: this.pieceKey(g), samples: [[now, e.clientX, e.clientY]], maxD: 0 };
+    this.ptrs.set(e.pointerId, p);
+    if (this.ptrs.size >= 2) {
+      if (!this.multi) this.multi = { t0: now, maxD: 0 };
+      for (const q of this.ptrs.values()) q.mode = 'multi';
+    }
+  }
+  moveP(e) {
+    const p = this.ptrs.get(e.pointerId); if (!p) return; e.preventDefault();
+    const g = this.game; const now = performance.now();
+    p.x = e.clientX; p.y = e.clientY; p.samples.push([now, p.x, p.y]); while (p.samples.length > 2 && now - p.samples[0][0] > 120) p.samples.shift();
+    p.maxD = Math.max(p.maxD, Math.hypot(p.x - p.x0, p.y - p.y0));
+    if (p.mode === 'multi') { if (this.multi) this.multi.maxD = Math.max(this.multi.maxD, p.maxD); return; }
+    if (!g || p.mode === 'done') return;
+    const key = this.pieceKey(g);
+    if (key !== p.key) { p.key = key; p.ax = p.x; p.ay = p.y; p.moved = 0; p.soft = 0; }
+    const dx = p.x - p.ax, dy = p.y - p.ay, S = this.stepP();
+    const v = this.velocity(p);
+    const intent = preciseIntent(dx, dy, v.vx, v.vy, S);
+    if (!p.mode && (intent === 'h' || intent === 'v')) p.mode = intent;
+    const st = this.app.settings;
+    if (p.mode !== 'h' && st.flickDown !== 'off' && intent === 'hard') { g.hardDrop(); p.mode = 'done'; return; }
+    if (p.mode !== 'h' && st.swipeUp !== 'off' && intent === 'hold') { this.upAction(g); p.mode = 'done'; return; }
+    if (p.mode === 'h') {
+      const target = dragColumns(dx, S, p.moved);
+      const delta = target - p.moved;
+      if (delta) { g.shiftBy(Math.sign(delta), Math.abs(delta)); p.moved = target; }
+    } else if (p.mode === 'v' && dy > 0) {
+      const target = softRows(dy, S);
+      const delta = target - p.soft;
+      if (delta > 0) { g.softDropRows(delta); p.soft = target; }
+    }
+  }
+  upP(e) {
+    const p = this.ptrs.get(e.pointerId); if (!p) return; e.preventDefault();
+    this.ptrs.delete(e.pointerId);
+    const g = this.game; const now = performance.now();
+    if (p.mode === 'multi') {
+      if (!this.ptrs.size && this.multi) {
+        const m = this.multi; this.multi = null;
+        if (g && now - m.t0 < 300 && m.maxD < 16) this.turn(g, -1);
+      }
+      return;
+    }
+    if (!g) return;
+    if (!p.mode && now - p.t0 < 260 && p.maxD < 16) { this.turn(g, this.tapDir(p)); return; }
+    if (p.mode !== 'done') {
+      const v = this.velocity(p), dx = p.x - p.ax, dy = p.y - p.ay, S = this.stepP();
+      const intent = preciseIntent(dx, dy, v.vx, v.vy, S);
+      const st = this.app.settings;
+      if (p.mode !== 'h' && st.flickDown !== 'off' && intent === 'hard') g.hardDrop();
+      else if (p.mode !== 'h' && st.swipeUp !== 'off' && intent === 'hold') this.upAction(g);
+    }
+  }
 
   // ---------------- gamepad (v2) ----------------
   // Standard mapping: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Select, 9 Start, 12-15 D-pad. Left stick works as a D-pad.
@@ -164,9 +262,11 @@ export class Input {
     if (down(15)) g.pressDir(1); if (up(15)) g.releaseDir(1);
     if (down(13)) g.setSoft(true); if (up(13)) g.setSoft(false);
     if (down(12)) g.hardDrop();
-    if (down(0)) g.rotate(1); if (down(1)) g.rotate(-1); if (down(3)) g.rotate(2);
-    if (down(2) || down(4) || down(5)) g.holdPiece();
-    if (down(7)) g.hardDrop(); if (down(6)) g.holdPiece();
+    if (down(0)) this.spin(g, 1); if (up(0)) this.spinOff(1);
+    if (down(1)) this.spin(g, -1); if (up(1)) this.spinOff(-1);
+    if (down(3)) this.spin(g, 2); if (up(3)) this.spinOff(2);
+    if (down(2) || down(4) || down(5)) this.hold(g);
+    if (down(7)) g.hardDrop(); if (down(6)) this.hold(g);
   }
   rumble(strong, ms) {
     const p = this.pad; if (!p || !this.app.settings.rumble) return;
@@ -184,10 +284,10 @@ export class Input {
         case 'right': on ? g.pressDir(1) : g.releaseDir(1); break;
         case 'soft': g.setSoft(on); break;
         case 'hard': if (on) g.hardDrop(); break;
-        case 'cw': if (on) g.rotate(1); break;
-        case 'ccw': if (on) g.rotate(-1); break;
-        case 'r180': if (on) g.rotate(2); break;
-        case 'hold': if (on) g.holdPiece(); break;
+        case 'cw': if (on) this.spin(g, 1); else this.spinOff(1); break;
+        case 'ccw': if (on) this.spin(g, -1); else this.spinOff(-1); break;
+        case 'r180': if (on) this.spin(g, 2); else this.spinOff(2); break;
+        case 'hold': if (on) this.hold(g); break;
       }
     };
     root.querySelectorAll('[data-act]').forEach(b => {

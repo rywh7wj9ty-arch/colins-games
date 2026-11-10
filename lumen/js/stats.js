@@ -19,7 +19,19 @@ export const DEFAULT_SETTINGS = {
   // v2.2: every new feature can be switched off on its own (all off = v2.1)
   features: { journey: true, beat: true, shatter: true, versus: true, challenges: true, skins: true, tspin: true, relax: true, replays: true, levelfeel: true },
   pieceStyle: 'glass', boardSkin: 'classic', cpuLevel: 'medium',
+  // v2.3: each new behaviour has its own switch. All off plays like v2.2. Missing keys default on.
+  features23: {
+    handling: true, touch: true, clearghost: true, queue: true, calls: true,
+    glass: true, linelight: true, crisp: true, coach: true, runcard: true,
+  },
 };
+export function mergeSettings(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const o = { ...DEFAULT_SETTINGS, ...src };
+  o.features = { ...DEFAULT_SETTINGS.features, ...((o.features && typeof o.features === 'object') ? o.features : {}) };
+  o.features23 = { ...DEFAULT_SETTINGS.features23, ...((src.features23 && typeof src.features23 === 'object') ? src.features23 : {}) };
+  return o;
+}
 
 function zeroT() { return { mini0: 0, mini1: 0, mini2: 0, full0: 0, full1: 0, full2: 0, full3: 0 }; }
 function zeroC() { return { single: 0, double: 0, triple: 0, tetris: 0 }; }
@@ -182,6 +194,6 @@ export function loadStats() {
 }
 export function saveStats(st) { try { const s = store(); const { puzzles, ...rest } = st; s && s.setItem(STATS_KEY, JSON.stringify(rest)); if (puzzles) s.setItem(PUZZLE_KEY, JSON.stringify(puzzles)); return true; } catch (e) { return false; } }
 export function loadSettings() {
-  try { const s = store(); const raw = s && s.getItem(SETTINGS_KEY); const o = { ...DEFAULT_SETTINGS, ...(raw ? JSON.parse(raw) : {}) }; o.features = { ...DEFAULT_SETTINGS.features, ...((o.features && typeof o.features === 'object') ? o.features : {}) }; return o; } catch (e) { return { ...DEFAULT_SETTINGS, features: { ...DEFAULT_SETTINGS.features } }; }
+  try { const s = store(); const raw = s && s.getItem(SETTINGS_KEY); return mergeSettings(raw ? JSON.parse(raw) : {}); } catch (e) { return mergeSettings({}); }
 }
 export function saveSettings(v) { try { const s = store(); s && s.setItem(SETTINGS_KEY, JSON.stringify(v)); } catch (e) { /* private mode */ } }
