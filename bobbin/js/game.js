@@ -2969,4 +2969,158 @@ window.__b18={f:function(k,v){if(k==='*')F18.forEach(function(f){save.f18[f[0]]=
     var s={x:0,y:0,w:3.4,h:1.5,mat:kind==='wood'?'wood':kind==='cloth'?'felt':'card',col:'blue',skin:kind==='wood'?'wood':kind==='cloth'?'felt':'card'};
     if(kind==='cloth')s.topCol='pink';vDrawSolid(g,s,'workshop');var d=g.getImageData(0,0,180,90).data,a=0,n=0;for(var i=0;i<d.length;i+=4){a+=d[i]+d[i+1]+d[i+2];if(d[i+3])n++}return {n:n,a:a}},
   flags:function(){return JSON.parse(JSON.stringify(save.f18))}};
+/* ================= v1.9: how it plays =================
+   Ten gameplay switches in save.f19. Each one is independent. With every switch off, the wrappers
+   below do not change forces, timers, checkpoints, or rewards, so play matches v1.8.
+   coyote - longer coyote time and jump buffer
+   hop    - releasing jump trims the hop less harshly
+   steer  - stronger air acceleration, same top speed
+   zip    - zip carriages catch from a little further, letting go pops you up, the carriage returns sooner
+   snap   - squash and the respawn input-grace finish sooner
+   fair   - an extra checkpoint in long gaps, and the sharpest timer buttons and pistons ease off
+   ledge  - a slow toe over a lip steps you back instead of a pit death
+   ribbon - prize bubbles popped in a row build a ribbon and a bonus wallet bubble
+   pace   - bosses spend less time dizzy or wandering; the moment you can hit them stays
+   coach  - a nearby sign speaks if you pause or fall twice, and the exit distance stays on screen */
+var F19=[['coyote','🐇','Forgiving jumps','A little longer to jump after a ledge, and early presses still count'],
+  ['hop','🪶','Softer hops','A tap still hops. Holding jump still goes high'],
+  ['steer','🌬️','Air steering','Easier to aim a jump while you are in the air'],
+  ['zip','🧵','Zip magnet','Zip-lines catch from a little further, and letting go pops you up'],
+  ['snap','⏩','Quicker get-ups','A squish and a respawn recover sooner'],
+  ['fair','🚩','Fairer courses','Closer checkpoints, and the sharpest timers and pistons ease off'],
+  ['ledge','🛟','Ledge mercy','A slow toe over the lip steps you back instead of a fall'],
+  ['ribbon','🎀','Prize ribbons','Pop bubbles in a row for a ribbon and a bonus bubble'],
+  ['pace','🥁','Boss tempo','Less waiting between boss chances. The safe moment stays'],
+  ['coach','🪧','Quiet coach','A sign speaks up if you pause, and the exit distance stays on screen']];
+(function(){var d={coyote:1,hop:1,steer:1,zip:1,snap:1,fair:1,ledge:1,ribbon:1,pace:1,coach:1};
+  if(!save.f19||typeof save.f19!=='object')save.f19={};for(var k in d)if(save.f19[k]===undefined)save.f19[k]=d[k];
+  if(!save.b19||typeof save.b19!=='object')save.b19={ribbons:0,ribbonBonus:0,mercies:0,zips:0}})();
+function f19(k){return !!(save.f19&&save.f19[k])}
+function b19add(k,n){save.b19[k]=(save.b19[k]||0)+(n||1)}
+/* ---------- forgiving jumps, softer hops, air steering, zip magnet ---------- */
+function zipMagnet(p){if(!f19('zip')||p.grab||p.thread||p.grounded||p.squash||p.hidden||!input.grab||p.grabCool>0||!L||!L.zips)return;
+  var pp=p.body.getPosition(),best=null,bd=1.7,i,z,zp,d;
+  for(i=0;i<L.zips.length;i++){z=L.zips[i];zp=z.body.getPosition();d=Math.hypot(zp.x-pp.x,(zp.y+0.55)-pp.y);if(d<bd){bd=d;best=z}}
+  if(!best)return;var fix=best.body.getFixtureList();if(!fix||!fix.getUserData())return;
+  attach(p,{fix:fix,ud:fix.getUserData(),body:best.body,pt:best.body.getWorldPoint(V(0,0.32))});b19add('zips');}
+var _up19=updatePlayer;
+updatePlayer=function(p,dt){var vv=p.body.getLinearVelocity(),v0x=vv.x,v0y=vv.y,c0=p.coyote,b0=p.buffer,cut0=!!p.cut,wasZip=!!(p.grab&&p.grab.ud&&p.grab.ud.type==='zip');
+  _up19(p,dt);if(!p.body||p.squash)return;
+  if(f19('coyote')){if(p.grounded&&p.coyote>0.05)p.coyote=0.16;else if(!p.grounded&&p.coyote>c0+0.04&&p.coyote<=0.105)p.coyote=0.16;
+    if(p.buffer>b0+0.08)p.buffer=0.20}
+  if(f19('hop')&&!cut0&&p.cut&&!input.jump){var v1=p.body.getLinearVelocity();
+    if(v0y<-2&&v1.y<0&&Math.abs(v1.y-v0y*0.5)<0.55)p.body.setLinearVelocity(V(v1.x,v0y*0.72))}
+  if(f19('steer')&&!p.grounded&&!p.grab&&!p.thread&&!p.stick&&Math.abs(input.x)>0.2){var v=p.body.getLinearVelocity(),max=6.4,nx=v.x+input.x*18*dt;
+    if(Math.abs(v.x)<max)p.body.setLinearVelocity(V(Math.max(-max,Math.min(max,nx)),v.y))}
+  if(f19('zip')&&wasZip&&!p.grab&&!input.grab){var vz=p.body.getLinearVelocity();if(vz.y>-3.6)p.body.setLinearVelocity(V(vz.x+(input.x||0)*1.1,-4.2))}
+  if(f19('zip'))zipMagnet(p)};
+function zipReturn(){if(!f19('zip')||!L||!L.zips)return;L.zips.forEach(function(z){if(!z.held&&z.idle>0.22){z.joint.setMotorSpeed(-8);z.joint.setMaxMotorForce(90)}})}
+/* ---------- quicker get-ups ---------- */
+var _sq19=squashUpdate;
+squashUpdate=function(p,dt){_sq19(p,f19('snap')?dt*2.15:dt)};
+var _rp19=respawnPlayer;
+respawnPlayer=function(){_rp19();if(f19('snap')&&player)player.grace=0.42};
+/* ---------- fairer courses: closer posts, eased timers and pistons ---------- */
+function fairEase(lv){if(!story17(lv)||typeof lv.def.id!=='number')return;var id=lv.def.id,add=id<=6?1.5:id<=12?1.0:0.5;
+  lv.buttons.forEach(function(bt){if(bt.mode==='timer')bt.secs=Math.round((bt.secs+add)*2)/2});
+  lv.movers.forEach(function(mv){if(mv.look==='cupcake'&&mv.wait<0.95)mv.wait=0.95})}
+function fairFlat(lv,x){var ys=[],dx,y;for(dx=-0.75;dx<=0.75;dx+=0.25){y=surfAt(lv,x+dx);if(y===null||inPit(x+dx,Math.min(y+0.5,0.9)))return null;ys.push(y)}
+  var lo=Math.min.apply(null,ys),hi=Math.max.apply(null,ys);if(hi-lo>0.18)return null;return (lo+hi)/2}
+function fairPosts(lv){if(!story17(lv))return;var cps=lv.cps.slice().sort(function(a,b){return a.x-b.x}),add=[],i,k;
+  for(i=0;i<cps.length;i++){var a=cps[i].x,b=i+1<cps.length?cps[i+1].x:(lv.exit?lv.exit.x:lv.w);if(b-a<16)continue;
+    var cuts=b-a>34?2:1;
+    for(k=1;k<=cuts;k++){var mid=a+(b-a)*k/(cuts+1),found=null,fy=0,o,x,y;
+      for(o=0;o<=(b-a)/2&&found===null;o+=0.5){var xs=o? [mid+o,mid-o]:[mid];
+        for(var xi=0;xi<xs.length;xi++){x=xs[xi];if(x<a+5||x>b-5)continue;
+          if(lv.cps.concat(add.map(function(q){return {x:q}})).some(function(c){return Math.abs(c.x-x)<4.5}))continue;
+          y=fairFlat(lv,x);if(y===null)continue;if(!c17(lv,x,y-1.3,0.6))continue;if(near17(lv,x,2.2))continue;found=x;fy=y;break}}
+      if(found!==null)add.push(found)}}
+  if(!add.length)return;add.forEach(function(x){var y=fairFlat(lv,x);if(y===null)return;var c={x:Math.round(x*100)/100,y:Math.round(y*100)/100,on:false,t:0,fair:true};
+  var Lft=cpClear(lv,c,-1),Rgt=cpClear(lv,c,1);if(Lft.d<0.9||Rgt.d<0.9)return;lv.cps.push(c)});
+  lv.fairCps=lv.cps.filter(function(c){return c.fair}).length;if(!lv.fairCps)return;
+  var first=lv.cps[0];lv.cps.sort(function(a,b){return a.x-b.x});if(lv.cps[0]!==first){lv.cps.splice(lv.cps.indexOf(first),1);lv.cps.unshift(first)}}
+/* ---------- ledge mercy ---------- */
+function ledgeMercy(){var p=player,lv=L;if(!p||!lv||p._mercyCool>0||!p._lip||!p.body)return false;var lip=p._lip,pp=p.body.getPosition();
+  if(lv.t-lip.t>0.36||Math.abs(pp.x-lip.x)>1.05||pp.y>lip.y+2.2)return false;
+  var y=surfAt(lv,lip.x);if(y===null||inPit(lip.x,0.8)||Math.abs(y-lip.y)>0.8)return false;
+  var dir=pp.x>=lip.x?-1:1;p.body.setTransform(V(lip.x,lip.y),0);p.body.setLinearVelocity(V(dir*2.2,-2.4));p.body.setAngularVelocity(0);
+  p.inv=0.4;p._mercyCool=0.7;p.airT=0;p.sy=1.15;p.sx=0.9;b19add('mercies');
+  floatText(lip.x,lip.y-1.5,'Steady!','#2f9e74');SND.sfx('land',3);burst(lip.x,lip.y,'dust',6,'#f6e3c4');return true}
+var _ll19=loseLife;
+loseLife=function(cause){if(cause==='pit'&&f19('ledge')&&ledgeMercy())return;
+  if(L){L._dieAtCp=(L._dieCp===L.cp)?(L._dieAtCp||0)+1:1;L._dieCp=L.cp}
+  _ll19(cause)};
+/* ---------- prize ribbons ---------- */
+function ribbonPop(n){var lv=L,p=player;if(!lv||!p||!p.body)return;if(!lv._rib)lv._rib={n:0,t:-9};
+  lv._rib.n=(lv.t-lv._rib.t)<1.75?lv._rib.n+n:n;lv._rib.t=lv.t;var s=lv._rib.n,pp=p.body.getPosition();
+  if(s<2)return;floatText(pp.x,pp.y-1.35,'Ribbon ×'+s,'#ff7fae');burst(pp.x,pp.y,'spark',6+s,'#ff9fc4');setExpr(p,'joy',0.7);
+  b19add('ribbons');if(s%3===0){lv.ribBonus=(lv.ribBonus||0)+1;save.wallet=(save.wallet||0)+1;b19add('ribbonBonus');persist();
+    floatText(pp.x,pp.y-2.05,'Bonus bubble!','#2f8fe0');SND.sfx('full');burst(pp.x,pp.y,'ring',1,'#fff')}}
+var _pf19=progFinish;
+progFinish=function(lv){_pf19(lv);if(lv&&lv.ribBonus)lv.earned=(lv.earned||0)+lv.ribBonus};
+/* ---------- boss tempo ---------- */
+['robot','sewing','jelly','soldier','gnome'].forEach(function(k){var ph=BK[k].phase;BK[k].phase=function(lv,B){ph.call(this,lv,B);if(!f19('pace')||!B.P)return;var P=B.P;
+  if(P.every)P.every=Math.max(2.2,+(P.every*0.84).toFixed(2));
+  if(k==='sewing'){if(P.sew)P.sew=Math.max(3.1,+(P.sew*0.74).toFixed(2));if(P.tired)P.tired=+(P.tired*1.18).toFixed(2)}
+  if(k==='jelly'){if(P.roam)P.roam=Math.max(4.0,+(P.roam*0.68).toFixed(2));if(P.open)P.open=+(P.open*1.2).toFixed(2)}
+  if(P.pot)P.pot=Math.max(4.4,+(P.pot*0.85).toFixed(2))}});
+var _bs19=bossStep;
+bossStep=function(lv,dt){if(f19('pace')&&lv.boss&&lv.boss.state==='hurt')lv.boss.hurtT+=dt*0.75;_bs19(lv,dt)};
+/* ---------- quiet coach ---------- */
+function goalHud(){var el=document.getElementById('goalHud');if(!el){var hud=document.getElementById('hud');if(!hud)return;el=document.createElement('div');el.id='goalHud';el.className='pill hidden';hud.appendChild(el)}
+  var on=!!(f19('coach')&&L&&L.exit&&player&&state==='play'&&!L.finished&&!L.out&&!L.def.boss);el.classList.toggle('hidden',!on);if(!on)return;
+  var dx=L.exit.x-player.body.getPosition().x,m=Math.max(0,Math.round(dx));el.textContent=m<3?'Exit just ahead':'Exit  '+m+'m  →'}
+function coachStep(lv,dt){var p=player;if(!p||!f19('coach')||lv.finished||lv.out)return;
+  if(Math.abs(input.x)>0.18||input.jump||input.grab)p._idleC=0;else p._idleC=(p._idleC||0)+dt;
+  var stuck=p._idleC>4.4||(lv._dieAtCp||0)>=2;if(!stuck)return;if(lv._coachAt===lv.cp&&lv.t-(lv._coachT||0)<7)return;
+  var pp=p.body.getPosition(),best=null,bd=12,i,s,d;
+  if(lv.def.boss){lv._coachAt=lv.cp;lv._coachT=lv.t;toast(lv.def.blurb||'Watch the boss, then use the gadget');return}
+  for(i=0;i<(lv.signs||[]).length;i++){s=lv.signs[i];d=s.x-pp.x;if(d>-3&&d<bd){bd=Math.abs(d);best=s}}
+  if(!best)return;lv._coachAt=lv.cp;lv._coachT=lv.t;p._idleC=0;toast(signText(best.text).replace(/\n/g,' · '))}
+/* ---------- frame hook ---------- */
+var _sg19=stepGame;
+stepGame=function(dt){var lv=L,p=player,g0=lv?lv.got:0;
+  if(state==='play'&&lv&&p&&p.body&&!lv.finished&&!lv.out&&!p.squash){var pp=p.body.getPosition();
+    if(p.grounded&&p.groundBody===lv.ground&&!inPit(pp.x,pp.y+1.1))p._lip={x:pp.x,y:pp.y,t:lv.t};
+    if(p._mercyCool>0)p._mercyCool-=dt}
+  _sg19(dt);if(!lv||L!==lv)return;
+  if(f19('ribbon')&&lv.got>g0&&state==='play')ribbonPop(lv.got-g0);
+  if(state==='play'&&!lv.finished&&!lv.out){zipReturn();if(f19('coach'))coachStep(lv,dt)}
+  goalHud()};
+var _nl19=newLevel;
+newLevel=function(def){var lv=_nl19(def);try{if(f19('fair')){fairEase(lv);fairPosts(lv)}}catch(e){console.warn('v19',e)}return lv};
+function feat19(k){goalHud();if(k==='fair')toast('Closer posts and eased timers apply when a level starts');
+  if(k==='pace')toast('Boss tempo changes on the next round');if(k==='zip'&&!f19('zip')&&player&&player.grab&&player.grab.ud&&player.grab.ud.type==='zip'){}}
+var _bf19=buildFeat;
+buildFeat=function(){_bf19();document.querySelectorAll('.featList').forEach(function(host){var lab=document.createElement('div');lab.className='featSplit';lab.textContent='v1.9 play';host.appendChild(lab);
+  F19.forEach(function(f){var b=document.createElement('button');b.className='btn small featBtn feat19'+(f19(f[0])?' on':'');b.setAttribute('data-f19',f[0]);
+    b.innerHTML='<span>'+f[1]+' '+f[2]+'</span><em>'+(f19(f[0])?'On':'Off')+'</em><small>'+f[3]+'</small>';
+    b.addEventListener('click',function(){SND.unlock();SND.sfx('tap');save.f19[f[0]]=f19(f[0])?0:1;persist();buildFeat();feat19(f[0])});host.appendChild(b)})})};
+buildFeat();goalHud();
+var _bst19=buildStats;
+buildStats=function(){_bst19();var h=document.getElementById('statsList');if(!h)return;var rows=[],b=save.b19||{};
+  if(f19('ribbon'))rows.push(['Prize ribbons',b.ribbons||0],['Ribbon bonuses',b.ribbonBonus||0]);
+  if(f19('ledge'))rows.push(['Ledge saves',b.mercies||0]);if(f19('zip'))rows.push(['Zip catches',b.zips||0]);
+  if(rows.length)h.innerHTML+=rows.map(function(r){return '<span>'+r[0]+'</span><b>'+r[1]+'</b>'}).join('')};
+window.__b19={f:function(k,v){if(k==='*')F19.forEach(function(f){save.f19[f[0]]=v?1:0});else if(k)save.f19[k]=v?1:0;persist();buildFeat();goalHud();return JSON.parse(JSON.stringify(save.f19))},
+  flags:function(){return JSON.parse(JSON.stringify(save.f19))},names:function(){return F19.map(function(f){return f[0]})},
+  tick:function(n){n=n||1;for(var i=0;i<n;i++){if(state==='play'||state==='end')stepGame(1/120)}return __bob.info()},
+  drive:function(o){o=o||{};input.x=+o.x||0;input.jump=!!o.jump;input.grab=!!o.grab;input.stickX=0;input.padX=0;
+    input.touchJump=false;input.touchGrab=false;input.padJump=false;input.padGrab=false;
+    input.keys.ArrowRight=input.keys.KeyD=o.x>0.2;input.keys.ArrowLeft=input.keys.KeyA=o.x<-0.2;
+    input.keys.Space=input.keys.ArrowUp=input.keys.KeyW=!!o.jump;input.keys.ShiftLeft=input.keys.ShiftRight=input.keys.KeyX=!!o.grab;
+    if(o.tap)input.jumpQ=true;else input.jumpQ=false},
+  surf:function(x){return L?surfAt(L,x):null},pit:function(x,y){return inPit(x,y)},
+  coyote:function(){return player?+player.coyote.toFixed(3):null},buffer:function(){return player?+player.buffer.toFixed(3):null},
+  grace:function(){return player?+(player.grace||0).toFixed(3):null},lives:function(n){if(L&&n!==undefined)L.lives=n;return L?L.lives:null},
+  wallet:function(){return save.wallet|0},rib:function(){return L?{n:L._rib?L._rib.n:0,bonus:L.ribBonus||0}:null},
+  timers:function(){return L?L.buttons.filter(function(b){return b.mode==='timer'}).map(function(b){return b.secs}):[]},
+  waits:function(){return L?L.movers.filter(function(m){return m.look==='cupcake'}).map(function(m){return +m.wait.toFixed(2)}):[]},
+  cps:function(){return L?L.cps.map(function(c){return [+c.x.toFixed(2),!!c.fair]}):[]},
+  bossP:function(){var B=L&&L.boss;return B&&B.P?JSON.parse(JSON.stringify(B.P)):null},
+  goal:function(){var e=document.getElementById('goalHud');return e?{hidden:e.classList.contains('hidden'),text:e.textContent}:null},
+  levers:function(){return L?L.levers.map(function(l){return {sig:l.sig,x:+l.x.toFixed(2),on:!!l.on,a:+l.body.getAngle().toFixed(2)}}):[]},
+  toggles:function(){return L?L.toggles.map(function(t){return {sig:t.sig,x:+t.x.toFixed(2),on:!!t.on}}):[]},
+  zips:function(){return L?L.zips.map(function(z){var q=z.body.getPosition();return {name:z.name,x:+q.x.toFixed(2),y:+q.y.toFixed(2)}}):[]},
+  b19:function(){return JSON.parse(JSON.stringify(save.b19))}};
 })();
