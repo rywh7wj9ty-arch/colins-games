@@ -84,6 +84,7 @@
   </div>
   <div class="pad right">
     <button data-act="hold" class="b-hold" aria-label="Hold">HOLD</button>
+    <button data-act="r180" class="b-180" aria-label="Rotate 180">180</button>
     <button data-act="ccw" aria-label="Rotate left">&#x21BA;</button>
     <button data-act="cw" class="b-cw" aria-label="Rotate right">&#x21BB;</button>
   </div>
@@ -102,7 +103,7 @@
   <div class="title-wrap">
     <h1 class="logo" aria-label="Lumen"><span>L</span><span>U</span><span>M</span><span>E</span><span>N</span></h1>
     <p class="tagline">a game of light and falling glass</p>
-    <p class="ver-tag" id="ver-tag">version 2.2</p>
+    <p class="ver-tag" id="ver-tag">version 2.3</p>
     <div class="modes" id="mode-list"></div>
     <nav class="title-nav">
       <button data-go="stats">Records</button>
@@ -135,6 +136,7 @@
     <div class="record-banner" id="res-record" hidden>New record</div>
     <div class="big-score" id="res-score">0</div>
     <p class="sub" id="res-sub"></p>
+    <div id="res-grade" hidden></div>
     <div class="res-grid" id="res-grid"></div>
     <div class="row-buttons">
       <button class="primary" data-do="next" id="res-next" hidden>Next puzzle</button>
@@ -225,6 +227,7 @@
         <li><b>Flick down</b>: hard drop. <b>Drag down slowly</b>: soft drop.</li>
         <li><b>Flick up</b>: hold.</li>
         <li>Prefer buttons? Settings &rarr; Controls &rarr; Buttons. Swipe actions can be changed there too.</li>
+        <li>With <b>Precise touch</b> on, a hard drop needs a longer, straighter flick, and in landscape the left edge turns left and the right edge turns right.</li>
       </ul>
       <h3>Controller (PlayStation, Xbox, Apple TV via AirPlay)</h3>
       <ul>
@@ -244,6 +247,8 @@
         <li>Empty the whole well for a <b>Perfect Clear</b>.</li>
       </ul>
       <p id="tut-btn" hidden><button class="primary" data-do="tspin-tut">Try the T-spin tutorial</button></p>
+      <h3>Version 2.3</h3>
+      <p>Guideline handling, precise touch, a clearer ghost and next queue, combo calls, richer glass, line-clear light, crisp drawing, this coach, and a grade on the results. Each one has a switch under Settings, in Features new in 2.3. With those switches off, LUMEN plays like 2.2.</p>
       <h3>Worlds</h3>
       <p>Every few levels the world changes: Dawn Tide, Aurora Veil, Neon Rain, Crystal Hollow, Deep Field and the Solar Crown. The music grows with you.</p>
       <h3>On iPhone and iPad</h3>
@@ -252,6 +257,8 @@
   </div>
 </section>
 
+<div id="v23-call"></div>
+<div id="coach" hidden></div>
 <div id="toasts"></div>
 
 <div id="loading"><div class="ld-logo">LUMEN</div><div class="ld-bar"><i></i></div></div>

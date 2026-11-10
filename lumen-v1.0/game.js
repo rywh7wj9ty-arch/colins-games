@@ -584,6 +584,7 @@ class App {
       else if (type === 'toggle') html += `<div class="set-row">${left}<button class="toggle${s[key] ? ' on' : ''}" data-key="${key}" aria-label="${label}"></button></div>`;
     }
     html += `<h3>Your data</h3><div class="set-actions"><button data-act2="export">Export stats</button><button data-act2="copy">Copy stats</button><button data-act2="reset-settings">Reset settings</button><button class="danger" data-act2="reset">Reset stats</button></div>`;
+    html += `<h3>Newer versions</h3><p class="sub"><a href="../lumen-v2.3/">v2.3</a> · guideline handling and sharper glass</p>`;
     html += `<div class="about">LUMEN ${VERSION} · <button data-act2="update" style="text-decoration:underline">Check for update</button> <span id="upd-msg"></span></div>`;
     body.innerHTML = html;
     const fmts = {}; rows.filter(r => r[0] === 'range').forEach(r => { fmts[r[1]] = r[7]; });

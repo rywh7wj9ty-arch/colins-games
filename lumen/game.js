@@ -8,9 +8,10 @@ import { Input } from './js/input.js';
 import * as S from './js/stats.js';
 import { PUZZLES } from './js/puzzles.js';
 import { installV22, MODE_INFO22 } from './js/v22.js';
+import { installV23 } from './js/v23.js';
 
-export const VERSION = '2.2';
-const OLDER = [['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v2.0', '../lumen-v2.0/', 'bright pastel look'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
+export const VERSION = '2.3';
+const OLDER = [['v2.2', '../lumen-v2.2/', 'Journey, Versus, challenges and replays'], ['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v2.0', '../lumen-v2.0/', 'bright pastel look'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.has('debug');
 const $ = (s, r = document) => r.querySelector(s);
@@ -170,7 +171,8 @@ class App {
     document.body.style.filter = Math.abs((s.brightness || 1) - 1) > 0.01 ? `brightness(${s.brightness})` : '';
     const reduced = s.effects === 'reduced';
     this.v22Apply();
-    this.fx.setOptions({ reduced, reducedMotion: this.reducedMotion, shakeOn: s.shake && !this.reducedMotion && this.mode !== 'relax', leanOn: s.lean, showGhost: s.ghost, showGrid: s.grid });
+    this.v23Apply();
+    this.fx.setOptions({ reduced, reducedMotion: this.reducedMotion, shakeOn: s.shake && !this.reducedMotion && this.mode !== 'relax', leanOn: s.lean, showGhost: s.ghost, showGrid: s.grid, richGlass: this.feat23('glass'), clearGhost: this.feat23('clearghost'), clearQueue: this.feat23('queue'), lineLight: this.feat23('linelight'), crisp: this.feat23('crisp') });
     this.bg.setQuality(reduced);
     this.sound.setVolumes(s.music, s.sfx);
     if (this.game) { this.game.das = s.das; this.game.arr = s.arr; this.game.sdf = s.sdf; }
@@ -261,7 +263,7 @@ class App {
     let puzzle = null;
     if (mode === 'puzzle') { this.puzzleIdx = clamp(pIdx ?? this.puzzleIdx ?? 0, 0, PUZZLES.length - 1); puzzle = PUZZLES[this.puzzleIdx]; }
     const o22 = this.v22Opts(mode, extra); this.lastOpts = o22;
-    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf, puzzle, ...o22 });
+    this.game = new Game({ mode, seed, das: s.das, arr: s.arr, sdf: s.sdf, puzzle, ...o22, handling: this.feat23('handling') });
     this.slowT = 0; this.ghostRec = []; this.ghostRun = null; this.combo0 = 0;
     if (mode === 'sprint' && s.raceGhost) { const gh = S.loadJSON(S.GHOST_KEY, null); if (gh && Array.isArray(gh.locks)) this.ghostRun = { ...gh, i: 0, board: Array.from({ length: 20 }, () => new Uint8Array(10)), lines: 0 }; }
     $('#ghostcv').style.display = this.ghostRun && this.L.side ? '' : 'none'; $('#ghost-pace').textContent = '';
@@ -277,6 +279,7 @@ class App {
     this.layout();
     this.show('game');
     this.v22Start();
+    this.v23Start();
     $('#hud-world').textContent = WORLDS[this.world].name;
     this.running = false;
     this.countdown(DEBUG && qs.has('nocd') ? 0 : 1);
@@ -309,7 +312,7 @@ class App {
     this.timers.push(setTimeout(() => { cd.textContent = ''; }, 700));
   }
   quit() {
-    this.clearTimers(); this.running = false; this.game = null; this.input.releaseAll(); this.v22Stop();
+    this.clearTimers(); this.running = false; this.game = null; this.input.releaseAll(); this.v22Stop(); this.v23Stop();
     this.fx.P.n = 0; this.bg.board = 0; this.bg.danger = 0;
     this.sound.startMusic(this.titleWorld, true);
     this.show('title');
@@ -405,6 +408,7 @@ class App {
     if (e.combo >= 1) this.popup(`${e.combo + 1}× combo`, '', 'combo', W.accent2, 1 + Math.min(e.combo, 10) * 0.08, 0.55);
     $('#hud-b2b').textContent = g.b2b >= 1 ? 'BACK-TO-BACK ×' + g.b2b : '';
     $('#hud-b2b').classList.toggle('on', g.b2b >= 1);
+    if (this.v23Call) this.v23Call(e);
     // achievements as they happen
     const live = this.replay || this.mode === 'tspin' ? [] : S.liveUnlocks(this.stats, g.summary());
     for (const id of live) if (!this.liveToasted.has(id)) { this.liveToasted.add(id); this.achToast(id); }
@@ -477,6 +481,7 @@ class App {
     this.timers.push(setTimeout(() => this.showResults(), DEBUG && qs.has('nocd') ? 300 : 1500));
   }
   showResults() {
+    const gradeEl = $('#res-grade'); if (gradeEl) gradeEl.hidden = true;
     const { summary: s, records: r, unlocked } = this.lastResult; const st = this.stats; const M = st.modes[s.mode];
     $('#res-next').hidden = true;
     $('#res-mode').textContent = MODE_INFO[s.mode].name + (s.mode === 'daily' ? ' · ' + this.dailyDate() : '');
@@ -519,6 +524,7 @@ class App {
     const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); const e = 1 - Math.pow(1 - k, 3); scoreEl.textContent = fmtBig(Math.round(big * e)); if (k < 1 && this.screen === 'results') requestAnimationFrame(step); else scoreEl.textContent = fmtBig(big); };
     step(); setTimeout(() => { scoreEl.textContent = fmtBig(big); }, dur + 200);
     this.v22Results();
+    this.v23Results();
     if (isRecord) this.celebrate();
     unlocked.filter(id => !this.liveToasted.has(id)).forEach((id, i) => setTimeout(() => this.achToast(id), 600 + i * 900));
   }
@@ -585,6 +591,7 @@ class App {
     const got = S.ACHIEVEMENTS.filter(a => st.achievements[a.id]).length;
     $('#ach-count').textContent = `${got} / ${S.ACHIEVEMENTS.length}`;
     $('#ach-grid').innerHTML = S.ACHIEVEMENTS.map(a => `<div class="ach${st.achievements[a.id] ? ' got' : ''}"><span class="n">${a.name}</span><span class="d">${a.desc}${st.achievements[a.id] ? ' · ' + fmtDate(st.achievements[a.id]) : ''}</span></div>`).join('');
+    this.v23StatsExtra();
   }
   drawChart(mode) {
     const cv = $('#chart'); const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -643,6 +650,7 @@ class App {
       else if (type === 'toggle') html += `<div class="set-row">${left}<button class="toggle${s[key] ? ' on' : ''}" data-key="${key}" aria-label="${label}"></button></div>`;
     }
     html += this.v22Settings();
+    html += this.v23Settings();
     html += `<h3>Your data</h3><div class="set-actions"><button data-act2="export">Export stats</button><button data-act2="copy">Copy stats</button><button data-act2="reset-settings">Reset settings</button><button class="danger" data-act2="reset">Reset stats</button></div>`;
     html += `<h3>Older versions</h3><p class="older">${OLDER.map(([v, href, d]) => `<a href="${href}">${v}</a><span class="dim">${d}</span>`).join(' ')}</p>`;
     html += `<div class="about">LUMEN ${VERSION} · <button data-act2="update" style="text-decoration:underline">Check for update</button> <span id="upd-msg"></span></div>`;
@@ -658,6 +666,7 @@ class App {
       this.settings[key] = v; S.saveSettings(this.settings); this.applySettingsLite(key);
     }));
     this.v22BindSettings(body);
+    this.v23BindSettings(body);
     $$('.toggle:not(.ftoggle)', body).forEach(t => t.addEventListener('click', e => { e.stopPropagation(); const k = t.dataset.key; this.setSetting(k, !this.settings[k]); t.classList.toggle('on', this.settings[k]); }));
     $$('[data-act2]', body).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this.settingsAction(b.dataset.act2, b); }));
   }
@@ -687,7 +696,7 @@ class App {
       if (btn.dataset.armed) { this.stats = S.newStats(); S.saveStats(this.stats); this.lastResult = null; btn.textContent = 'Stats cleared'; delete btn.dataset.armed; this.buildTitle(); }
       else { btn.dataset.armed = '1'; btn.textContent = 'Tap again to erase everything'; setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = 'Reset stats'; } }, 4000); }
     } else if (a === 'reset-settings') {
-      this.settings = { ...S.DEFAULT_SETTINGS }; S.saveSettings(this.settings); this.applySettings(); this.buildSettings();
+      this.settings = S.mergeSettings({}); S.saveSettings(this.settings); this.applySettings(); this.buildSettings();
     } else if (a === 'update') {
       const msg = $('#upd-msg');
       if (!this.reg) { msg.textContent = 'offline updates unavailable here'; return; }
@@ -763,6 +772,7 @@ class App {
       $('#res-grid').innerHTML = [['Time', fmtTime(s.timeMs, true)], ['Pieces', s.pieces + ' / ' + z.par], ['Tries', P[z.id].tries], ['Best', P[z.id].bestMs != null ? fmtTime(P[z.id].bestMs, true) : '–']]
         .map(([k, v]) => `<div class="res-cell"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
       $('#res-next').hidden = !(win && this.puzzleIdx < PUZZLES.length - 1);
+      const gradeEl = $('#res-grade'); if (gradeEl) gradeEl.hidden = true;
       this.show('results'); unlocked.forEach((id, i) => setTimeout(() => this.achToast(id), 500 + i * 900));
     }, 1300));
   }
@@ -829,5 +839,6 @@ class App {
 }
 
 installV22(App);
+installV23(App);
 const app = new App();
 app.boot().catch(e => { console.error(e); if (window.__lumenFail) window.__lumenFail('Startup failed: ' + (e && e.message ? e.message : e)); });

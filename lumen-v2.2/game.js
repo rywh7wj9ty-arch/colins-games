@@ -10,7 +10,7 @@ import { PUZZLES } from './js/puzzles.js';
 import { installV22, MODE_INFO22 } from './js/v22.js';
 
 export const VERSION = '2.2';
-const OLDER = [['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v2.0', '../lumen-v2.0/', 'bright pastel look'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
+const OLDER = [['v2.3', '../lumen-v2.3/', 'guideline handling and sharper glass'], ['v2.1', '../lumen-v2.1/', 'v1.0 colours + all v2 features'], ['v2.0', '../lumen-v2.0/', 'bright pastel look'], ['v1.0', '../lumen-v1.0/', 'the original LUMEN']];
 const qs = new URLSearchParams(location.search);
 const DEBUG = qs.has('debug');
 const $ = (s, r = document) => r.querySelector(s);

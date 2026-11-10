@@ -182,6 +182,8 @@ export class Game {
     this.held = { left: false, right: false }; this.dasDir = 0; this.dasT = 0; this.arrT = 0;
     this.soft = false; this.gravT = 0; this.lockT = 0; this.resets = 0; this.lowest = 0;
     this.lastRot = false; this.lastKick = -1;
+    // v2.3 guideline handling. Off (the default) plays exactly like v2.2.
+    this.handling = !!opts.handling; this.rotHeld = 0; this.pendingRot = 0; this.pendingHold = false;
     this.spawn();
   }
   emit(e) { this.events.push(e); if (this.events.length > 200) this.events.shift(); }
@@ -214,6 +216,31 @@ export class Game {
     if (this.fits(t, 0, 3, this.cur.y + 1)) this.cur.y++;
     this.lowest = this.cur.y;
     this.emit({ type: 'spawn', piece: t });
+    this.applyHandling();
+  }
+  // IRS: a rotate key that is still held (or a rotate that arrived with no piece) spins the new piece.
+  // IHS: a hold press that could not be used is banked for the next piece, once.
+  applyHandling() {
+    if (!this.handling || this.over || !this.cur) return;
+    const dir = this.rotHeld || this.pendingRot || 0;
+    this.pendingRot = 0;
+    if (dir) this.rotate(dir);
+    if (this.pendingHold && this.cur && !this.over && !this.holdUsed && !this.noHold) {
+      this.pendingHold = false;
+      this.holdPiece();
+    }
+  }
+  queueRotate(dir) {
+    if (this.over) return false;
+    if (!this.cur) { if (this.handling) this.pendingRot = dir; return false; }
+    return this.rotate(dir);
+  }
+  queueHold() {
+    if (this.over) return false;
+    if (!this.cur) { if (this.handling) this.pendingHold = true; return false; }
+    const ok = this.holdPiece();
+    if (this.handling && !ok) this.pendingHold = true;
+    return ok;
   }
 
   topOut(reason) {
@@ -315,6 +342,7 @@ export class Game {
     const t = this.cur.type;
     const prev = this.hold;
     this.hold = t; this.holdUsed = true;
+    this.pendingHold = false;
     this.emit({ type: 'hold', piece: t });
     this.spawn(prev || undefined);
     return true;
