@@ -160,10 +160,10 @@ window.BOT = (function () {
     return goTo((xe || spots[spots.length - 1][0]) - 0.3, { max: 2000 });
   }
   function pull(x, sigName) {
-    goTo(x - 0.15);
+    goTo(x + 0.45);
     var g = 0, i;
-    while (g++ < 80) {
-      i = step(3, { x: -1, grab: true });
+    while (g++ < 90) {
+      i = step(2, { x: -0.45, grab: true });
       if (!i || i.finished) return i;
       if (!sigName || sig(sigName)) break;
       var ls = __b19.levers(), k;
@@ -359,7 +359,7 @@ window.BOT = (function () {
     while (g++ < 2400 && si <= names.length) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.x > land + 0.2) return pass(r);
+      if (i.x > land - 0.4) return pass(r);
       mv = si < names.length ? mvOf(names[si]) : null;
       nxt = si + 1 < names.length ? mvOf(names[si + 1]) : null;
       on = (I2() || {}).on;
@@ -377,12 +377,19 @@ window.BOT = (function () {
           step(1, { x: 1, jump: true, tap: true });
           step(last ? (soft ? 10 : 14) : (up ? (soft ? 34 : 44) : (soft ? 22 : 32)), { x: 1, jump: true });
         } else { var dx = mv.x - i.x; step(2, { x: Math.abs(dx) < 0.35 ? 0 : (dx > 0 ? 0.25 : -0.25) }); }
-      } else if (i.grounded && mv && mv.y < -0.8 && i.x > edge - 0.42) {
+      } else if (i.grounded && mv && mv.y < -1 && i.x > edge - 0.5) {
         var board = !!((__b19.flags() || {}).hop);
         step(1, { x: 1, jump: true, tap: true });
         step(board ? 8 : 12, { x: 1, jump: true });
+        var k = 0;
+        while (k++ < 40 && info() && !info().grounded) step(1, { x: 0.2 });
       } else if (!i.grounded) step(2, { x: 1 });
-      else step(2, { x: (mv && mv.y < -0.8) ? 1 : (i.x > edge - 0.7 ? -0.3 : 1) });
+      else {
+        var near = null, nk;
+        for (nk = 0; nk < names.length; nk++) { var pm = mvOf(names[nk]); if (pm && Math.abs(i.x - pm.x) < 1.05) { near = pm; break; } }
+        if (near) { var nd = near.x - i.x; step(2, { x: Math.abs(nd) < 0.3 ? 0 : (nd > 0 ? 0.3 : -0.3) }); }
+        else step(2, { x: (mv && mv.y < -1) ? 1 : (i.x > edge - 0.95 ? -0.3 : 1) });
+      }
     }
     return info();
   }
@@ -587,7 +594,12 @@ window.BOT = (function () {
     if (t === 'magnet') return doMagnet(r);
     if (t === 'velcro') return doVelcro(r);
     if (t === 'tape') return doTape(r);
-    if (t === 'lever' || t === 'snip' || t === 'marble') { pull(r.lx, r.sig); return pass(r); }
+    if (t === 'lever' || t === 'snip' || t === 'marble') {
+      pull(r.lx, r.sig);
+      var w = 0;
+      while (w++ < 160 && ((info() || {}).x || 0) < (r.gate || r.xe || 0) - 0.8) step(2, { x: 1 });
+      return pass(r);
+    }
     if (t === 'domino') return doDomino(r);
     if (t === 'toybtn') { pull(r.lx, r.sig); var w = 0; while (w++ < 400 && !sig(r.bsig)) step(4, { x: 0 }); return pass(r); }
     if (t === 'beltlever') { pull(r.lx, r.sig); return pass(r); }
@@ -649,20 +661,22 @@ window.BOT = (function () {
     say('L2');
     // the sprung platforms over the first pit are not in the floor map, so hop their centres
     doSpots([[6.6, 0], [9.6, 0], [12.6, 0], [15.1, -1.3]], 16);
-    goTo(19.2, { max: 1200 });
+    goTo(21.1, { max: 1200 });
     var g = 0;
-    while (g++ < 80 && !sig('post')) step(2, { x: -1, grab: true });
+    while (g++ < 80 && !sig('post')) step(2, { x: -0.6, grab: true });
     step(4, { x: -1, grab: false });
     goTo(16.3, { max: 600 });
     g = 0;
     while (g++ < 400) { var ball = obj('ball'); if (ball && ball.x > 29.5) break; step(3, { x: (info() || {}).x > 16.8 ? -0.3 : 0 }); }
     // up the steps, across the tower, and a full jump left onto the ruler
     goTo(39.4, { max: 2000 });
+    step(10, { x: -1 });
     g = 0;
-    while (g++ < 40) { var q = step(2, { x: -1 }); if (q && q.x < 37.7) break; }
+    var lip = (__b19.flags() || {}).hop ? 39.15 : 38.7;
+    while (g++ < 50) { var q = step(1, { x: -1 }); if (q && q.x < lip) break; }
     step(1, { x: -1, jump: true, tap: true });
-    step(6, { x: -1, jump: true });
-    step(8, { x: -0.4 });
+    step(2, { x: -1, jump: true });
+    step(16, { x: -0.3 });
     g = 0;
     while (g++ < 250 && !sig('door2')) step(2, { x: 0 });
     // heavy crate onto the heavy button
