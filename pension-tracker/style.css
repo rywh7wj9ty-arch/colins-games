@@ -60,3 +60,13 @@ html,body{overflow-x:hidden}.tw{overflow-x:auto}canvas,svg{max-width:100%}
 .inf-dial b{min-width:42px;color:#ffb84d}
 #letTxt{width:100%;min-height:140px;resize:vertical;font:inherit;color:inherit;background:#0e1530;border:1px solid #2a3768;border-radius:12px;padding:11px 12px}
 @media(max-width:380px){.hh-grid,.cal-grid{grid-template-columns:1fr}}
+
+/* r7 */
+.pair b{display:block;font-size:19px}
+.pair .dual,.dual{display:block;font-size:13px;color:#9aa6c8;font-weight:500;margin-top:2px}
+.big .dual{font-size:14px;font-weight:600;margin-top:4px}
+.how-tbl th{white-space:normal;text-align:left;vertical-align:top;font-weight:650;color:#c7d0ee}
+.how-tbl td{white-space:normal;text-align:left;vertical-align:top}
+.how-tbl tr.hi td{color:#ffb84d;font-weight:700}
+button.linkish{display:inline;font:inherit;font-size:13px;color:#ffb84d;background:none;border:0;padding:0;text-align:left;text-decoration:underline;cursor:pointer}
+.both-card .kv .pair b{font-size:20px}

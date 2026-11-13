@@ -1,7 +1,7 @@
 <!doctype html><html lang="en-GB"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#000">
-<title>Tesla Shares Tracker</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TSLA Shares"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=9">
+<title>Tesla Shares Tracker</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TSLA Shares"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23e31937%22/%3E%3Ctext x=%2232%22 y=%2246%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22800%22%3ET%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=10">
 </head><body data-theme="midnight">
 <div id="lock" class="lock"><form class="lockbox" onsubmit="return false">
  <div class="logo">T</div><h1>Tesla Shares</h1><p class="muted" id="lockMsg">Private tracker &middot; enter passcode</p><button type="button" class="btn primary" id="faceBtn" hidden>Unlock with Face ID</button>
@@ -75,7 +75,7 @@
  <li>Person totals = SUM of their accounts; Grand total = Colin total + Caroline total</li></ul></div>
 </section>
 <section id="t-charts" class="tab">
- <div class="card"><h3>TSLA price</h3><div class="seg" id="rangeSeg"><button data-r="1d" class="on">1D</button><button data-r="5d">5D</button><button data-r="1mo">1M</button><button data-r="6mo">6M</button><button data-r="1y">1Y</button><button data-r="5y">5Y</button></div>
+ <div class="card"><h3>TSLA price</h3><div class="seg" id="rangeSeg"><button data-r="1d" class="on">1D</button><button data-r="5d">5D</button><button data-r="1mo">1M</button><button data-r="6mo">6M</button><button data-r="1y">1Y</button><button data-r="5y">5Y</button><button data-r="10y">10Y</button></div>
  <canvas id="cPrice" class="chart"></canvas><div class="muted small" id="cPriceInfo"></div></div>
  <div class="card"><h3>Portfolio value (£)</h3><div class="seg" id="pvSeg"><button data-w="both" class="on">Combined</button><button data-w="0">Colin</button><button data-w="1">Caroline</button></div>
  <canvas id="cPort" class="chart"></canvas><p class="muted small">Today's share counts × historical TSLA price × USD→GBP (Yahoo history). It shows what your current holdings were worth, not your actual past balance.</p></div>
@@ -139,5 +139,5 @@
 </main></div>
 <div id="themeSheet" class="sheet" hidden><div class="sheetbox"><h3>Colour scheme</h3><div id="themeGrid" class="themegrid"></div><button class="btn" id="themeClose">Done</button></div></div>
 <div id="toast" class="toast"></div>
-<script src="data/vault.js?v=9"></script><script src="app.js?v=9"></script><script src="v9.js?v=9"></script>
+<script src="data/vault.js?v=9"></script><script src="app.js?v=10"></script><script src="v9.js?v=9"></script><script src="v10.js?v=10"></script>
 </body></html>
