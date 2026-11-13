@@ -497,17 +497,23 @@ window.BOT = (function () {
     return pass(r);
   }
   function doPulley(r) {
-    var top = r.top || -3, home = (r.xb || 0) + 0.35, g = 0, i;
-    goTo(home, { max: 2000 });
-    while (g++ < 90 && !sig(r.sig)) step(1, { x: -0.35, grab: true });
-    step(6, { x: 0.2, grab: false });
+    var top = r.top || -3, home = (r.xb || 0) + 1.15, g = 0, i;
+    var soft = !!((__b19.flags() || {}).hop);
+    goTo((r.xa || home) - 0.55, { max: 2000 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(soft ? 22 : 28, { x: 1, jump: true });
+    step(24, { x: 1 });
+    goTo(home, { max: 800 });
+    while (g++ < 70 && !sig(r.sig)) step(1, { x: -0.3, grab: true });
+    step(3, { x: 0.4, grab: false });
+    goTo(home, { max: 400 });
     g = 0;
-    while (g++ < 1000) {
+    while (g++ < 1200) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.grounded && i.y < top + 1.2 && i.x > (r.xb || 0) - 0.5) break;
+      if (i.grounded && i.y < top + 1.4 && i.x > (r.xb || 0) + 0.3) break;
       var dx = home - i.x;
-      step(2, { x: Math.abs(dx) < 0.18 ? 0 : (dx > 0 ? 0.35 : -0.35) });
+      step(2, { x: Math.abs(dx) < 0.15 ? 0 : (dx > 0 ? 0.4 : -0.4) });
     }
     return pass(r);
   }
@@ -612,7 +618,14 @@ window.BOT = (function () {
     if (t === 'duck') return pass(r);
     if (t === 'boxwall') return doBox(r);
     if (t === 'rollpin') return doRoll(r);
-    if (t === 'chain1' || t === 'tearwall' || t === 'tower') return pass(r);
+    if (t === 'chain1') {
+      doCan(r);
+      var cw = 0;
+      while (cw++ < 500 && !sig(r.bsig)) step(4, { x: 0 });
+      if (r.end) goTo(r.end, { max: 900 });
+      return pass(r);
+    }
+    if (t === 'tearwall' || t === 'tower') return pass(r);
     return pass(r);
   }
 
