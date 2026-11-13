@@ -289,7 +289,8 @@ function bodyMassIn(x1,x2,yTop,yBot){var m=0,list=[];
 function updateDevices(dt){var lv=L;
   lv.levers.forEach(function(lo){var a=lo.body.getAngle();lo.flash=Math.max(0,lo.flash-dt);if(lo.momentary){lo.on=a<-0.2;return}
     if(!lo.on&&a<-0.22){lo.on=true;lo.flash=1;save.stats.levers++;SND.sfx('click');var tip=lo.body.getWorldPoint(V(0,-1.4));setSig(lo.sig,true,tip.x,tip.y);
-      if(player.grab&&player.grab.ud.type==='lever'&&player.grab.ud.lever===lo){setTimeout(function(){if(player&&player.grab&&player.grab.ud.type==='lever')release(player,true)},250)}}});
+      if(player.grab&&player.grab.ud.type==='lever'&&player.grab.ud.lever===lo)lo.drop=0.25}
+    if(lo.drop>0){lo.drop-=dt;if(lo.drop<=0){lo.drop=0;if(player&&player.grab&&player.grab.ud&&player.grab.ud.type==='lever'&&player.grab.ud.lever===lo)release(player,true)}}});
   lv.buttons.forEach(function(bt){var r=bodyMassIn(bt.x,bt.x+bt.w,bt.y-0.5,bt.y+0.12);bt.mass=r.m;var press=r.m>=bt.minMass-1e-6;
     bt.wob=(r.m>0&&!press)?bt.wob+dt:0;
     if(bt.wob>0.4&&!bt.warned){bt.warned=true;floatText(bt.x+bt.w/2,bt.y-1.5,'Too light! Needs something heavy','#c65a00')}
@@ -3128,5 +3129,9 @@ window.__b19={f:function(k,v){if(k==='*')F19.forEach(function(f){save.f19[f[0]]=
   exit:function(){return L&&L.exit?{x:+L.exit.x.toFixed(2),y:+L.exit.y.toFixed(2),w:L.w}:null},
   chase:function(){var c=L&&L.chase;return c?{active:!!c.active,done:!!c.done,sx:+c.sx.toFixed(2),x0:c.x0,x1:c.x1}:null},
   hold:function(on){window.__bobHold=on?1:0},
+  cpAt:function(x){if(!L||!player)return null;var best=0,bd=1e9,i;for(i=0;i<L.cps.length;i++){var d=Math.abs(L.cps[i].x-x);if(d<bd){bd=d;best=i}}
+    L.cp=best;var c=L.cps[best];if(player.grab)release(player,true);
+    player.body.setTransform(V(c.x,c.y-0.55),0);player.body.setLinearVelocity(V(0,0));player.grounded=false;
+    return {i:best,x:+c.x.toFixed(2),y:+c.y.toFixed(2)}},
   b19:function(){return JSON.parse(JSON.stringify(save.b19))}};
 })();

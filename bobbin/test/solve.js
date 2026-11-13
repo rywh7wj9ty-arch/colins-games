@@ -353,35 +353,36 @@ window.BOT = (function () {
     return pass(r);
   }
   function doPistons(r) {
-    var names = r.names || [], px = r.px || [], land = r.land || (r.xe - 1), edge = r.edge || r.xs;
-    var g = 0, i, si = 0, mvs, mv, nxt, on;
-    goTo(edge - 0.45, { max: 2000 });
-    while (g++ < 1600 && si <= names.length) {
+    var names = r.names || [], land = r.land || (r.xe - 1), edge = r.edge || r.xs;
+    var g = 0, i, si = 0, mv, nxt, on, prev = {};
+    function mvOf(n) { return moverBy((I2() || {}).movers || [], n); }
+    while (g++ < 2400 && si <= names.length) {
       i = info();
       if (!i || i.finished) return i;
       if (i.x > land + 0.2) return pass(r);
-      if ((__b19.grace() || 0) > 0.02) { step(1, { x: 0 }); continue; }
-      mvs = (I2().movers) || [];
-      on = I2().on;
-      mv = si < names.length ? moverBy(mvs, names[si]) : null;
-      nxt = si + 1 < names.length ? moverBy(mvs, names[si + 1]) : null;
+      mv = si < names.length ? mvOf(names[si]) : null;
+      nxt = si + 1 < names.length ? mvOf(names[si + 1]) : null;
+      on = (I2() || {}).on;
       if (on && names.indexOf(on) >= 0) si = names.indexOf(on);
-      mv = si < names.length ? moverBy(mvs, names[si]) : null;
-      nxt = si + 1 < names.length ? moverBy(mvs, names[si + 1]) : null;
+      mv = si < names.length ? mvOf(names[si]) : null;
+      nxt = si + 1 < names.length ? mvOf(names[si + 1]) : null;
       if (on === names[si] && mv) {
         var last = si === names.length - 1;
-        var ready = last || (nxt && nxt.y < -0.8);
+        var ny = nxt ? nxt.y : 0, was = nxt ? (prev[names[si + 1]] != null ? prev[names[si + 1]] : ny) : 0;
+        if (nxt) prev[names[si + 1]] = ny;
+        var up = nxt && ny < -1.45;
+        var ready = last || (nxt && ny <= was + 0.002 && ny < (up ? -1.35 : -1.0));
         if (ready && i.grounded && i.y < -0.9) {
-          var up = nxt && nxt.y < -1.45;
+          var soft = !!((__b19.flags() || {}).hop);
           step(1, { x: 1, jump: true, tap: true });
-          step(last ? 14 : (up ? 42 : 30), { x: 1, jump: true });
-        }
-        else { var dx = mv.x - i.x; step(2, { x: Math.abs(dx) < 0.35 ? 0 : (dx > 0 ? 0.25 : -0.25) }); }
-      } else if (i.grounded && mv && mv.y < -0.8) {
-        if (i.x < edge - 0.42) step(2, { x: 1 });
-        else { step(1, { x: 1, jump: true, tap: true }); step(8, { x: 1, jump: true }); }
-      } else if (!i.grounded) step(2, { x: 1, jump: true });
-      else step(2, { x: i.x > edge - 0.15 ? -0.15 : 0.3 });
+          step(last ? (soft ? 10 : 14) : (up ? (soft ? 34 : 44) : (soft ? 22 : 32)), { x: 1, jump: true });
+        } else { var dx = mv.x - i.x; step(2, { x: Math.abs(dx) < 0.35 ? 0 : (dx > 0 ? 0.25 : -0.25) }); }
+      } else if (i.grounded && mv && mv.y < -0.8 && i.x > edge - 0.42) {
+        var board = !!((__b19.flags() || {}).hop);
+        step(1, { x: 1, jump: true, tap: true });
+        step(board ? 8 : 12, { x: 1, jump: true });
+      } else if (!i.grounded) step(2, { x: 1 });
+      else step(2, { x: (mv && mv.y < -0.8) ? 1 : (i.x > edge - 0.7 ? -0.3 : 1) });
     }
     return info();
   }
@@ -413,15 +414,28 @@ window.BOT = (function () {
     return pass(r);
   }
   function doRoll(r) {
-    goTo((r.step || r.shelf || r.xs) + 0.4, { max: 2000 });
+    goTo((r.step || r.xs) + 0.8, { max: 2200 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(40, { x: 1, jump: true });
+    step(24, { x: 0 });
+    if (((info() || {}).y || 0) > -2.4) {
+      goTo((r.step || r.xs) + 0.8, { max: 600 });
+      step(1, { x: 1, jump: true, tap: true });
+      step(40, { x: 1, jump: true });
+      step(24, { x: 0 });
+    }
     var g = 0, ball, i;
-    while (g++ < 500 && !sig(r.sig)) {
+    while (g++ < 400 && !sig(r.sig)) {
       ball = obj(r.ball); i = info();
       if (!i || !ball) break;
-      if (i.y > ball.y + 0.5) step(2, { x: 1, jump: !!i.grounded, tap: !!i.grounded });
-      else if (i.x > ball.x - 0.45) step(2, { x: -1 });
-      else step(2, { x: 1 });
+      step(1, { x: i.x > ball.x - 0.5 ? -0.5 : 0.7 });
     }
+    var w = 0;
+    while (w++ < 180 && !sig(r.sig)) step(2, { x: 0 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(16, { x: 1, jump: true });
+    step(260, { x: 1 });
+    step(30, { x: 0 });
     return pass(r);
   }
   function doDomino(r) {
@@ -461,35 +475,49 @@ window.BOT = (function () {
     return pass(r);
   }
   function doBalloon(r) {
-    goTo(r.px - 0.3);
-    var g = 0, i;
-    while (g++ < 450) {
+    var top = -(r.h || 5), g = 0, i;
+    goTo((r.px || r.xs) - 0.1, { max: 2000 });
+    step(1, { x: 0.3, grab: true, jump: true, tap: true });
+    while (g++ < 700) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.y < -(r.h || 5) + 1.4) { step(10, { x: 1, grab: false }); break; }
-      step(3, { x: 0.15, grab: true, jump: i.grounded && Math.abs(i.x - r.px) > 0.8, tap: true });
+      if (i.grabName !== r.name && g < 50) { step(2, { x: 0.2, grab: true, jump: !!i.grounded, tap: !!i.grounded }); continue; }
+      if (i.y < top + 0.35 && i.x > (r.wall || 0) + 0.3) { step(12, { x: 0.15, grab: false }); break; }
+      step(2, { x: i.x < (r.wall || 0) + 1.4 ? 0.4 : 0.05, grab: true });
     }
+    g = 0;
+    while (g++ < 60) { i = step(2, { x: 0.2 }); if (i && i.grounded) break; }
     return pass(r);
   }
   function doPulley(r) {
-    goTo(r.xb + 0.7);
-    step(12, { x: 0 });
-    pull(r.lx, r.sig);
-    var g = 0, i, top = r.top || -3;
-    while (g++ < 500) {
+    var top = r.top || -3, home = (r.xb || 0) + 0.35, g = 0, i;
+    goTo(home, { max: 2000 });
+    while (g++ < 90 && !sig(r.sig)) step(1, { x: -0.35, grab: true });
+    step(6, { x: 0.2, grab: false });
+    g = 0;
+    while (g++ < 1000) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.y < top + 1.3 && i.grounded) break;
-      step(3, { x: i.x < r.xb + 0.9 ? 0.25 : -0.25 });
+      if (i.grounded && i.y < top + 1.2 && i.x > (r.xb || 0) - 0.5) break;
+      var dx = home - i.x;
+      step(2, { x: Math.abs(dx) < 0.18 ? 0 : (dx > 0 ? 0.35 : -0.35) });
     }
     return pass(r);
   }
   function doCan(r) {
-    goTo((r.lx || 0) - 0.2);
-    var g = 0;
-    while (g++ < 350 && !sig(r.sig)) step(3, { x: -1, grab: true });
-    step(8, { x: 1, grab: false });
-    if (r.gate) goTo(r.gate + 1.5);
+    var lx = r.lx || 0, n = 0, g;
+    goTo((r.pe || lx) - 2.2, { max: 2000 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(18, { x: 1, jump: true });
+    step(12, { x: 1 });
+    goTo(lx + 0.35, { max: 800 });
+    while (n++ < 14 && !sig(r.sig)) {
+      g = 0;
+      while (g++ < 55 && !sig(r.sig)) step(1, { x: -0.65, grab: true });
+      step(4, { x: 0.4, grab: false });
+      if (((info() || {}).x || 0) < lx - 0.1) goTo(lx + 0.3, { max: 300 });
+    }
+    if (r.gate) goTo((r.xe || r.gate + 3) - 0.5, { max: 900 });
     return info();
   }
   function doFan(r) {
@@ -514,13 +542,16 @@ window.BOT = (function () {
     return pass(r);
   }
   function doVelcro(r) {
-    goTo((r.wall || r.xs) - 0.8);
-    var g = 0, i, top = -(r.h || 4);
-    while (g++ < 400) {
+    var wall = r.wall || r.xs, top = -(r.h || 4), g = 0, i;
+    goTo(wall - 1.05, { max: 2000 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(10, { x: 1, jump: true });
+    while (g++ < 600) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.y < top + 0.8 && i.grounded) break;
-      step(3, { x: 1, jump: !!i.grounded, tap: !!i.grounded });
+      if (i.grounded && i.y < top + 1.05 && i.x > wall - 0.2) break;
+      step(1, { x: 1, jump: true, tap: g % 18 === 0 });
+      if ((__b19.grace() || 0) > 0.05) break;
     }
     return pass(r);
   }
@@ -747,25 +778,21 @@ window.BOT = (function () {
     } else if (id === 1) level1();
     else if (id === 2) level2();
     else {
-      var route = __bob.route() || [], guard = 0, fails = {}, seg, k, x0;
-      while (guard++ < route.length * 8 && T < BUDGET) {
-        i = info();
-        if (!i || i.finished) break;
-        seg = null;
-        for (k = 0; k < route.length; k++) if (i.x < (route[k].xe || 1e9) - 1.25) { seg = route[k]; break; }
-        if (!seg) break;
-        x0 = i.x;
-        runSeg(seg);
-        i = info();
-        if (!i || i.finished) break;
-        if (i.x > (seg.xe || 0) - 1.1) continue;
-        if (i.x < x0 + 0.8) {
-          var key = seg.t + Math.round(seg.xs || 0);
-          fails[key] = (fails[key] || 0) + 1;
-          say('retry ' + key + ' x' + i.x.toFixed(1));
-          if (fails[key] >= 4) { say('give up ' + key); break; }
+      var route = __bob.route() || [], k, seg, attempt, done;
+      for (k = 0; k < route.length && T < BUDGET; k++) {
+        seg = route[k];
+        done = false;
+        for (attempt = 0; attempt < 3 && !done && T < BUDGET; attempt++) {
           __b19.lives(99);
+          __b19.cpAt((seg.xs || 0) + 1.4);
+          step(6, { x: 0 });
+          if (attempt) say('retry ' + seg.t + Math.round(seg.xs || 0));
+          runSeg(seg);
+          grace();
+          i = info();
+          done = !!(i && (i.finished || (i.y < -0.2 && i.x > (seg.xe || 0) - 1.7)));
         }
+        if (!done) { say('give up ' + seg.t + Math.round(seg.xs || 0) + ' x' + ((info() || {}).x || 0).toFixed(1)); break; }
       }
       i = info();
       if (i && !i.finished) {
@@ -780,5 +807,16 @@ window.BOT = (function () {
     var B = __bob.boss();
     return { finished: !!(i.finished || (B && B.won)), t: i.t, got: i.got, total: i.total, x: i.x, deaths: i.deaths, lives: i.lives, ticks: T, log: LOG.slice(-18) };
   }
-  return { run: run, log: function () { return LOG; }, pistons: doPistons, ropes: doRopes };
+  function one(k) {
+    var route = __bob.route() || [], seg = route[k];
+    if (!seg) return { err: 'no seg' };
+    T = 0; LOG = [];
+    __b19.lives(99);
+    __b19.cpAt((seg.xs || 0) + 1.4);
+    step(8, { x: 0 });
+    runSeg(seg);
+    var i = info() || {};
+    return { t: seg.t, xe: seg.xe, x: i.x, y: i.y, g: i.grounded, ok: !!(i.finished || (i.y < -0.2 && i.x > (seg.xe || 0) - 1.7)), log: LOG.slice(-4) };
+  }
+  return { run: run, one: one, log: function () { return LOG; } };
 })();
