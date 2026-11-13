@@ -505,7 +505,8 @@ function mechBuilder(lv,b,addRect){var w=lv.world;
 var WAPI={pos:function(){var p=player.body.getPosition();return {x:p.x,y:p.y,g:player.grounded,on:player.groundBody}},respawnPlayer:function(){respawnPlayer()},
   obj:function(n){for(var i=0;i<L.objs.length;i++)if(L.objs[i].name===n)return L.objs[i];return null},respawnObj:function(o){respawnObj(o,o.home)},
   resetLever:function(sg){L.levers.forEach(function(l){if(l.sig===sg)resetLever(l)})},pulley:function(n){for(var i=0;i<L.pulleys.length;i++)if(L.pulleys[i].name===n)return L.pulleys[i]},
-  held:function(o){return !!(player.grab&&player.grab.body===o.body)},sig:function(s){return sig(s)}};
+  held:function(o){return !!(player.grab&&player.grab.body===o.body)},sig:function(s){return sig(s)},
+  nudge:function(o,vx,vy){if(!o||!o.body)return;o.body.setLinearVelocity(V(vx,vy));o.body.setAwake(true)}};
 function mechTie(lv,ob){if(ob.joint)return;ob.joint=lv.world.createJoint(pl.RopeJoint({maxLength:ob.teth,localAnchorA:V(ob.peg.x,ob.peg.y),localAnchorB:V(0,0.5)},lv.ground,ob.body));ob.free=false;ob.freeT=0}
 function mechUntie(lv,ob){if(ob.joint){try{lv.world.destroyJoint(ob.joint)}catch(e){}ob.joint=null}ob.free=true}
 function mechThreads(lv){var src=[];
@@ -2988,7 +2989,7 @@ var F19=[['coyote','🐇','Forgiving jumps','A little longer to jump after a led
   ['steer','🌬️','Air steering','Easier to aim a jump while you are in the air'],
   ['zip','🧵','Zip magnet','Zip-lines catch from a little further, and letting go pops you up'],
   ['snap','⏩','Quicker get-ups','A squish and a respawn recover sooner'],
-  ['fair','🚩','Fairer courses','Closer checkpoints, and the sharpest timers and pistons ease off'],
+  ['fair','🚩','Fairer courses','Closer checkpoints, eased timers and pistons, and a settled pulley ball is tipped into the pan'],
   ['ledge','🛟','Ledge mercy','A slow toe over the lip steps you back instead of a fall'],
   ['ribbon','🎀','Prize ribbons','Pop bubbles in a row for a ribbon and a bonus bubble'],
   ['pace','🥁','Boss tempo','Less waiting between boss chances. The safe moment stays'],
@@ -3092,7 +3093,7 @@ stepGame=function(dt){var lv=L,p=player,g0=lv?lv.got:0;
   if(state==='play'&&!lv.finished&&!lv.out){zipReturn();if(f19('coach'))coachStep(lv,dt)}
   goalHud()};
 var _nl19=newLevel;
-newLevel=function(def){var lv=_nl19(def);try{if(f19('fair')){fairEase(lv);fairPosts(lv)}}catch(e){console.warn('v19',e)}return lv};
+newLevel=function(def){window.__bobFair=!!f19('fair');var lv=_nl19(def);try{if(f19('fair')){fairEase(lv);fairPosts(lv)}}catch(e){console.warn('v19',e)}return lv};
 function feat19(k){goalHud();if(k==='fair')toast('Closer posts and eased timers apply when a level starts');
   if(k==='pace')toast('Boss tempo changes on the next round');if(k==='zip'&&!f19('zip')&&player&&player.grab&&player.grab.ud&&player.grab.ud.type==='zip'){}}
 var _bf19=buildFeat;

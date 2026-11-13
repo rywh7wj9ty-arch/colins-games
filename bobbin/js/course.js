@@ -121,9 +121,13 @@ S.balloon=function(c,P){var b=c.b,h=P.h||5.5;var x0=c.lead(3,c.hint('balloon','H
   b.route({t:'balloon',name:nm,px:px,wall:x+4,h:h});c.x=xx+3};
 // pulley: stand on the right pan, pull the lever and the falling ball lifts you up
 S.pulley=function(c,P){var b=c.b,dm=P.d||3.2;var x0=c.lead(4.5,c.hint('pulley','Stand on the right pan,\nthen pull the lever'));var x=c.x,sg='pu'+c.n,nm='pl'+c.n,bn='pb'+c.n;
-  // the lip is left of the v1.8 mark so the ball, falling at a true 1/120 step, drops into the pan
-  b.poly([[x-3.4,-5.5],[x+2.2,-4.7],[x+2.2,-4.3],[x-3.4,-4.3]],{topCol:c.col()});b.ball(bn,x-2.6,-6.2,0.55,{density:2.6});
-  b.gate(sg,x+2.2,-6.3,0.35,1.6,{dy:-1.8,mode:'latch'});b.block(x+2.15,-14,0.45,7.7,{mat:'wood'});
+  b.poly([[x-3.4,-5.5],[x+3.0,-4.7],[x+3.0,-4.3],[x-3.4,-4.3]],{topCol:c.col()});b.ball(bn,x-2.6,-6.2,0.55,{density:2.6});
+  b.gate(sg,x+3.0,-6.3,0.35,1.6,{dy:-1.8,mode:'latch'});b.block(x+2.95,-14,0.45,7.7,{mat:'wood'});
+  // fair: once the gate has risen, a ball still sitting on the slope gets a small tip into the pan.
+  // On the v1.8 slope a running ball flies past the pan, and a ball that has settled against the
+  // gate on a later pulley never restarts when the gate lifts.
+  if(window.__bobFair){var tip=0;b.watch(function(dt,A){if(tip>1)return;if(!A.sig(sg)){tip=0;return;}tip+=dt;if(tip<0.5)return;
+    var o=A.obj(bn);tip=2;if(!o)return;var q=o.body.getPosition();if(q.y<-4.2)A.nudge(o,1.5,-0.2);});}
   b.block(x+3.2,dm+0.45,2,1);c.G(x,x+3.2);c.G(x+5.2,x+7);b.lever(sg,x+6.75,0,{start:0.55});
   b.pulley(nm,x+3.2,x+7,0,2,{dmax:dm,rimsA:true});b.block(x+7,0.4,2,3.6,{});b.block(x+9,-dm,5,4+dm,{topCol:c.col(),tape:0.4});b.cp(x+10.4,-dm);c.P(x+8,-dm-1.2);c.P(x+8,-1.4);
   var xx=x+14,cur=-dm;while(cur<-1.3){cur+=1.3;b.block(xx,cur,1.6,4-cur,{topCol:c.col()});xx+=1.6}c.G(xx,xx+3);

@@ -498,22 +498,23 @@ window.BOT = (function () {
   }
   function doPulley(r) {
     var top = r.top || -3, home = (r.xb || 0) + 1.15, g = 0, i;
-    var soft = !!((__b19.flags() || {}).hop);
-    goTo((r.xa || home) - 0.55, { max: 2000 });
+    goTo((r.xa || home) - 0.6, { max: 2000 });
     step(1, { x: 1, jump: true, tap: true });
-    step(soft ? 22 : 28, { x: 1, jump: true });
-    step(24, { x: 1 });
+    step(24, { x: 1, jump: true });
+    g = 0;
+    while (g++ < 40) { i = step(1, { x: 1 }); if (i && i.grounded) break; }
     goTo(home, { max: 800 });
-    while (g++ < 70 && !sig(r.sig)) step(1, { x: -0.3, grab: true });
-    step(3, { x: 0.4, grab: false });
+    g = 0;
+    while (g++ < 80 && !sig(r.sig)) step(1, { x: -0.35, grab: true });
+    step(4, { x: 0.45, grab: false });
     goTo(home, { max: 400 });
     g = 0;
-    while (g++ < 1200) {
+    while (g++ < 1400) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.grounded && i.y < top + 1.4 && i.x > (r.xb || 0) + 0.3) break;
-      var dx = home - i.x;
-      step(2, { x: Math.abs(dx) < 0.15 ? 0 : (dx > 0 ? 0.4 : -0.4) });
+      if (i.grounded && i.y < top + 1.3 && i.x > (r.xb || 0) + 0.4) break;
+      var dx = home - ((i && i.x) || home);
+      step(2, { x: Math.abs(dx) < 0.2 ? 0 : (dx > 0 ? 0.45 : -0.45) });
     }
     return pass(r);
   }
@@ -569,16 +570,46 @@ window.BOT = (function () {
     return pass(r);
   }
   function doTape(r) {
-    goTo((r.x1 || r.xs) - 0.3);
-    var g = 0, i;
-    while (g++ < 350) {
+    var x1 = r.x1 || r.xs, x2 = r.x2 || (x1 + 5), g = 0, i;
+    goTo(x1 - 0.35, { max: 2000 });
+    step(1, { x: 0.15, jump: true, tap: true });
+    step(36, { x: 0.15, jump: true });
+    while (g++ < 500) {
       i = info();
       if (!i || i.finished) return i;
-      if (i.x > (r.x2 || 0) + 0.4) break;
-      // jump into the tape, then creep right; jump releases
-      var on = i.y < -2.2 && !i.grounded;
-      step(3, { x: on ? 1 : 0.4, jump: !on && !!i.grounded, tap: !on && !!i.grounded });
+      if (i.x > x2 + 0.35 && (i.grounded || i.y > -1.2)) break;
+      var on = i.y < -2.3;
+      if (on && i.x > x2 - 0.2) step(2, { x: 0.2, jump: true, tap: true });
+      else step(2, { x: on ? 1 : 0.2, jump: !on, tap: !on && !!i.grounded });
     }
+    return pass(r);
+  }
+  function doParade(r) {
+    var exit = r.exit || 0, g = 0, i;
+    while (g++ < 900) {
+      i = step(2, { x: 1, jump: true });
+      if (!i || i.finished) return i;
+      if (exit && i.x > exit - 0.5) return i;
+    }
+    return info();
+  }
+  function doTear(r) {
+    var ledge = r.ledge || r.xs, g = 0, i, ball;
+    goTo(ledge + 0.4, { max: 2000 });
+    step(1, { x: 1, jump: true, tap: true });
+    step(28, { x: 0.4, jump: true });
+    g = 0;
+    while (g++ < 30) { i = step(1, { x: 0.2 }); if (i && i.grounded && i.y < -1.4) break; }
+    g = 0;
+    while (g++ < 250) {
+      ball = obj(r.ball); i = info();
+      if (!i || i.finished) return i;
+      if (ball && ball.x > (r.wall || 0) - 0.4) break;
+      if (!ball || i.y > -1.5) { step(2, { x: 1, jump: !!i.grounded, tap: !!i.grounded }); continue; }
+      step(2, { x: i.x > ball.x - 0.35 ? -0.5 : 1 });
+    }
+    g = 0;
+    while (g++ < 200) { i = step(2, { x: 1 }); if (i && i.grounded && i.x > (r.wall || 0) + 1.2) break; }
     return pass(r);
   }
   function runSeg(r) {
@@ -625,7 +656,9 @@ window.BOT = (function () {
       if (r.end) goTo(r.end, { max: 900 });
       return pass(r);
     }
-    if (t === 'tearwall' || t === 'tower') return pass(r);
+    if (t === 'parade') return doParade(r);
+    if (t === 'tearwall') return doTear(r);
+    if (t === 'tower') return pass(r);
     return pass(r);
   }
 
@@ -681,17 +714,25 @@ window.BOT = (function () {
     goTo(16.3, { max: 600 });
     g = 0;
     while (g++ < 400) { var ball = obj('ball'); if (ball && ball.x > 29.5) break; step(3, { x: (info() || {}).x > 16.8 ? -0.3 : 0 }); }
-    // up the steps, across the tower, and a full jump left onto the ruler
-    goTo(39.4, { max: 2000 });
-    step(10, { x: -1 });
+    // the tower is climbed from the right: three steps, then a short hop left onto the ruler
     g = 0;
-    var lip = (__b19.flags() || {}).hop ? 39.15 : 38.7;
-    while (g++ < 50) { var q = step(1, { x: -1 }); if (q && q.x < lip) break; }
+    while (g++ < 400 && ((info() || {}).x || 0) < 43.9) step(2, { x: 1 });
+    function towerHop(n) {
+      step(1, { x: -1, jump: true, tap: true });
+      step(n, { x: -1, jump: true });
+      var k = 0, s;
+      while (k++ < 40) { s = step(1, { x: -0.15 }); if (s && s.grounded) return s; }
+      return info();
+    }
+    towerHop(32); towerHop(30); towerHop(32);
+    step(14, { x: -1 });
+    g = 0;
+    while (g++ < 30 && ((info() || {}).x || 0) > 37.55) step(1, { x: -1 });
     step(1, { x: -1, jump: true, tap: true });
-    step(2, { x: -1, jump: true });
-    step(16, { x: -0.3 });
+    step(8, { x: -1, jump: true });
+    step(30, { x: 0.15 });
     g = 0;
-    while (g++ < 250 && !sig('door2')) step(2, { x: 0 });
+    while (g++ < 300 && !sig('door2')) step(2, { x: 0.1 });
     // heavy crate onto the heavy button
     g = 0;
     while (g++ < 400 && !sig('pad')) {
@@ -719,7 +760,7 @@ window.BOT = (function () {
 
   function boss101() {
     var g = 0, B, i, best, bd, k, d;
-    while (g++ < 2500) {
+    while (g++ < 4000) {
       i = info(); B = __bob.boss();
       if (!i || (B && B.won) || (i && i.finished)) return i;
       if (!B || !B.extra) { step(4, { x: 0 }); continue; }
@@ -736,18 +777,21 @@ window.BOT = (function () {
   }
   function boss102() {
     var g = 0, B, i;
-    // climb the pink tower and take the zip
-    goTo(6.2, { max: 1500 });
-    while (g++ < 2000) {
+    // the zip starts on the right-hand tower
+    goTo(32.5, { max: 2500 });
+    while (g++ < 2400) {
       i = info(); B = __bob.boss();
       if (!i || (B && B.won) || i.finished) return i;
-      if (B && B.state === 'tired') {
-        if (i.grab) step(4, { x: i.x < B.x ? 1 : -0.2, grab: false, jump: true, tap: true });
-        else step(3, { x: i.x < B.x - 0.2 ? 1 : (i.x > B.x + 0.4 ? -1 : 0), jump: i.grounded && i.y > -2, tap: true });
-      } else if (i.grab !== 'hang') {
-        if (i.y > -2) goTo(6.2, { max: 600 });
-        step(3, { x: 0.5, jump: !!i.grounded, grab: true, tap: !!i.grounded });
-      } else step(3, { x: 1, grab: true });
+      var on = i.grab === 'hang' || i.grab === 'zip' || (i.y < -4 && i.grab);
+      if (!on) {
+        if (i.x < 30) goTo(32.5, { max: 800 });
+        step(2, { x: 0.4, jump: !!i.grounded, grab: true, tap: !!i.grounded });
+      } else if (B && B.state === 'tired' && Math.abs(i.x - B.x) < 1.3) {
+        step(3, { x: 0, grab: false, jump: true, tap: true });
+      } else {
+        var dir = (B && B.x) ? (i.x > B.x + 0.4 ? -1 : (i.x < B.x - 0.8 ? 1 : 0)) : -1;
+        step(2, { x: dir, grab: true });
+      }
     }
     return info();
   }
@@ -761,7 +805,6 @@ window.BOT = (function () {
         if (!sig('feed')) pull(7.4, 'feed');
         else step(4, { x: i.x < 10 ? 1 : 0 });
       } else {
-        // stay on the left shelf, out of the jelly
         step(4, { x: i.x > 8 ? -0.6 : (i.x < 5 ? 0.4 : 0), jump: i.grounded && i.y > -1.5, tap: true });
       }
     }
@@ -811,8 +854,7 @@ window.BOT = (function () {
         done = false;
         for (attempt = 0; attempt < 3 && !done && T < BUDGET; attempt++) {
           __b19.lives(99);
-          __b19.cpAt((seg.xs || 0) + 1.4);
-          step(6, { x: 0 });
+          if (seg.xs) { __b19.cpAt(seg.xs + 1.4); step(6, { x: 0 }); }
           if (attempt) say('retry ' + seg.t + Math.round(seg.xs || 0));
           runSeg(seg);
           grace();
