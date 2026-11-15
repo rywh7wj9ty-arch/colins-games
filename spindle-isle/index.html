@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spindle Isle">
+<meta name="theme-color" content="#ffd89a">
+<meta name="description" content="Tilt a floating golden-hour isle and roll Pip, a little marble, to the sleeping flower.">
+<title>Spindle Isle</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="view" aria-label="Spindle Isle, a floating diorama"></canvas>
+<button id="btn-pause" class="icon hidden" aria-label="Pause">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg>
+</button>
+<div id="seeds-hud" class="hidden" aria-hidden="true"></div>
+<p id="hint" class="hidden"></p>
+
+<div id="title" class="panel-wrap">
+  <div class="panel">
+    <p class="kicker">a little diorama</p>
+    <h1>Spindle Isle</h1>
+    <p class="tag">Turn the world. Tilt the dream. Roll Pip to the flower.</p>
+    <p class="ver">v1.0</p>
+    <button id="btn-play" class="primary">Play</button>
+    <button id="btn-settings" class="ghost">Settings</button>
+    <p class="help">Drag to tilt · swipe to turn<br>Arrows tilt · Q and E turn · a gamepad works too</p>
+    <div id="a2hs" class="a2hs hidden">
+      <p>For the full screen, tap <b>Share</b>, then <b>Add to Home Screen</b>, and open Spindle Isle from your Home Screen.</p>
+      <button id="a2hs-ok" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="panel-wrap center hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+  <div class="panel">
+    <h2 id="pause-title">Paused</h2>
+    <button id="pause-resume" class="primary">Resume</button>
+    <button id="pause-blossom" class="ghost">Back to the last blossom</button>
+    <button id="pause-restart" class="ghost">Start again</button>
+    <button id="pause-settings" class="ghost">Settings</button>
+    <button id="pause-title" class="ghost">Title</button>
+    <p class="help">Arrows or the left stick tilt. Q, E or the shoulder buttons turn the isle.</p>
+  </div>
+</div>
+
+<div id="settings" class="panel-wrap center hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="panel">
+    <h2 id="settings-title">Settings</h2>
+    <label>Music <input id="music" type="range" min="0" max="100" value="70"></label>
+    <label>SFX <input id="sfx" type="range" min="0" max="100" value="85"></label>
+    <label>Brightness <input id="bright" type="range" min="75" max="125" value="100"></label>
+    <label class="check"><input id="mute" type="checkbox"> Mute</label>
+    <h3>Older versions</h3>
+    <ul id="older"></ul>
+    <p id="older-empty">No older versions yet.</p>
+    <button id="settings-back" class="primary">Back</button>
+  </div>
+</div>
+
+<div id="fall" class="panel-wrap center hidden" role="dialog" aria-modal="true" aria-labelledby="fall-title">
+  <div class="panel">
+    <h2 id="fall-title">Pip slipped</h2>
+    <p class="tag">The isle is still here. Pip can go back to the last blossom.</p>
+    <button id="fall-back" class="primary">Back to the last blossom</button>
+  </div>
+</div>
+
+<div id="stuck" class="toast hidden">
+  <p>Pip is resting in a funny spot.</p>
+  <button id="stuck-back" type="button">Back to the last blossom</button>
+</div>
+
+<div id="complete" class="panel-wrap center hidden" role="dialog" aria-modal="true" aria-labelledby="done-title">
+  <div class="panel">
+    <p class="kicker">the flower woke up</p>
+    <h2 id="done-title">Spindle Isle bloomed</h2>
+    <p id="res-seeds" class="stat"></p>
+    <p id="res-time" class="stat"></p>
+    <button id="res-again" class="primary">Play again</button>
+    <button id="res-title" class="ghost">Title</button>
+  </div>
+</div>
+
+<div id="loading"><p>Waking the isle…</p></div>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
