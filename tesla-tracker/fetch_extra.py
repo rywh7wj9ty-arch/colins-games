@@ -1,24 +1,50 @@
-# Writes public market data only: data/history.json (daily closes), data/news.json (headlines, earnings, analyst targets)
-import json,sys,time,re,urllib.request,urllib.parse,http.cookiejar,html,email.utils
+# Writes public market data only: data/history.json (daily OHLC for TSLA, closes for SPY/FX), data/news.json (headlines, earnings, analyst targets)
+import json,sys,time,re,os,urllib.request,urllib.parse,http.cookiejar,html,email.utils
 out=sys.argv[1] if len(sys.argv)>1 else 'tesla-tracker/data'
 UA={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36'}
 cj=http.cookiejar.CookieJar();op=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 def g(u):return op.open(urllib.request.Request(u,headers=UA),timeout=30).read()
-def chart(sym,rng='10y'):
+def rd(x,n=5):
+  return None if x is None else round(x,n)
+def chart(sym,rng='10y',ohlc=False):
   r=json.loads(g(f'https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(sym)}?range={rng}&interval=1d'))['chart']['result'][0]
-  return [[t,round(c,5)] for t,c in zip(r['timestamp'],r['indicators']['quote'][0]['close']) if c is not None]
+  q=r['indicators']['quote'][0];out=[]
+  ts,cl=r['timestamp'],q['close']
+  op,hi,lo,vo=q.get('open') or [],q.get('high') or [],q.get('low') or [],q.get('volume') or []
+  for i,t in enumerate(ts):
+    c=cl[i] if i<len(cl) else None
+    if c is None: continue
+    row=[t,round(c,5)]
+    if ohlc:
+      o=op[i] if i<len(op) else None
+      h=hi[i] if i<len(hi) else None
+      l=lo[i] if i<len(lo) else None
+      v=vo[i] if i<len(vo) else None
+      row += [rd(o),rd(h),rd(l), None if v is None else int(v)]
+    out.append(row)
+  return out
 hist={'updated':int(time.time()),'source':'Yahoo Finance daily closes'}
-def chart_try(sym):
+def chart_try(sym,ohlc=False):
   last=None
   for rng in ('10y','5y'):
-    try:return chart(sym,rng)
+    try:return chart(sym,rng,ohlc=ohlc)
     except Exception as e:
       last=e;print('hist',sym,rng,e,file=sys.stderr);time.sleep(1)
   raise last or RuntimeError('no history')
 for k,s in [('TSLA','TSLA'),('SPY','SPY'),('USDGBP','GBP=X')]:
-  try:hist[k]=chart_try(s);time.sleep(1)
+  try:hist[k]=chart_try(s,ohlc=(k=='TSLA'));time.sleep(1)
   except Exception as e:print('hist',k,e,file=sys.stderr)
-if 'TSLA' in hist: json.dump(hist,open(f'{out}/history.json','w'),separators=(',',':'))
+# Keep any series the live fetch missed so a flaky Yahoo call cannot wipe 10y of data
+oldp=f'{out}/history.json'
+if os.path.exists(oldp):
+  try:
+    old=json.load(open(oldp))
+    for k in ('TSLA','SPY','USDGBP'):
+      if k not in hist and k in old: hist[k]=old[k]
+  except Exception as e:
+    print('hist merge',e,file=sys.stderr)
+if hist.get('TSLA') and len(hist['TSLA'][0])>2: hist['source']='Yahoo Finance daily OHLC'
+if 'TSLA' in hist: json.dump(hist,open(oldp,'w'),separators=(',',':'))
 def rss(u,n=12):
   b=g(u).decode('utf-8','ignore');items=[]
   for it in re.findall(r'<item>(.*?)</item>',b,re.S)[:n]:
