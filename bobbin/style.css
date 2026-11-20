@@ -328,6 +328,8 @@ body.tv .screen .panel{zoom:1.06}
 /* v1.8 look switches live in the same feature list */
 .featSplit{grid-column:1/-1;text-align:left;font-size:12px;font-weight:700;letter-spacing:.2px;margin:6px 0 0;opacity:.8}
 .featBtn.feat18{background:#6d7dff;box-shadow:0 4px 0 rgba(40,50,140,.45),0 6px 12px rgba(90,58,40,.12)}
+.featBtn.feat19{background:#2f9e74;box-shadow:0 4px 0 rgba(20,110,70,.45),0 6px 12px rgba(90,58,40,.12)}
+#goalHud{left:50%;right:auto;top:auto;bottom:calc(var(--sab) + 10px);transform:translateX(-50%);font-size:14px;padding:4px 12px;z-index:4;white-space:nowrap}
 /* Screen polish (body.look18). Off = the v1.7 chrome. Safe areas stay on the inset vars. */
 body.look18 .tver{display:inline-block;opacity:1;font-weight:700;letter-spacing:.4px;background:#fffaf0;color:var(--ink);
   border-radius:999px;padding:3px 12px;margin:0 0 8px;box-shadow:0 2px 0 rgba(90,58,40,.22);outline:2px dashed rgba(90,58,40,.35);outline-offset:-5px}
