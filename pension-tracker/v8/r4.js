@@ -13,7 +13,7 @@ Q('main').insertAdjacentHTML('beforeend','<section id="t-sim" hidden></section><
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!=='t-'+b.dataset.t);render()});
 const vis=id=>!Q('#t-'+id).hidden;
 // 2) age slider + 3) Tesla pulse on Overview
-let PX={};async function pulse(){try{const j=await(await fetch('../tesla-tracker/data/tsla.json?'+Date.now())).json();const xk=j.marketState==='PRE'?'preMarket':j.marketState==='POST'?'postMarket':null;
+let PX={};async function pulse(){try{const j=await(await fetch('../../tesla-tracker/data/tsla.json?'+Date.now())).json();const xk=j.marketState==='PRE'?'preMarket':j.marketState==='POST'?'postMarket':null;
  PX={last:xk&&j[xk+'Price']?j[xk+'Price']:j.price,prev:j.prevClose,close:j.price,state:j.marketState,lbl:xk==='preMarket'?'Pre-market':xk==='postMarket'?'After hours':j.marketState==='REGULAR'?'Market open':'Market closed',at:new Date(j.updated*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'})};
  if(PX.last){S.price=PX.last}render()}catch(e){}}
 setInterval(()=>{if(D&&!document.hidden)pulse()},300000);
