@@ -28,7 +28,7 @@
     <p class="kicker">a little diorama</p>
     <h1>Spindle Isle</h1>
     <p class="tag">Turn the world. Tilt the dream. Roll Pip to the flower.</p>
-    <p class="ver">v1.0</p>
+    <p class="ver">v1.1</p>
     <button id="btn-play" class="primary">Play</button>
     <button id="btn-settings" class="ghost">Settings</button>
     <p class="help">Drag to tilt · swipe to turn<br>Arrows tilt · Q and E turn · a gamepad works too</p>
@@ -54,6 +54,9 @@
 <div id="settings" class="panel-wrap center hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
   <div class="panel">
     <h2 id="settings-title">Settings</h2>
+    <h3>New in 1.1</h3>
+    <p class="feat-note">All off brings back the original isle.</p>
+    <div id="feats"></div>
     <label>Music <input id="music" type="range" min="0" max="100" value="70"></label>
     <label>SFX <input id="sfx" type="range" min="0" max="100" value="85"></label>
     <label>Brightness <input id="bright" type="range" min="75" max="125" value="100"></label>
@@ -82,8 +85,10 @@
   <div class="panel">
     <p class="kicker">the flower woke up</p>
     <h2 id="done-title">Spindle Isle bloomed</h2>
+    <p id="res-stars" class="stars hidden"></p>
     <p id="res-seeds" class="stat"></p>
     <p id="res-time" class="stat"></p>
+    <p id="res-best" class="best hidden"></p>
     <button id="res-again" class="primary">Play again</button>
     <button id="res-title" class="ghost">Title</button>
   </div>

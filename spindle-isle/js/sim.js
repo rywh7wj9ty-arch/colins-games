@@ -28,6 +28,7 @@ export function createSim(level = LEVEL) {
   let snap = null;
   let bridgeLatch = false;
   let t = 0;
+  let wet = false;
   const boxes = [];
 
   function reset() {
@@ -184,6 +185,7 @@ export function createSim(level = LEVEL) {
     for (const w of level.water) {
       if (inRect(w, level.waterTop - 0.3, w.y + 0.8)) inWater = true;
     }
+    wet = inWater;
 
     const wind = level.wind;
     const inWind = yawIndex === wind.yaw && windCharge > 0.68 && inRect(wind, wind.y0, wind.y1);
@@ -322,6 +324,7 @@ export function createSim(level = LEVEL) {
       seedTotal: level.seeds.length,
       won, fallen, checkpoint, onGround, groundId,
       seeAngle, windCharge, bridge: bridgeOn(),
+      inWater: wet,
       t, snap: snap ? { ...snap } : null,
     };
   }
