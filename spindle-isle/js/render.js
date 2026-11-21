@@ -3,6 +3,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { LEVEL, PIP_R } from './level.js';
 import { poseGravity } from './pose.js';
+import { createDress } from './dress.js';
 
 const TIERS = [
   { dpr: 2, shadow: 1024, bloom: true, grass: 240, plants: 64 },
@@ -103,7 +104,8 @@ function cloudTex() {
   return t;
 }
 
-export function createView(canvas) {
+export function createView(canvas, opts = {}) {
+  const feat = (id) => (opts.feat ? !!opts.feat(id) : false);
   const phone = /iPhone|iPod|Android/i.test(navigator.userAgent);
   const cores = navigator.hardwareConcurrency || 8;
   let tier = (phone || cores <= 4) ? 1 : 0;
@@ -293,15 +295,17 @@ export function createView(canvas) {
   });
   grass.receiveShadow = true;
   world.add(grass);
+  const grassAmp = { value: 1 };
   const grassMat = grass.material;
   grassMat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = timeU;
-    shader.vertexShader = 'uniform float uTime;\nattribute float aPhase;\n' + shader.vertexShader.replace(
+    shader.uniforms.uAmp = grassAmp;
+    shader.vertexShader = 'uniform float uTime;\nuniform float uAmp;\nattribute float aPhase;\n' + shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
        float ph = aPhase;
-       transformed.x += sin(uTime * 1.5 + ph) * 0.12 * position.y;
-       transformed.z += cos(uTime * 1.2 + ph * 1.3) * 0.08 * position.y;`
+       transformed.x += sin(uTime * 1.5 + ph) * 0.12 * uAmp * position.y;
+       transformed.z += cos(uTime * 1.2 + ph * 1.3) * 0.08 * uAmp * position.y;`
     );
   };
   const phases = new Float32Array(grassSpots.map(p => p.phase));
@@ -682,8 +686,22 @@ export function createView(canvas) {
     if (TIERS[tier].bloom) makeTargets();
   }
 
+  const pipMats = [];
+  pip.traverse((o) => {
+    if (o.isMesh && pipMats.indexOf(o.material) < 0) pipMats.push(o.material);
+  });
+  const dress = createDress({
+    scene, world, camera, renderer, timeU, feat,
+    getTier: () => tier,
+    sky, skyPlain: skyMat, clouds, waters, waterMat, grassAmp,
+    hemi, sun, fill, rim, pipMats, face, pupils, gear, mill, bloom, burst,
+  });
+
   const look = new THREE.Vector3(3.4, 1.15, 1.6);
+  const juiceOffset = new THREE.Vector3(1.15, 2.35, -2.55);
   const camPos = new THREE.Vector3(8.6, 16.4, -14.6);
+  const scenicPos = new THREE.Vector3(6.8, 7.2, -16.8);
+  const scenicLook = new THREE.Vector3(3.4, 1.35, 4.2);
   const _flowerWorld = new THREE.Vector3();
   const _finale = new THREE.Vector3();
   const _finaleOffset = new THREE.Vector3(1.8, 3.4, -3.8);
@@ -691,10 +709,15 @@ export function createView(canvas) {
   let squash = 0;
   let seen = new Set();
   let bloomT = 0;
+  let prevYaw = 0;
+  let pipWasGround = true;
 
   function update(dt, state, pose, extra) {
     timeU.value += dt;
     sinceTier += dt;
+    const spinning = Math.abs(pose.yaw - prevYaw) > 0.008 && !(extra && extra.title);
+    dress.animate(dt, state, pose, Object.assign({}, extra, { spinning }));
+    prevYaw = pose.yaw;
     const tset = TIERS[tier];
     poseGravity(pose.yaw, pose.pitch, pose.roll, grav, world.quaternion);
 
@@ -706,12 +729,24 @@ export function createView(canvas) {
         const axis = new THREE.Vector3(-state.vz / sp, 0, state.vx / sp);
         body.quaternion.setFromAxisAngle(axis, rollAngle);
       }
-      const stretch = Math.min(0.18, sp * 0.045);
-      const landed = state.onGround && Math.abs(state.vy) < 0.2;
-      squash += ((landed ? 0 : 0) - squash) * Math.min(1, dt * 6);
-      if (state.onGround && state.vy < -0.01) squash = Math.min(0.22, squash + 0.04);
-      const sy = 1 + stretch * 0.4 - squash;
-      const sx = 1 / Math.sqrt(Math.max(0.55, sy));
+      let sy = 1;
+      let sx = 1;
+      if (feat('pip')) {
+        const stretch = Math.min(0.14, sp * 0.032);
+        if (!state.onGround && state.vy < -0.8) squash = Math.max(squash, Math.min(0.16, -state.vy * 0.012));
+        else squash += (0 - squash) * Math.min(1, dt * 8);
+        if (state.onGround && !pipWasGround) squash = Math.min(0.2, squash + 0.09);
+        sy = 1 + stretch * (state.onGround ? 0.4 : 1) - squash;
+        sx = 1 / Math.sqrt(Math.max(0.72, sy));
+      } else {
+        const stretch = Math.min(0.18, sp * 0.045);
+        const landed = state.onGround && Math.abs(state.vy) < 0.2;
+        squash += ((landed ? 0 : 0) - squash) * Math.min(1, dt * 6);
+        if (state.onGround && state.vy < -0.01) squash = Math.min(0.22, squash + 0.04);
+        sy = 1 + stretch * 0.4 - squash;
+        sx = 1 / Math.sqrt(Math.max(0.55, sy));
+      }
+      pipWasGround = !!state.onGround;
       body.scale.set(sx, sy, sx);
       face.position.y = (sy - 1) * 0.12;
       const blink = Math.sin(timeU.value * 0.7) > 0.97 ? 0.15 : 1;
@@ -741,23 +776,25 @@ export function createView(canvas) {
         else if (!seen.has(s.id)) {
           seen.add(s.id);
           burst(s.m.position.x, s.base, s.m.position.z, 16, [1, 0.9, 0.55], 1.6);
+          if (feat('juice')) burst(s.m.position.x, s.base + 0.08, s.m.position.z, 22, [1, 0.97, 0.78], 2.2);
         }
       }
       if (state.won) bloomT = Math.min(1, bloomT + dt / 2.6);
       else bloomT = 0;
-      const open = 0.7 + bloomT * 0.7;
+      const juicy = feat('juice');
+      const open = 0.7 + bloomT * (juicy ? 1.15 : 0.7);
       petalBits.forEach((h, i) => {
         const bit = h.children[0];
         bit.rotation.x = open;
-        const s = 0.85 + bloomT * 0.45;
+        const s = 0.85 + bloomT * (juicy ? 1.15 : 0.45);
         bit.scale.set(s, s, s);
       });
-      heart.scale.setScalar(1 + bloomT * 0.35 + Math.sin(timeU.value * 3) * 0.03);
-      heartMat.emissiveIntensity = 0.25 + bloomT * 0.85;
+      heart.scale.setScalar(1 + bloomT * (juicy ? 0.75 : 0.35) + Math.sin(timeU.value * 3) * 0.03);
+      heartMat.emissiveIntensity = 0.25 + bloomT * (juicy ? 1.45 : 0.85);
       if (bloomT > 0.04) heart.layers.enable(1);
       else heart.layers.disable(1);
-      if (bloomT > 0.05 && Math.random() < dt * 10) {
-        burst(bloom.position.x, bloom.position.y + 1, bloom.position.z, 2, [1, 0.95, 0.7], 1.2);
+      if (bloomT > 0.05 && Math.random() < dt * (juicy ? 24 : 10)) {
+        burst(bloom.position.x, bloom.position.y + 1, bloom.position.z, juicy ? 4 : 2, [1, 0.95, 0.7], juicy ? 1.6 : 1.2);
       }
     }
 
@@ -783,19 +820,22 @@ export function createView(canvas) {
       m.lookAt(camera.position);
     });
 
-    const focus = state ? new THREE.Vector3(state.x, state.y, state.z) : look;
-    const wantLook = look.clone().lerp(focus, extra && extra.title ? 0.02 : 0.12);
+    const scenic = feat('sky') && bloomT <= 0.05;
+    const focus = state ? new THREE.Vector3(state.x, state.y, state.z) : (scenic ? scenicLook : look);
+    const baseLook = scenic ? scenicLook : look;
+    const wantLook = baseLook.clone().lerp(focus, extra && extra.title ? 0.015 : 0.1);
     if (bloomT > 0) wantLook.lerp(bloom.position, bloomT * 0.65);
     if (bloomT > 0.05) {
       bloom.getWorldPosition(_flowerWorld);
-      _finale.copy(_flowerWorld).add(_finaleOffset);
+      _finale.copy(_flowerWorld).add(feat('juice') ? juiceOffset : _finaleOffset);
       camera.position.lerp(_finale, 1 - Math.exp(-dt * 1.5));
       wantLook.copy(_flowerWorld);
       wantLook.y += 0.45;
     } else {
-      camera.position.lerp(camPos, 1 - Math.exp(-dt * 2));
+      camera.position.lerp(scenic ? scenicPos : camPos, 1 - Math.exp(-dt * 2));
     }
     camera.lookAt(wantLook);
+    dress.applyShake(camera);
 
     camera.layers.set(0);
     renderer.setRenderTarget(null);
@@ -808,7 +848,7 @@ export function createView(canvas) {
       renderer.setClearColor(0x000000, 0);
       renderer.clear(true, true, true);
       renderer.render(scene, camera);
-      renderer.setClearColor(0xf6e2b8, 1);
+      renderer.setClearColor(dress.clearHex, 1);
       camera.layers.set(0);
       blurMat.uniforms.tMap.value = bloomRT.texture;
       blurMat.uniforms.uDir.value.set(1, 0);
@@ -847,7 +887,8 @@ export function createView(canvas) {
     update, resize,
     get tier() { return tier; },
     lockTier(i) { locked = true; tier = Math.max(0, Math.min(TIERS.length - 1, i)); applyTier(); },
-    resetSeeds() { seen = new Set(); bloomT = 0; },
+    resetSeeds() { seen = new Set(); bloomT = 0; pipWasGround = true; dress.reset(); },
     get bloom() { return bloomT; },
+    look: () => dress.look(),
   };
 }

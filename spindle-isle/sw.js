@@ -1,11 +1,15 @@
-/* Spindle Isle. One cache name per release so an update never mixes files. */
-const CACHE = 'spindle-isle-v10-20261115';
+/* Spindle Isle v1.1. Scope is this folder. Only v1.1 caches are cleaned,
+   so the frozen /spindle-isle-v1.0/ copy keeps its own cache. */
+const CACHE = 'spindle-isle-v11-20261120';
+const PREFIX = 'spindle-isle-v11-';
 const ASSETS = [
   './',
   'index.html',
   'style.css',
   'manifest.webmanifest',
   'js/game.js',
+  'js/features.js',
+  'js/dress.js',
   'js/level.js',
   'js/sim.js',
   'js/pose.js',
@@ -27,7 +31,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((k) => k.startsWith('spindle-isle-') && k !== CACHE).map((k) => caches.delete(k))
+    keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))
   )).then(() => self.clients.claim()));
 });
 

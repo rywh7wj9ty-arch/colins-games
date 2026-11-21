@@ -170,11 +170,16 @@ export function createAudio() {
     },
     ui() { tone(660, 0.08, 'sine', 0.05); },
     click() { tone(520, 0.09, 'triangle', 0.07); tone(780, 0.12, 'sine', 0.04); },
-    seed() {
+    seed(juicy) {
       tone(880, 0.12, 'sine', 0.07);
       tone(1174, 0.18, 'sine', 0.05);
       tone(1568, 0.26, 'triangle', 0.035);
+      if (juicy) {
+        tone(1976, 0.2, 'sine', 0.028);
+        tone(1318, 0.16, 'triangle', 0.03);
+      }
     },
+    land() { tone(210, 0.08, 'sine', 0.045, null, 0.55); },
     blossom() { tone(640, 0.2, 'sine', 0.05); },
     water() { tone(420, 0.15, 'sine', 0.03, null, 0.7); },
     wind() { tone(360, 0.4, 'triangle', 0.04, null, 1.4); },
